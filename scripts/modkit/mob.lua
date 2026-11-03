@@ -75,7 +75,11 @@ function Mob:despawn()
 end
 Mob.remove = Mob.despawn
 function Mob:heal(amount)
-  if self._out then self._out.heal(amount) else self:set_health(self._view.health + amount) end
+  if self._out then self._out.heal(amount); return end
+  if not self.dimension then error("mob:heal needs a goal or a hook with a host (not on_hurt)", 2) end
+  local health = self._view.health
+  if health == nil then error("mob:heal needs the mob's view (not on_death)", 2) end
+  self:set_health(health + amount)
 end
 
 -- By id, in a callback with a host.

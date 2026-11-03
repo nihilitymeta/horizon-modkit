@@ -48,7 +48,7 @@ local CALLBACKS = {
     e:on_crafted(wrap(item), wrap_player(player), recipe)
   end },
   on_dropped = { "item_dropped", function(e, player, item, count)
-    e:on_dropped({ id = item, count = count }, wrap_player(player), count)
+    e:on_dropped(wrap({ id = item, count = count, damage = 0, plain = true }), wrap_player(player), count)
   end },
   on_hurt_enemy = { "item_hurt_enemy", function(e, item, player, target)
     e:on_hurt_enemy(wrap(item), wrap_player(player), target)
