@@ -1,0 +1,7 @@
+{
+  "languageMode": "nonstrict",
+  "aliases": {
+    "modkit": "../../scripts/modkit",
+    "example": "scripts/example"
+  }
+}

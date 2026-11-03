@@ -1,0 +1,11 @@
+id = "example_mod"
+name = "Example Mod"
+version = "0.1.0"
+description = "One of everything a Lua mod on Horizon Modkit does, a file per concept, for reading."
+authors = ["whos-carmen"]
+api = "0.2"
+side = "both"
+capabilities = ["registries", "scripts"]
+experimental = ["scripts"]
+# The modkit this folder sits in (`--dev-mod /path/to/horizon-modkit`).
+depends = ["horizon_modkit >= 0.7"]

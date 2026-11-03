@@ -244,7 +244,7 @@ written back after the callback like `mob.data`, and kept through saves.
 |---|---|
 | `function B:on_random_tick(block)` | the block's random tick (declare `random_ticks` in its data) |
 | `function B:on_tick(block)` | a scheduled tick (`block:schedule_tick(delay)`) |
-| `function B:on_use(block, player, held, face)` | a right click; `player` has `name`, `dimension`, `position`, `game_mode`; `held` has `item`, `count` |
+| `function B:on_use(block, player, held, face)` | a right click; `player` has `name`, `dimension`, `position`, `game_mode`; `held` has `item`, `count`. It runs once per hand (the main hand, then the off hand, as the game tries both; `held` is the main hand's both times): do one thing that is the same done twice, such as lighting a lamp rather than toggling it, or read the state first |
 | `B:block_entity { ticks = true, data = { charge = 0 } }` | every placed block of this kind gets a block entity: saved data per block (`data` is what a new one starts with), ticked each server tick when `ticks` |
 | `function B:on_block_entity_tick(block)` | every server tick of a block with a block entity |
 | `function B:on_break(block, player)` | a player breaks it; return `true` to keep it |
@@ -255,10 +255,10 @@ Each block class registers its callbacks with the engine for its own block id (`
 `on_random_tick`, `on_tick`, `on_block_entity_tick`, `on_break` and `on_place` run for this block's ticks and events
 alone; other blocks' random ticks (hundreds a second across the loaded world) never reach Lua.
 
-`block` has `x`, `y`, `z`, `dimension`, `id`, its state properties as fields (`block.stage`), `block.data` (the
+`block` has `x`, `y`, `z`, `dimension`, `id`, its state properties as fields (`block.stage`; strings as the state spells them, `"true"` for a boolean), `block.data` (the
 block entity's saved table in every callback, nil for a block without one; what you change in it is saved after
-the callback, a number keeps its NBT type, a key set to nil is gone), and `block:set(key, value)`,
-`block:schedule_tick(delay)`, `block:handled()` (skip the vanilla tick), `block:cancel()` (eat the click),
+the callback, a number keeps its NBT type, a key set to nil is gone), and `block:set(key, value)` (in `on_use`, the ticks and `on_block_entity_tick`),
+`block:schedule_tick(delay)` and `block:handled()` (skip the vanilla tick), in `on_random_tick` and `on_tick` only, `block:cancel()` (eat the click),
 `block:summon(kind, dx, dy, dz)` (the mob's id, in a callback with a host), `block:replace(id, props, flags)`,
 `block:drop(id, count)`, `block:light()`, `block:above()`, `block:below()`, `block:broadcast(line)`.
 

@@ -9,7 +9,7 @@
 #
 # HORIZON is the fork checkout, built: target/fast/horizon-client and target/debug/cargo-horizon-mod
 # (`cargo build -p cargo-horizon-mod`). With no folders given, the parasite's tools/modkit-probe beside this
-# checkout is checked when it is there.
+# checkout is checked when it is there, after examples/example_mod.
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 : "${HORIZON:?the fork checkout}"
@@ -20,8 +20,9 @@ mods=()
 for a in "$@"; do
   case "$a" in --self-test) self_test=true ;; *) mods+=("$a") ;; esac
 done
-if [ ${#mods[@]} = 0 ] && [ -d "$HERE/../horizon-parasite-mod/tools/modkit-probe" ]; then
-  mods=("$HERE/../horizon-parasite-mod/tools/modkit-probe")
+if [ ${#mods[@]} = 0 ]; then
+  mods=("$HERE/examples/example_mod")
+  [ -d "$HERE/../horizon-parasite-mod/tools/modkit-probe" ] && mods+=("$HERE/../horizon-parasite-mod/tools/modkit-probe")
 fi
 failed=0
 check() {

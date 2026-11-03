@@ -1,58 +1,72 @@
 # Horizon Modkit
 
-A library for [Horizon](https://playhorizon.dev) mods written in Lua: entities, blocks and goals as classes with
-lifecycle callbacks, the way a NeoForge or Fabric mod declares them. Install it beside your mod; your mod says
-`depends = ["horizon_modkit"]` and `require("modkit")`. It needs a game built from the engine fork
-[whos-carmen/horizon](https://github.com/whos-carmen/horizon), branch `engine-work`. Experimental, as the
-`scripts` capability is.
+A library for [Horizon](https://playhorizon.dev) mods written in Lua: items, blocks, mobs, goals, players and
+commands as classes with callbacks, the way a NeoForge or Fabric mod declares them, over the engine fork
+[whos-carmen/horizon](https://github.com/whos-carmen/horizon) (branch `engine-work`, the game to run them
+with). No Rust, no patches. Experimental, as the `scripts` capability is.
 
-**Reference:** [docs/api.md](docs/api.md) (entities, goals, the mob, blocks, `scripts/registry.lua`).
-The engine's [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md)
-is the layer under it.
+## Start here
 
-## A mod with it
+- [Getting started](docs/getting-started.md): from `cargo horizon-mod new` to an item of your own in the game.
+- [The example mod](examples/example_mod): one of everything, a file per concept, each saying how to see it.
+- [Horizon Parasite Mod](https://github.com/whos-carmen/horizon-parasite-mod): a real mod built with this.
 
-`cargo horizon-mod new my-mod --template lua` (the fork's `cargo-horizon-mod`) writes one: the files below with a
-wand and its `on_use`, a `.luaurc` for an editor, a README. `tools/scaffold-check.sh` builds, checks and plays one;
-`tools/check.sh` loads a mod's scripts headlessly in the game's runtime, no world, and says what fails and where.
+## Guides
+
+One screen each, one code block lifted from the example mod, a link to the reference.
+
+| | |
+|---|---|
+| [Items](docs/guides/items.md) | an item's callbacks: used, used on a block, a blow, eaten, crafted, dropped |
+| [Blocks](docs/guides/blocks.md) | a state of its own, a block entity, random and scheduled ticks, placed and broken |
+| [Mobs and goals](docs/guides/mobs.md) | a mob's goals and callbacks, vanilla mobs too |
+| [Players and events](docs/guides/players-and-events.md) | join, death, chat, blocks, pickups, sleep |
+| [Commands](docs/guides/commands.md) | `/mymod ...` with typed arguments |
+| [Timers and saved data](docs/guides/timers-and-data.md) | settings, timers, tables saved with the world, a player or a mob |
+| [Sounds and effects](docs/guides/sounds-and-effects.md) | sounds, particles, titles, status effects |
+| [Spawning](docs/guides/spawning.md) | eggs, natural spawns, summons |
+| [Models and animation](docs/guides/models-and-animation.md) | a mob's look and sounds, item and block models |
+| [Reload and restart](docs/guides/reload-and-restart.md) | what a change needs |
+
+**Reference:** [docs/api.md](docs/api.md), every class and callback; [ids](docs/reference/ids.md) a mod keeps
+reaching for; the [FAQ](docs/reference/faq.md). The engine's
+[lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md) is the layer
+under it all.
+
+## In short
 
 ```toml
-# horizon-mod.toml
+# horizon-mod.toml; scripts/init.lua below
 capabilities = ["registries", "scripts"]
 experimental = ["scripts"]
-depends = ["horizon_modkit"]
+depends = ["horizon_modkit >= 0.7"]
 ```
 
 ```lua
--- scripts/registry.lua: what the mod adds (or JSON under data/)
-registry.entity_type("crawler", { template = "minecraft:zombie", attributes = { max_health = 30 }, goals = "none" })
-registry.block("hive", { template = "minecraft:sculk", item = true })
-```
-
-```lua
--- scripts/init.lua: what it does
-local modkit = require("modkit")
+local modkit = require("@modkit")
 local M = modkit.mod("my_mod")
 
-local Crawler = M:entity("crawler")
-Crawler:goals { { 1, modkit.goals.HuntPlayer(32, 1.2, 20) }, { 5, modkit.goals.Wander(6) } }
-function Crawler:on_hurt(mob, hit) if hit.damage_type == "minecraft:on_fire" then hit:cancel() end end
-function Crawler:on_interact(mob, player, held)
-  mob.data.pets = (mob.data.pets or 0) + 1      -- saved with the mob
-  return true                                   -- the click is taken
-end
-
-local Hive = M:block("hive")
-Hive:block_entity { ticks = true, data = { charge = 0 } }
-function Hive:on_block_entity_tick(block)
-  block.data.charge = block.data.charge + 1
-  if block.data.charge >= 400 then block:summon("my_mod:crawler", 0, 1, 1); block.data.charge = 0 end
+-- A right click with the wand, in the air or on a block: a word to everyone,
+-- sparks where the player stands. Return true and the click is taken
+-- (nothing else acts on it).
+local Wand = M:item("wand")
+function Wand:on_use(item, player)
+  local p = player.position
+  horizon.broadcast(("%s waves the wand"):format(player.name))
+  modkit.particles("minecraft:happy_villager", p.x, p.y + 1, p.z, 12, 0.5, 0.05)
+  return true
 end
 ```
 
-Run: `horizon-client … --dev-mod /path/to/horizon-modkit --dev-mod /path/to/my_mod` (or install both `.hmod`s and
-turn them on). Scripts reload on `/reload`; the registry script runs at start. With `--dev-tools`, `/goals <mob>`
-shows a mob's goals and `/lua` the mods, their handlers and errors.
+Run: `horizon-client --dev-tools --dev-mod /path/to/horizon-modkit --dev-mod /path/to/my_mod` (or install both
+`.hmod`s). Scripts reload on `/reload`; `scripts/registry.lua`, what the mod adds, runs at start.
+
+## Tools
+
+`tools/check.sh` loads the modkit, the example mod and a mod given headlessly in the game's runtime and runs
+luau-lsp over them; `tools/scaffold-check.sh` builds, checks and plays a scaffolded mod; `tools/example-check.sh`
+plays the example mod through every concept; `tools/docs-check.sh` checks the docs' links and that every
+guide's code is in the example it names. Each takes `HORIZON=/path/to/horizon` (built).
 
 ## License
 
