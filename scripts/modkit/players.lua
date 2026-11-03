@@ -8,6 +8,15 @@
 --   function Players:on_break_block(player, block) end   -- breaking a block (block: x, y, z, id); return true to keep it
 --   function Players:on_place_block(player, block, item) end
 --   function Players:on_pickup(player, item, count) end  -- about to pick an item (an id) up; return true to leave it
+--   function Players:on_tick(player) end                 -- every server tick of every player: keep it light
+--   function Players:on_hurt(player, hit) end            -- about to take damage: hit:set_amount(n), hit:cancel(); player is {id, kind}
+--   function Players:on_fall(player, fall) end           -- about to land: fall.distance, fall:set_distance(n), fall:set_multiplier(n), fall:cancel()
+--   function Players:on_knockback(player, hit) end       -- about to be pushed: hit.strength, hit:set_strength(n), hit:cancel()
+--   function Players:on_command(player, line) end        -- typed a command; return true to stop it; player:reply(text) answers
+--   function Players:on_change_dimension(player, from, to) end
+--   function Players:on_sleep(player, x, y, z) end       -- entering a bed; return true to keep them out
+--   function Players:on_exp(player, amount) end          -- about to gain experience from an orb; return a number to change it
+--   function Players:on_open_menu(player, menu, pos) end -- opened a menu (menu its type, pos its block or nil)
 --
 -- `player` is the engine's table (`uuid`, `name`, `position`...) with the
 -- player's methods (modkit.player: `player:give`, `player:effect`...).
@@ -30,6 +39,43 @@ local CALLBACKS = {
   on_pickup = { "item_picked_up", function(e, player, item, count)
     if e:on_pickup(wrap(player), item, count) == true then horizon.cancel() end
   end },
+  on_tick = { "player_tick", function(e, player) e:on_tick(wrap(player)) end },
+  on_hurt = { "player_hurt", function(e, player, damage_type, causing, direct, amount)
+    e:on_hurt(player, {
+      damage_type = damage_type, causing = causing, direct = direct, amount = amount,
+      set_amount = function(self, n) self.amount = n; horizon.set_amount(n) end,
+      cancel = function(self) self.canceled = true; horizon.cancel() end,
+    })
+  end },
+  on_fall = { "player_fall", function(e, player, distance, multiplier)
+    e:on_fall(player, {
+      distance = distance, multiplier = multiplier,
+      set_distance = function(self, n) self.distance = n; horizon.set_distance(n) end,
+      set_multiplier = function(self, n) self.multiplier = n; horizon.set_multiplier(n) end,
+      cancel = function(self) self.canceled = true; horizon.cancel() end,
+    })
+  end },
+  on_knockback = { "player_knockback", function(e, player, damage_type, causing, direct, strength, x, z)
+    e:on_knockback(player, {
+      damage_type = damage_type, causing = causing, direct = direct, strength = strength, x = x, z = z,
+      set_strength = function(self, n) self.strength = n; horizon.set_strength(n) end,
+      cancel = function(self) self.canceled = true; horizon.cancel() end,
+    })
+  end },
+  on_command = { "player_command", function(e, player, line)
+    player = wrap(player)
+    player.reply = function(_, text) horizon.reply(text) end
+    if e:on_command(player, line) == true then horizon.cancel() end
+  end },
+  on_change_dimension = { "player_changed_dimension", function(e, player, from, to) e:on_change_dimension(wrap(player), from, to) end },
+  on_sleep = { "player_bed_enter", function(e, player, x, y, z)
+    if e:on_sleep(wrap(player), x, y, z) == true then horizon.cancel() end
+  end },
+  on_exp = { "player_exp_change", function(e, player, amount)
+    local n = e:on_exp(wrap(player), amount)
+    if type(n) == "number" then horizon.set_amount(n) end
+  end },
+  on_open_menu = { "player_container_open", function(e, player, menu, pos) e:on_open_menu(wrap(player), menu, pos) end },
 }
 
 Players.__index = Players

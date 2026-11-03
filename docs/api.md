@@ -52,6 +52,10 @@ kinds and blocks work), `M:config(defaults)` for its settings, `M:on(hook, fn)` 
 | `function E:on_hurt(mob, hit)` | about to take damage: `hit.damage_type` (`minecraft:on_fire`...), `.causing`, `.direct` (entity ids, -1 none), `.amount`; `hit:set_amount(n)`, `hit:cancel()` refuses the hit. `mob` is `id` and `kind` only, no actions: the game is mid-hit |
 | `function E:on_death(mob, cause)` | it died, by any cause: `cause.damage_type` (`minecraft:on_fire`...), `cause.causing` (the mob behind it, or 0), `cause.player` (the player credited, or nil); `mob` is `id` and `kind`, `mob.data` still readable |
 | `function E:on_interact(mob, player, held)` | a player right-clicked it, before the mob and the item act; `held` has `item`, `count`, `plain` or is nil. Return `true` to take the click |
+| `function E:on_fall(mob, fall)` | about to land: `fall.distance`, `fall.multiplier`; `fall:set_distance(n)`, `fall:set_multiplier(n)`, `fall:cancel()` (no fall damage). `mob` is `id` and `kind` only: no host |
+| `function E:on_knockback(mob, hit)` | about to be pushed back: `hit.strength` (raw), `hit.x`, `hit.z` (the direction), `hit.damage_type`, `hit.causing`; `hit:set_strength(n)`, `hit:cancel()`. No host |
+| `function E:on_equip(mob, slot, from, to)` | an equipment slot (`mainhand`, `offhand`, `head`...) took a different stack: `from` and `to` are item tables or nil |
+| `function E:on_drops(mob, drops, source)` | it died and its loot is about to drop: `drops` is a sequence of `{id, count, damage, plain}` to change in place (add entries, change counts, remove some); `source` has `table`, `player` (the killer, or nil), `tool` |
 
 A callback is wired to the game's hook for the class's kind as soon as it is defined, so a kind without one costs
 nothing each tick. `mob.data` in `on_tick`, `on_death` and `on_interact` is the mod's own saved table on that mob,
@@ -95,6 +99,10 @@ Actions are applied in order after the callback returns; a script never holds th
 | `function I:on_hit(item, player, target)` | a blow at `target` (`id`, `kind`, `position`) holding the item; return `true` and the blow does nothing |
 | `function I:on_finished(item, player)` | eaten, drunk, or held for its `use_duration`; return an item id (and a count) for what stays in the hand |
 | `function I:on_tick(item, player, slot, selected)` | every server tick the item sits in an inventory; keep it light |
+| `function I:on_crafted(item, player, recipe)` | a player took it from a crafting grid (`recipe` the recipe's id) |
+| `function I:on_dropped(item, player, count)` | a player threw `count` of it |
+| `function I:on_hurt_enemy(item, player, target)` | a blow with it landed on `target` (`id`, `kind`), after the damage (`on_hit` is before it) |
+| `function I:on_use_start(item, player, hand, duration)` | a use over time starts (eating, drinking, drawing; `hand` `"main"` or `"off"`, `duration` in ticks): return a number to change the duration, `true` to stop the use |
 
 `item` is `{id, count, damage, plain}` with `item:take(n)` and `item:give(n)` on the acting player's inventory.
 The item itself is declared in `scripts/registry.lua` (`registry.item(name, { template = "minecraft:bone" })`)
@@ -109,6 +117,19 @@ with its model under `assets/`.
 | `function P:on_break_block(player, block)` | a player breaks a block (`block` has `x`, `y`, `z`, `id`); return `true` to keep it |
 | `function P:on_place_block(player, block, item)` | a player placed a block from `item` |
 | `function P:on_pickup(player, item, count)` | a player is about to pick up `count` of `item` (an id); return `true` to leave it |
+| `function P:on_tick(player)` | every server tick of every living player; keep it light |
+| `function P:on_hurt(player, hit)` | about to take damage: `hit.damage_type`, `hit.causing`, `hit.amount`; `hit:set_amount(n)`, `hit:cancel()`. `player` is `id` and `kind` only (mid-hit: no host, no name) |
+| `function P:on_fall(player, fall)`, `function P:on_knockback(player, hit)` | as the entity's, for players (`player` is `id` and `kind`; no host) |
+| `function P:on_command(player, line)` | typed a command (without its slash), before it runs; return `true` to stop it; `player:reply(text)` answers (the only way here: no player's state is in place) |
+| `function P:on_change_dimension(player, from, to)` | arrived in another level (a dedicated server tells it; the window's own server does not) |
+| `function P:on_sleep(player, x, y, z)` | entering the bed at that position; return `true` to keep them out |
+| `function P:on_exp(player, amount)` | about to gain `amount` experience from an orb; return a number to change it |
+| `function P:on_open_menu(player, menu, pos)` | opened a menu: `menu` its type (`minecraft:generic_9x3`, `minecraft:crafting`...), `pos` its block (`{x, y, z}`) or nil |
+
+What has no class: `M:on("explosion", function(dimension, center, blocks) ... end)` (take entries out of `blocks` to spare them),
+`M:on("entity_joined", fn, "minecraft:arrow")` (any entity joining the level, by kind; `horizon.cancel()` keeps it out),
+`M:on("projectile_impact", fn, "minecraft:snowball")` and `M:on("projectile_launched", fn, kind)`, `M:on("mob_heal", fn)` (every
+living entity about to heal, by id only). A player's chat has no hook yet (the engine's lua-bindings.md says what it will be).
 
 `player`, in these and in every other callback that names one (`on_interact`, the item and block callbacks, a
 command), is the engine's table (`uuid`, `name`, `dimension`, `position`, `game_mode`, `health`, and `held`, the
@@ -190,6 +211,7 @@ written back after the callback like `mob.data`, and kept through saves.
 | `function B:on_block_entity_tick(block)` | every server tick of a block with a block entity |
 | `function B:on_break(block, player)` | a player breaks it; return `true` to keep it |
 | `function B:on_place(block, player, item)` | a player placed it from `item` |
+| `function B:on_drops(block, drops, source)` | a player, an explosion or a mob broke it and its loot is about to drop: `drops` as `E:on_drops`; `source.tool`, `source.player`, `source.explosion` |
 
 Each block class registers its callbacks with the engine for its own block id (`horizon.on(hook, fn, id)`), so
 `on_random_tick`, `on_tick`, `on_block_entity_tick`, `on_break` and `on_place` run for this block's ticks and events

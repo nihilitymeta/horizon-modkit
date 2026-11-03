@@ -8,6 +8,7 @@
 --   function Hive:on_use(block, player, held) end   -- a right click; block:cancel() eats it
 --   function Hive:on_break(block, player) end        -- a player breaks it; return true to keep it
 --   function Hive:on_place(block, player, item) end  -- a player placed it
+--   function Hive:on_drops(block, drops, source) end -- its loot is about to drop: change `drops` ({id, count} entries) in place
 --
 -- `block` is the block at that moment: `block.x/y/z`, `block.dimension`,
 -- `block.id`, its state properties as fields (`block.stage`), `block.data`
@@ -90,6 +91,10 @@ function Block.new(mod, id)
   end, id)
   horizon.on("block_placed", function(x, y, z, _, player, item)
     if b.on_place then b:on_place(instance(dimension_of(player), id, x, y, z, nil, nil), Player.wrap(player), item) end
+  end, id)
+  horizon.on("loot_drops", function(source, drops)
+    local at = source.block
+    if b.on_drops then b:on_drops(instance(source.dimension, id, at.x, at.y, at.z, nil, nil), drops, source) end
   end, id)
   return b
 end

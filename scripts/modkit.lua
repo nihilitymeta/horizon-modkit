@@ -11,7 +11,7 @@
 --   function Hive:on_random_tick(block) ... end
 --
 -- The library runs inside the mod's own Lua state; one `modkit.mod` per mod.
-local modkit = { VERSION = "0.5.0" }
+local modkit = { VERSION = "0.6.0" }
 
 local Mob = require("modkit.mob")
 local Goal = require("modkit.goal")
@@ -108,9 +108,10 @@ end
 function Mod:save_config(c) horizon.save_config(c or self._config) end
 
 --- A hook handler as the game takes it (`horizon.on`), for what the classes
---- do not cover.
-function Mod:on(hook, fn)
-  horizon.on(hook, fn)
+--- do not cover: `M:on("explosion", fn)`, `M:on("entity_joined", fn, "minecraft:arrow")`,
+--- `M:on("projectile_impact", fn, "minecraft:snowball")`, `M:on("mob_heal", fn)`.
+function Mod:on(hook, fn, kind)
+  horizon.on(hook, fn, kind)
 end
 
 function modkit.log(msg) horizon.log(msg) end

@@ -11,6 +11,10 @@
 --   function Crawler:on_hurt(mob, hit) end     -- about to take damage: hit:set_amount(n), hit:cancel()
 --   function Crawler:on_death(mob, cause) end  -- it died, by any cause: cause.damage_type, .causing, .player (or nil)
 --   function Crawler:on_interact(mob, player, held) end -- right-clicked; return true to take the click
+--   function Crawler:on_fall(mob, fall) end     -- about to land: fall.distance, fall:set_distance(n), fall:set_multiplier(n), fall:cancel()
+--   function Crawler:on_knockback(mob, hit) end -- about to be pushed: hit.strength, hit:set_strength(n), hit:cancel()
+--   function Crawler:on_equip(mob, slot, from, to) end  -- an equipment slot changed (item tables or nil)
+--   function Crawler:on_drops(mob, drops, source) end   -- its loot is about to drop: change `drops` ({id, count} entries) in place
 --
 -- A callback is wired to the game's hook for the class's kind the moment it
 -- is defined, so a kind without one costs nothing each tick.
@@ -42,6 +46,27 @@ local CALLBACKS = {
   end },
   on_interact = { "mob_interact", function(e, dimension, mob, player, held, data)
     if e:on_interact(Mob.host(mob, dimension, data), Player.wrap(player), held) == true then horizon.cancel() end
+  end },
+  on_fall = { "mob_fall", function(e, mob, distance, multiplier)
+    e:on_fall(Mob.host(mob, nil, nil), {
+      distance = distance, multiplier = multiplier,
+      set_distance = function(self, n) self.distance = n; horizon.set_distance(n) end,
+      set_multiplier = function(self, n) self.multiplier = n; horizon.set_multiplier(n) end,
+      cancel = function(self) self.canceled = true; horizon.cancel() end,
+    })
+  end },
+  on_knockback = { "mob_knockback", function(e, mob, damage_type, causing, direct, strength, x, z)
+    e:on_knockback(Mob.host(mob, nil, nil), {
+      damage_type = damage_type, causing = causing, direct = direct, strength = strength, x = x, z = z,
+      set_strength = function(self, n) self.strength = n; horizon.set_strength(n) end,
+      cancel = function(self) self.canceled = true; horizon.cancel() end,
+    })
+  end },
+  on_equip = { "mob_equipped", function(e, mob, slot, from, to)
+    e:on_equip(Mob.host(mob, horizon.time().dimension, nil), slot, from, to)
+  end },
+  on_drops = { "loot_drops", function(e, source, drops)
+    e:on_drops(Mob.host(source.mob, source.dimension, nil), drops, source)
   end },
 }
 

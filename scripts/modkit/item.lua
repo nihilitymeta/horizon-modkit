@@ -7,6 +7,10 @@
 --   function Wand:on_hit(item, player, target) end           -- a blow with it; return true and the blow does nothing
 --   function Wand:on_finished(item, player) end              -- eaten, drunk or used for its duration; return an id (and count) for what stays in the hand
 --   function Wand:on_tick(item, player, slot, selected) end  -- every server tick in an inventory: keep it light
+--   function Wand:on_crafted(item, player, recipe) end       -- a player took it from a crafting grid
+--   function Wand:on_dropped(item, player, count) end        -- a player threw it
+--   function Wand:on_hurt_enemy(item, player, target) end    -- a blow with it landed on target ({id, kind})
+--   function Wand:on_use_start(item, player, hand, duration) end -- a use over time starts; return a number for the duration, true to stop it
 --
 -- `item` is `{id, count, damage, plain}` with `item:take(n)` and `item:give(n)`
 -- on the acting player's inventory; `player`, `block` and `target` are the
@@ -39,6 +43,19 @@ local CALLBACKS = {
   end },
   on_tick = { "item_tick", function(e, item, player, slot, selected)
     e:on_tick(wrap(item), wrap_player(player), slot, selected)
+  end },
+  on_crafted = { "item_crafted", function(e, player, recipe, item)
+    e:on_crafted(wrap(item), wrap_player(player), recipe)
+  end },
+  on_dropped = { "item_dropped", function(e, player, item, count)
+    e:on_dropped({ id = item, count = count }, wrap_player(player), count)
+  end },
+  on_hurt_enemy = { "item_hurt_enemy", function(e, item, player, target)
+    e:on_hurt_enemy(wrap(item), wrap_player(player), target)
+  end },
+  on_use_start = { "item_use_start", function(e, item, player, hand, duration)
+    local r = e:on_use_start(wrap(item), wrap_player(player), hand, duration)
+    if r == true then horizon.cancel() elseif type(r) == "number" then horizon.set_duration(r) end
   end },
 }
 
