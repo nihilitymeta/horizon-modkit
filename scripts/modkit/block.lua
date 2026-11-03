@@ -16,9 +16,6 @@
 local Block = {}
 Block.__index = Block
 
-function Block.new(mod, id)
-  return setmetatable({ mod = mod, id = id }, Block)
-end
 
 --- Gives every placed block of this kind a block entity: `ticks` runs
 --- `on_block_entity_tick` each server tick, `data` is what a new one starts
@@ -62,28 +59,31 @@ function Instance:above(dy) return horizon.block(self.x, self.y + (dy or 1), sel
 --- The block under this one.
 function Instance:below(dy) return horizon.block(self.x, self.y - (dy or 1), self.z) end
 
---- Installs the mod's handlers once.
+--- A block class, with its hooks registered for its id alone: the engine
+--- calls them for this block's ticks and events only (a handler for every
+--- block would hear every random tick of the level).
+function Block.new(mod, id)
+  local b = setmetatable({ mod = mod, id = id }, Block)
+  horizon.on("random_tick", function(dimension, _, x, y, z, props, data)
+    if b.on_random_tick then b:on_random_tick(instance(dimension, id, x, y, z, props, data)) end
+  end, id)
+  horizon.on("tick_block", function(dimension, _, x, y, z, props, data)
+    if b.on_tick then b:on_tick(instance(dimension, id, x, y, z, props, data)) end
+  end, id)
+  horizon.on("block_entity_tick", function(dimension, _, x, y, z, data)
+    if b.on_block_entity_tick then b:on_block_entity_tick(instance(dimension, id, x, y, z, nil, data)) end
+  end, id)
+  horizon.on("block_broken", function(x, y, z, _, player)
+    if b.on_break and b:on_break(instance(dimension_of(player), id, x, y, z, nil, nil), player) == true then horizon.cancel() end
+  end, id)
+  horizon.on("block_placed", function(x, y, z, _, player, item)
+    if b.on_place then b:on_place(instance(dimension_of(player), id, x, y, z, nil, nil), player, item) end
+  end, id)
+  return b
+end
+
+--- Installs the mod's handlers once (the clicks are not registered by block).
 function Block.install(mod)
-  horizon.on("random_tick", function(dimension, id, x, y, z, props, data)
-    local b = mod.blocks[id]
-    if b and b.on_random_tick then b:on_random_tick(instance(dimension, id, x, y, z, props, data)) end
-  end)
-  horizon.on("tick_block", function(dimension, id, x, y, z, props, data)
-    local b = mod.blocks[id]
-    if b and b.on_tick then b:on_tick(instance(dimension, id, x, y, z, props, data)) end
-  end)
-  horizon.on("block_entity_tick", function(dimension, id, x, y, z, data)
-    local b = mod.blocks[id]
-    if b and b.on_block_entity_tick then b:on_block_entity_tick(instance(dimension, id, x, y, z, nil, data)) end
-  end)
-  horizon.on("block_broken", function(x, y, z, id, player)
-    local b = mod.blocks[id]
-    if b and b.on_break and b:on_break(instance(dimension_of(player), id, x, y, z, nil, nil), player) == true then horizon.cancel() end
-  end)
-  horizon.on("block_placed", function(x, y, z, id, player, item)
-    local b = mod.blocks[id]
-    if b and b.on_place then b:on_place(instance(dimension_of(player), id, x, y, z, nil, nil), player, item) end
-  end)
   horizon.on("right_click_block", function(x, y, z, id, face, player, held, data)
     local b = mod.blocks[id]
     if b and b.on_use then
