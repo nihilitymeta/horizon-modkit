@@ -10,6 +10,12 @@ The modkit's classes and callbacks, over the engine's Lua hook API ([lua-binding
 beside it for an editor, and a README. `cargo horizon-mod build` packs it, `cargo horizon-mod check` reads the
 `.hmod`, `cargo horizon-mod run -- --dev-mod /path/to/horizon-modkit` plays it.
 
+`cargo horizon-mod check <folder> --game <horizon-client> --dev-mod /path/to/horizon-modkit` loads the scripts
+headlessly in the game's Lua runtime before any world: a script that fails to load, a hook `horizon.on` does not
+know, a command that errors when declared, each with its file and line, exit code 1. The modkit's
+`tools/check.sh` runs it on the modkit itself and on a mod folder given (`--self-test` shows a misspelled hook
+refused with its line).
+
 ## Declaring what the mod adds: `scripts/registry.lua`
 
 The entity types, blocks, items, loot tables, recipes and tags a mod adds are declared in `scripts/registry.lua`,
