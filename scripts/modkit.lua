@@ -11,12 +11,13 @@
 --   function Hive:on_random_tick(block) ... end
 --
 -- The library runs inside the mod's own Lua state; one `modkit.mod` per mod.
-local modkit = { VERSION = "0.2.0" }
+local modkit = { VERSION = "0.3.0" }
 
 local Mob = require("modkit.mob")
 local Goal = require("modkit.goal")
 local Entity = require("modkit.entity")
 local Block = require("modkit.block")
+local Item = require("modkit.item")
 
 modkit.Mob = Mob
 modkit.Goal = Goal.new
@@ -27,7 +28,7 @@ local Mod = {}
 Mod.__index = Mod
 
 function modkit.mod(id)
-  local m = setmetatable({ id = id, entities = {}, blocks = {} }, Mod)
+  local m = setmetatable({ id = id, entities = {}, blocks = {}, items = {} }, Mod)
   Entity.install(m)
   Block.install(m)
   return m
@@ -60,6 +61,17 @@ function Mod:block(name)
     self.blocks[id] = b
   end
   return b
+end
+
+--- An item class for the item `name` (the mod's own, or a vanilla one).
+function Mod:item(name)
+  local id = self:qualify(name)
+  local i = self.items[id]
+  if not i then
+    i = Item.new(self, id)
+    self.items[id] = i
+  end
+  return i
 end
 
 --- A hook handler as the game takes it (`horizon.on`), for what the classes

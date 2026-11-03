@@ -36,7 +36,7 @@ registry.data("minecraft:tags/block/mineable/hoe", { values = { registry.id .. "
 
 ### `modkit.mod(id)`
 
-The mod: `M:entity(name)`, `M:block(name)` (`name` is `my_mod:name` unless it has a namespace already, so vanilla
+The mod: `M:entity(name)`, `M:block(name)`, `M:item(name)` (`name` is `my_mod:name` unless it has a namespace already, so vanilla
 kinds and blocks work), `M:on(hook, fn)` for a raw hook handler.
 
 ### Entities: `M:entity(name)`
@@ -85,6 +85,20 @@ id or nil), `target_position`, `target_in_melee_range`, `navigation_done`, `near
 | `mob:player_within(range)`, `mob:distance_to(p)`, `mob:nearby(filter)`, `mob:nearest(filter, range)` | reading; `filter` is a kind id or a function of a nearby record (`id`, `kind`, `position`, `distance`, `health`, `alive`, `hostile`, `baby`, `target`) |
 
 Actions are applied in order after the callback returns; a script never holds the mob.
+
+### Items: `M:item(name)`
+
+| | |
+|---|---|
+| `function I:on_use(item, player)` | a right click in the air (or on a block that let it through); return `true` to take the use |
+| `function I:on_use_on(item, player, block, face)` | a right click on a block (`block` has `x`, `y`, `z`, `id`; `face` is `{x, y, z}`); return `true` to take it |
+| `function I:on_hit(item, player, target)` | a blow at `target` (`id`, `kind`, `position`) holding the item; return `true` and the blow does nothing |
+| `function I:on_finished(item, player)` | eaten, drunk, or held for its `use_duration`; return an item id (and a count) for what stays in the hand |
+| `function I:on_tick(item, player, slot, selected)` | every server tick the item sits in an inventory; keep it light |
+
+`item` is `{id, count, damage, plain}` with `item:take(n)` and `item:give(n)` on the acting player's inventory.
+The item itself is declared in `scripts/registry.lua` (`registry.item(name, { template = "minecraft:bone" })`)
+with its model under `assets/`.
 
 ### Reading the world
 
