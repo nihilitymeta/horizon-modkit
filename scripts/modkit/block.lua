@@ -40,6 +40,17 @@ end
 
 local function dimension_of(player) return player and player.dimension or "minecraft:overworld" end
 
+--- The state properties in a state's name (`ns:hive[stage=dormant,lit=true]`), as the
+--- instance's `props`; `{}` for a block without any.
+local function props_of(state: string?): Props
+  local out = {}
+  local inside = state and state:match("%[(.*)%]")
+  if inside then
+    for k, v in inside:gmatch("([%w_]+)=([^,%]]+)") do out[k] = v end
+  end
+  return out
+end
+
 local function instance(dimension, id, x, y, z, props, data)
   return setmetatable({ dimension = dimension, id = id, x = x, y = y, z = z, props = props or {}, live = props == nil, data = data }, Instance)
 end
@@ -92,9 +103,11 @@ function Block.new(mod, id)
   horizon.on("block_placed", function(x, y, z, _, player, item)
     if b.on_place then b:on_place(instance(dimension_of(player), id, x, y, z, nil, nil), Player.wrap(player), item) end
   end, id)
+  -- The block is gone when its loot drops: its properties come from the
+  -- state the engine names (`source.block.state`), not from the world.
   horizon.on("loot_drops", function(source, drops)
     local at = source.block
-    if b.on_drops then b:on_drops(instance(source.dimension, id, at.x, at.y, at.z, nil, nil), drops, source) end
+    if b.on_drops then b:on_drops(instance(source.dimension, id, at.x, at.y, at.z, props_of(at.state), nil), drops, source) end
   end, id)
   return b
 end
