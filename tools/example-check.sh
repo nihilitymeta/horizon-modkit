@@ -14,6 +14,8 @@ MOD="$HERE/examples/example_mod"
 WORLD=${WORLD:-New World}
 SOCK=${SOCK:-/tmp/horizon-example-check.sock}
 CTL="${GAME_BUILD:-$HORIZON/target/fast}/horizon-ctl --socket $SOCK"
+# The game writes logs/ under HORIZON_HOME when it is set: keep that the game dir, so the log is here.
+export HORIZON_HOME="$GAME_DIR"
 LOG="$GAME_DIR/logs/latest.log"
 j() { python3 -c "import sys,json; d=json.load(sys.stdin); $1"; }
 mob_id() { for i in 1 2 3 4 5 6; do local id; id=$($CTL entities 12 | j "es=[e for e in d['entities'] if e.get('type')=='$1']; print(es[0]['id'] if es else '')"); [ -n "$id" ] && { echo "$id"; return; }; sleep 0.5; done; }

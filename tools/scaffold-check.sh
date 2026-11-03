@@ -14,6 +14,8 @@ WORLD=${WORLD:-New World}
 SOCK=${SOCK:-/tmp/horizon-scaffold-check.sock}
 TOOL=${TOOL:-$HORIZON/target/debug/cargo-horizon-mod}
 CTL="${GAME_BUILD:-$HORIZON/target/fast}/horizon-ctl --socket $SOCK"
+# The game writes logs/ under HORIZON_HOME when it is set: keep that the game dir, so the log is here.
+export HORIZON_HOME="$GAME_DIR"
 LOG="$GAME_DIR/logs/latest.log"
 WORK=${WORK:-$(mktemp -d /tmp/horizon-scaffold.XXXXXX)}
 j() { python3 -c "import sys,json; d=json.load(sys.stdin); $1"; }
