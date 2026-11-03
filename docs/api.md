@@ -2,6 +2,14 @@
 
 The modkit's classes and callbacks, over the engine's Lua hook API ([lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md); every hook point of the engine and the Lua handler it reaches: [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md)); the data a mod's files or registry script declare are in the engine's [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md).
 
+## Starting a mod
+
+`cargo horizon-mod new <path> --template lua` scaffolds a scripted mod on the modkit: a manifest with
+`registries` and `scripts` and `depends = ["horizon_modkit"]`, `scripts/registry.lua` with one item (a wand),
+`scripts/init.lua` with its `on_use`, `assets/<id>/lang/en_us.json`, a `.luaurc` that names the modkit checkout
+beside it for an editor, and a README. `cargo horizon-mod build` packs it, `cargo horizon-mod check` reads the
+`.hmod`, `cargo horizon-mod run -- --dev-mod /path/to/horizon-modkit` plays it.
+
 ## Declaring what the mod adds: `scripts/registry.lua`
 
 The entity types, blocks, items, loot tables, recipes and tags a mod adds are declared in `scripts/registry.lua`,

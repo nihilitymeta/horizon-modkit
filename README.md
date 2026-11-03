@@ -12,6 +12,9 @@ is the layer under it.
 
 ## A mod with it
 
+`cargo horizon-mod new my-mod --template lua` (the fork's `cargo-horizon-mod`) writes one: the files below with a
+wand and its `on_use`, a `.luaurc` for an editor, a README. `tools/scaffold-check.sh` builds, checks and plays one.
+
 ```toml
 # horizon-mod.toml
 capabilities = ["registries", "scripts"]
