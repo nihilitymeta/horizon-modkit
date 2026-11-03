@@ -154,6 +154,15 @@ the callback, a number keeps its NBT type, a key set to nil is gone), and `block
 `block:schedule_tick(delay)`, `block:handled()` (skip the vanilla tick), `block:cancel()` (eat the click),
 `block:summon(kind, dx, dy, dz)`, `block:broadcast(line)`.
 
+### Spawning
+
+In `scripts/registry.lua`: a spawn egg is an item whose id ends in `_spawn_egg` and names the kind
+(`registry.item("crawler_spawn_egg", { template = "minecraft:zombie_spawn_egg" })`, with a texture and model of
+your own under `assets/`); natural spawning is a biome modifier
+(`registry.data("neoforge/biome_modifier/crawlers", { type = "neoforge:add_spawns", biomes = "#minecraft:is_overworld",
+spawners = { { type = registry.id .. ":crawler", weight = 20, min_count = 1, max_count = 3 } } })`), in the
+category of the mob's template (`monster`, `creature`...; say `category` to choose). Both need a restart.
+
 ## Not yet
 
-Models of your own, natural spawning, spawn eggs: each arrives as the engine's hook points do.
+Models and animations of your own: they arrive as the engine's hook points do.
