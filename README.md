@@ -47,9 +47,19 @@ Zombie:goals { { 0, modkit.Goal { flags = {}, can_use = function(self, mob) retu
   tick = function(self, mob) if self:every("t", 60) then mob:convert("my_mod:crawler") end end } } }
 
 -- A block: data/my_mod/horizon/block/hive.json declares it (template, states, random_ticks).
+-- With a block entity it keeps data of its own, saved with the chunk.
 local Hive = M:block("hive")
+Hive:block_entity { ticks = true, data = { charge = 0 } }
+function Hive:on_block_entity_tick(block)
+  if block.stage ~= "mature" then return end
+  block.data.charge = block.data.charge + 1
+  if block.data.charge >= 400 then
+    block:summon("my_mod:crawler", 0, 1, 1)
+    block.data.charge = 0
+  end
+end
 function Hive:on_random_tick(block)
-  if block.stage == "mature" then block:summon("my_mod:crawler", 0, 1, 1); block:handled() end
+  if block.stage == "dormant" and math.random() < 0.25 then block:set("stage", "mature"); block:handled() end
 end
 function Hive:on_use(block, player, held)
   if held and held.item == "minecraft:bone_meal" then block:set("stage", "growing"); block:cancel() end
@@ -108,14 +118,18 @@ Actions are applied in order after the callback returns; a script never holds th
 | `function B:on_random_tick(block)` | the block's random tick (declare `random_ticks` in its data) |
 | `function B:on_tick(block)` | a scheduled tick (`block:schedule_tick(delay)`) |
 | `function B:on_use(block, player, held, face)` | a right click; `player` has `name`, `dimension`, `position`, `game_mode`; `held` has `item`, `count` |
+| `B:block_entity { ticks = true, data = { charge = 0 } }` | every placed block of this kind gets a block entity: saved data per block (`data` is what a new one starts with), ticked each server tick when `ticks` |
+| `function B:on_block_entity_tick(block)` | every server tick of a block with a block entity |
 
-`block` has `x`, `y`, `z`, `dimension`, `id`, its state properties as fields (`block.stage`), and
-`block:set(key, value)`, `block:schedule_tick(delay)`, `block:handled()` (skip the vanilla tick), `block:cancel()`
-(eat the click), `block:summon(kind, dx, dy, dz)`, `block:broadcast(line)`.
+`block` has `x`, `y`, `z`, `dimension`, `id`, its state properties as fields (`block.stage`), `block.data` (the
+block entity's saved table in every callback, nil for a block without one; what you change in it is saved after
+the callback, a number keeps its NBT type, a key set to nil is gone), and `block:set(key, value)`,
+`block:schedule_tick(delay)`, `block:handled()` (skip the vanilla tick), `block:cancel()` (eat the click),
+`block:summon(kind, dx, dy, dz)`, `block:broadcast(line)`.
 
 ## Not yet
 
-Block entities with saved data, hurt/death/interact callbacks on entities, models of your own, natural spawning,
+Hurt/death/interact callbacks on entities, saved data on mobs, models of your own, natural spawning,
 spawn eggs: each arrives as the engine's hook points do. The registry entries (entity types, blocks, items) stay in
 your mod's data files for now.
 

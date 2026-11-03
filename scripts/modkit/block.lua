@@ -1,18 +1,29 @@
 -- A block class: callbacks for one block, the mod's own or a vanilla one.
 --
 --   local Hive = M:block("hive")
+--   Hive:block_entity { ticks = true, data = { charge = 0 } }   -- saved data per block, ticked
+--   function Hive:on_block_entity_tick(block) end   -- every server tick, with block.data
 --   function Hive:on_random_tick(block) end   -- the block declares random_ticks in its data
 --   function Hive:on_tick(block) end          -- a scheduled tick (block:schedule_tick)
 --   function Hive:on_use(block, player, held) end   -- a right click; block:cancel() eats it
 --
 -- `block` is the block at that moment: `block.x/y/z`, `block.dimension`,
--- `block.id`, its state properties as fields (`block.stage`), and methods
--- that ask the game to act after the call.
+-- `block.id`, its state properties as fields (`block.stage`), `block.data`
+-- (the block entity's saved table, written back after the callback; nil
+-- without a block entity), and methods that ask the game to act after the call.
 local Block = {}
 Block.__index = Block
 
 function Block.new(mod, id)
   return setmetatable({ mod = mod, id = id }, Block)
+end
+
+--- Gives every placed block of this kind a block entity: `ticks` runs
+--- `on_block_entity_tick` each server tick, `data` is what a new one starts
+--- with (numbers, strings, booleans, nested tables; saved with the chunk).
+function Block:block_entity(def)
+  horizon.block_entity(self.id, def or {})
+  return self
 end
 
 local Instance = {}
@@ -22,8 +33,8 @@ Instance.__index = function(self, key)
   return rawget(self, "props")[key]
 end
 
-local function instance(dimension, id, x, y, z, props)
-  return setmetatable({ dimension = dimension, id = id, x = x, y = y, z = z, props = props or {} }, Instance)
+local function instance(dimension, id, x, y, z, props, data)
+  return setmetatable({ dimension = dimension, id = id, x = x, y = y, z = z, props = props or {}, data = data }, Instance)
 end
 
 --- Sets a state property of the block (`block:set("stage", "growing")`).
@@ -42,18 +53,22 @@ function Instance:broadcast(line) horizon.broadcast(line) end
 
 --- Installs the mod's handlers once.
 function Block.install(mod)
-  horizon.on("random_tick", function(dimension, id, x, y, z, props)
+  horizon.on("random_tick", function(dimension, id, x, y, z, props, data)
     local b = mod.blocks[id]
-    if b and b.on_random_tick then b:on_random_tick(instance(dimension, id, x, y, z, props)) end
+    if b and b.on_random_tick then b:on_random_tick(instance(dimension, id, x, y, z, props, data)) end
   end)
-  horizon.on("tick_block", function(dimension, id, x, y, z, props)
+  horizon.on("tick_block", function(dimension, id, x, y, z, props, data)
     local b = mod.blocks[id]
-    if b and b.on_tick then b:on_tick(instance(dimension, id, x, y, z, props)) end
+    if b and b.on_tick then b:on_tick(instance(dimension, id, x, y, z, props, data)) end
   end)
-  horizon.on("right_click_block", function(x, y, z, id, face, player, held)
+  horizon.on("block_entity_tick", function(dimension, id, x, y, z, data)
+    local b = mod.blocks[id]
+    if b and b.on_block_entity_tick then b:on_block_entity_tick(instance(dimension, id, x, y, z, {}, data)) end
+  end)
+  horizon.on("right_click_block", function(x, y, z, id, face, player, held, data)
     local b = mod.blocks[id]
     if b and b.on_use then
-      b:on_use(instance(player and player.dimension or "minecraft:overworld", id, x, y, z, {}), player, held, face)
+      b:on_use(instance(player and player.dimension or "minecraft:overworld", id, x, y, z, {}, data), player, held, face)
     end
   end)
 end
