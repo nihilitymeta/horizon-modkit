@@ -119,6 +119,13 @@ engine's reads answer at once: `horizon.block(x, y, z)`, `horizon.block_property
 have no host: a goal reads its `mob` view instead. `mob:block_below()` and `block:above()` are the modkit's
 shorthands for the block under a mob and over a block.
 
+### Timers and saved data
+
+`horizon.after(ticks, fn)` runs `fn` once after `ticks` server ticks, `horizon.every(ticks, fn)` every `ticks`
+(a failing timer is logged, and a repeating one kept); inside, the reads and actions work. `horizon.world_data()`
+is the mod's own saved table on the world and `horizon.player_data(player)` on a player (by name or UUID),
+written back after the callback like `mob.data`, and kept through saves.
+
 ### Blocks: `M:block(name)`
 
 | | |
