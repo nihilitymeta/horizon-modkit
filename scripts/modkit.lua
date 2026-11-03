@@ -18,6 +18,7 @@ local Goal = require("modkit.goal")
 local Entity = require("modkit.entity")
 local Block = require("modkit.block")
 local Item = require("modkit.item")
+local Players = require("modkit.players")
 
 modkit.Mob = Mob
 modkit.Goal = Goal.new
@@ -61,6 +62,12 @@ function Mod:block(name)
     self.blocks[id] = b
   end
   return b
+end
+
+--- The players class: callbacks on what every player does.
+function Mod:players()
+  if not self._players then self._players = Players.new(self) end
+  return self._players
 end
 
 --- An item class for the item `name` (the mod's own, or a vanilla one).

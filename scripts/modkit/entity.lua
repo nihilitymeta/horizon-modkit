@@ -9,7 +9,7 @@
 --   function Crawler:on_tick(mob) end          -- every server tick: mob.data, host actions
 --   function Crawler:on_ai_tick(mob, state) end -- every AI tick, as a goal of its own: steering actions
 --   function Crawler:on_hurt(mob, hit) end     -- about to take damage: hit:set_amount(n), hit:cancel()
---   function Crawler:on_death(mob, killer) end -- a player's blow killed it
+--   function Crawler:on_death(mob, cause) end  -- it died, by any cause: cause.damage_type, .causing, .player (or nil)
 --   function Crawler:on_interact(mob, player, held) end -- right-clicked; return true to take the click
 --
 -- A callback is wired to the game's hook for the class's kind the moment it
@@ -36,8 +36,8 @@ local CALLBACKS = {
     }
     e:on_hurt(Mob.host(mob, nil, nil), hit)
   end },
-  on_death = { "mob_killed", function(e, dimension, mob, killer, data)
-    e:on_death(Mob.host(mob, dimension, data), killer)
+  on_death = { "mob_died", function(e, dimension, mob, cause, data)
+    e:on_death(Mob.host(mob, dimension, data), cause)
   end },
   on_interact = { "mob_interact", function(e, dimension, mob, player, held, data)
     if e:on_interact(Mob.host(mob, dimension, data), player, held) == true then horizon.cancel() end

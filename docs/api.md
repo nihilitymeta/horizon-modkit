@@ -50,7 +50,7 @@ kinds and blocks work), `M:on(hook, fn)` for a raw hook handler.
 | `function E:on_tick(mob)` | every server tick of every mob of this type (NeoForge's `tick`): `mob` is the view with `mob.data` and the host actions; keep it light |
 | `function E:on_ai_tick(mob, state)` | every AI tick, as a goal of its own: the steering and fighting actions, `state` the goal's table |
 | `function E:on_hurt(mob, hit)` | about to take damage: `hit.damage_type` (`minecraft:on_fire`...), `.causing`, `.direct` (entity ids, -1 none), `.amount`; `hit:set_amount(n)`, `hit:cancel()` refuses the hit. `mob` is `id` and `kind` only, no actions: the game is mid-hit |
-| `function E:on_death(mob, killer)` | a player's melee blow killed it (other deaths are not told yet): `killer` is the player; `mob.data` still readable |
+| `function E:on_death(mob, cause)` | it died, by any cause: `cause.damage_type` (`minecraft:on_fire`...), `cause.causing` (the mob behind it, or 0), `cause.player` (the player credited, or nil); `mob` is `id` and `kind`, `mob.data` still readable |
 | `function E:on_interact(mob, player, held)` | a player right-clicked it, before the mob and the item act; `held` has `item`, `count`, `plain` or is nil. Return `true` to take the click |
 
 A callback is wired to the game's hook for the class's kind as soon as it is defined, so a kind without one costs
@@ -100,6 +100,16 @@ Actions are applied in order after the callback returns; a script never holds th
 The item itself is declared in `scripts/registry.lua` (`registry.item(name, { template = "minecraft:bone" })`)
 with its model under `assets/`.
 
+### Players: `M:players()`
+
+| | |
+|---|---|
+| `function P:on_join(player)`, `on_leave`, `on_respawn` | a player joined the game, left it (by any path), respawned after a death |
+| `function P:on_death(player, cause)` | a player died; `cause` is the death message's key (`death.attack.lava`) or nil |
+| `function P:on_break_block(player, block)` | a player breaks a block (`block` has `x`, `y`, `z`, `id`); return `true` to keep it |
+| `function P:on_place_block(player, block, item)` | a player placed a block from `item` |
+| `function P:on_pickup(player, item, count)` | a player is about to pick up `count` of `item` (an id); return `true` to leave it |
+
 ### Reading the world
 
 Inside any callback with a host (`on_tick`, `on_death`, `on_interact`, `on_spawned`, the block callbacks) the
@@ -118,6 +128,8 @@ shorthands for the block under a mob and over a block.
 | `function B:on_use(block, player, held, face)` | a right click; `player` has `name`, `dimension`, `position`, `game_mode`; `held` has `item`, `count` |
 | `B:block_entity { ticks = true, data = { charge = 0 } }` | every placed block of this kind gets a block entity: saved data per block (`data` is what a new one starts with), ticked each server tick when `ticks` |
 | `function B:on_block_entity_tick(block)` | every server tick of a block with a block entity |
+| `function B:on_break(block, player)` | a player breaks it; return `true` to keep it |
+| `function B:on_place(block, player, item)` | a player placed it from `item` |
 
 `block` has `x`, `y`, `z`, `dimension`, `id`, its state properties as fields (`block.stage`), `block.data` (the
 block entity's saved table in every callback, nil for a block without one; what you change in it is saved after
@@ -127,5 +139,5 @@ the callback, a number keeps its NBT type, a key set to nil is gone), and `block
 
 ## Not yet
 
-Deaths other than a player's melee blow, models of your own, natural spawning, spawn eggs, items with callbacks:
+Models of your own, natural spawning, spawn eggs, timers and saved data per world or player, sounds and commands:
 each arrives as the engine's hook points do.
