@@ -148,6 +148,10 @@ written back after the callback like `mob.data`, and kept through saves.
 | `function B:on_break(block, player)` | a player breaks it; return `true` to keep it |
 | `function B:on_place(block, player, item)` | a player placed it from `item` |
 
+Each block class registers its callbacks with the engine for its own block id (`horizon.on(hook, fn, id)`), so
+`on_random_tick`, `on_tick`, `on_block_entity_tick`, `on_break` and `on_place` run for this block's ticks and events
+alone; other blocks' random ticks (hundreds a second across the loaded world) never reach Lua.
+
 `block` has `x`, `y`, `z`, `dimension`, `id`, its state properties as fields (`block.stage`), `block.data` (the
 block entity's saved table in every callback, nil for a block without one; what you change in it is saved after
 the callback, a number keeps its NBT type, a key set to nil is gone), and `block:set(key, value)`,
