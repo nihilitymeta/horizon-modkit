@@ -13,6 +13,7 @@
 --   function Players:on_fall(player, fall) end           -- about to land: fall.distance, fall:set_distance(n), fall:set_multiplier(n), fall:cancel()
 --   function Players:on_knockback(player, hit) end       -- about to be pushed: hit.strength, hit:set_strength(n), hit:cancel()
 --   function Players:on_command(player, line) end        -- typed a command; return true to stop it; player:reply(text) answers
+--   function Players:on_chat(player, line) end           -- a chat line; return true to drop it, a string to send instead
 --   function Players:on_change_dimension(player, from, to) end
 --   function Players:on_sleep(player, x, y, z) end       -- entering a bed; return true to keep them out
 --   function Players:on_exp(player, amount) end          -- about to gain experience from an orb; return a number to change it
@@ -61,6 +62,10 @@ local CALLBACKS = {
       set_strength = function(self, n) self.strength = n; horizon.set_strength(n) end,
       cancel = function(self) self.canceled = true; horizon.cancel() end,
     })
+  end },
+  on_chat = { "player_chat", function(e, player, line)
+    local r = e:on_chat(player, line)
+    if r == true then horizon.cancel() elseif type(r) == "string" then horizon.set_line(r) end
   end },
   on_command = { "player_command", function(e, player, line)
     player = wrap(player)

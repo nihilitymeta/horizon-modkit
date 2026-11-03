@@ -121,6 +121,7 @@ with its model under `assets/`.
 | `function P:on_hurt(player, hit)` | about to take damage: `hit.damage_type`, `hit.causing`, `hit.amount`; `hit:set_amount(n)`, `hit:cancel()`. `player` is `id` and `kind` only (mid-hit: no host, no name) |
 | `function P:on_fall(player, fall)`, `function P:on_knockback(player, hit)` | as the entity's, for players (`player` is `id` and `kind`; no host) |
 | `function P:on_command(player, line)` | typed a command (without its slash), before it runs; return `true` to stop it; `player:reply(text)` answers (the only way here: no player's state is in place) |
+| `function P:on_chat(player, line)` | a chat line, after the chat filter, before anyone sees it (`player` is `uuid` and `name` only: no host); return `true` to drop it, a string to send instead (unsigned) |
 | `function P:on_change_dimension(player, from, to)` | arrived in another level (a dedicated server tells it; the window's own server does not) |
 | `function P:on_sleep(player, x, y, z)` | entering the bed at that position; return `true` to keep them out |
 | `function P:on_exp(player, amount)` | about to gain `amount` experience from an orb; return a number to change it |
@@ -129,7 +130,7 @@ with its model under `assets/`.
 What has no class: `M:on("explosion", function(dimension, center, blocks) ... end)` (take entries out of `blocks` to spare them),
 `M:on("entity_joined", fn, "minecraft:arrow")` (any entity joining the level, by kind; `horizon.cancel()` keeps it out),
 `M:on("projectile_impact", fn, "minecraft:snowball")` and `M:on("projectile_launched", fn, kind)`, `M:on("mob_heal", fn)` (every
-living entity about to heal, by id only). A player's chat has no hook yet (the engine's lua-bindings.md says what it will be).
+living entity about to heal, by id only).
 
 `player`, in these and in every other callback that names one (`on_interact`, the item and block callbacks, a
 command), is the engine's table (`uuid`, `name`, `dimension`, `position`, `game_mode`, `health`, and `held`, the
