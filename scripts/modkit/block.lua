@@ -16,11 +16,6 @@
 local Block = {}
 Block.__index = Block
 
---- The block over this one (`dy` blocks up, 1 by default), by id.
-function Block:above(dy) return horizon.block(self.x, self.y + (dy or 1), self.z) end
---- The block under this one.
-function Block:below(dy) return horizon.block(self.x, self.y - (dy or 1), self.z) end
-
 function Block.new(mod, id)
   return setmetatable({ mod = mod, id = id }, Block)
 end
@@ -62,6 +57,10 @@ function Instance:summon(kind, dx, dy, dz)
   horizon.summon(self.dimension, kind, self.x + 0.5 + (dx or 0), self.y + (dy or 1), self.z + 0.5 + (dz or 0))
 end
 function Instance:broadcast(line) horizon.broadcast(line) end
+--- The block over this one (`dy` blocks up, 1 by default), by id.
+function Instance:above(dy) return horizon.block(self.x, self.y + (dy or 1), self.z) end
+--- The block under this one.
+function Instance:below(dy) return horizon.block(self.x, self.y - (dy or 1), self.z) end
 
 --- Installs the mod's handlers once.
 function Block.install(mod)
@@ -88,7 +87,7 @@ function Block.install(mod)
   horizon.on("right_click_block", function(x, y, z, id, face, player, held, data)
     local b = mod.blocks[id]
     if b and b.on_use then
-      b:on_use(instance(player and player.dimension or "minecraft:overworld", id, x, y, z, {}, data), player, held, face)
+      b:on_use(instance(dimension_of(player), id, x, y, z, nil, data), player, held, face)
     end
   end)
 end
