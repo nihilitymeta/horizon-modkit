@@ -114,8 +114,14 @@ function Entity:_register(mob)
     horizon.clear_target_goals()
   end
   local base = short(self.id)
+  -- One engine name per row: two goals named alike (two Wanders) would
+  -- otherwise share one definition, since the game keeps the last by name.
+  local taken = {}
   for i, row in ipairs(self.goal_list) do
-    horizon.add_goal(row[1], row[2]:register(base .. "." .. (row[2].def.name or ("goal" .. i))))
+    local name = base .. "." .. (row[2].def.name or ("goal" .. i))
+    if taken[name] then name = name .. i end
+    taken[name] = true
+    horizon.add_goal(row[1], row[2]:register(name))
   end
   for i, row in ipairs(self.target_list) do
     horizon.add_target_goal(row[1], row[2]:register(base .. ".target" .. i))
