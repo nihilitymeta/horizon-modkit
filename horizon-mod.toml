@@ -1,0 +1,10 @@
+id = "horizon_modkit"
+name = "Horizon Modkit"
+version = "0.1.0"
+description = "A library for mods written in Lua: entities, blocks and goals as classes with lifecycle callbacks."
+authors = ["whos-carmen"]
+api = "0.2"
+side = "both"
+# scripts: the library is Lua that other mods `require` (they list `depends = ["horizon_modkit"]`).
+capabilities = ["scripts"]
+experimental = ["scripts"]
