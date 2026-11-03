@@ -1,6 +1,6 @@
 # Horizon Modkit API
 
-The modkit's classes and callbacks, over the engine's Lua hook API ([lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md)); the data a mod's files or registry script declare are in the engine's [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md).
+The modkit's classes and callbacks, over the engine's Lua hook API ([lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md); every hook point of the engine and the Lua handler it reaches: [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md)); the data a mod's files or registry script declare are in the engine's [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md).
 
 ## Declaring what the mod adds: `scripts/registry.lua`
 
