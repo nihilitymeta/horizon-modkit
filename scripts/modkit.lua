@@ -11,7 +11,7 @@
 --   function Hive:on_random_tick(block) ... end
 --
 -- The library runs inside the mod's own Lua state; one `modkit.mod` per mod.
-local modkit = { VERSION = "0.3.0" }
+local modkit = { VERSION = "0.4.0" }
 
 local Mob = require("modkit.mob")
 local Goal = require("modkit.goal")
@@ -81,6 +81,13 @@ function Mod:item(name)
   return i
 end
 
+--- A command of the mod's: `M:command("mymod count [kind:word]", 2, function(player, args) ... end)`;
+--- `horizon.feedback(text)` answers the player. Level 0 is everyone, 4 the operators.
+function Mod:command(usage, level, fn)
+  if type(level) == "function" then level, fn = 0, level end
+  horizon.command(usage, level, fn)
+end
+
 --- A hook handler as the game takes it (`horizon.on`), for what the classes
 --- do not cover.
 function Mod:on(hook, fn)
@@ -88,6 +95,15 @@ function Mod:on(hook, fn)
 end
 
 function modkit.log(msg) horizon.log(msg) end
+--- Effects in the world and on a player (docs/api.md): the engine's actions, from a callback.
+function modkit.sound(name, x, y, z, volume, pitch) horizon.sound(name, x, y, z, volume, pitch) end
+function modkit.particles(name, x, y, z, count, spread, speed) horizon.particles(name, x, y, z, count, spread, speed) end
+function modkit.title(player, text, subtitle)
+  horizon.title(player.uuid or player, text)
+  if subtitle then horizon.subtitle(player.uuid or player, subtitle) end
+end
+function modkit.tell(player, text) horizon.tell(player.uuid or player, text) end
+function modkit.action_bar(player, text) horizon.action_bar(player.uuid or player, text) end
 function modkit.distance(a, b) return horizon.distance(a, b) end
 
 return modkit

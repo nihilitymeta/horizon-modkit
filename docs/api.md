@@ -36,7 +36,7 @@ registry.data("minecraft:tags/block/mineable/hoe", { values = { registry.id .. "
 
 ### `modkit.mod(id)`
 
-The mod: `M:entity(name)`, `M:block(name)`, `M:item(name)` (`name` is `my_mod:name` unless it has a namespace already, so vanilla
+The mod: `M:entity(name)`, `M:block(name)`, `M:item(name)`, `M:players()`, `M:command(usage, level, fn)` (`name` is `my_mod:name` unless it has a namespace already, so vanilla
 kinds and blocks work), `M:on(hook, fn)` for a raw hook handler.
 
 ### Entities: `M:entity(name)`
@@ -119,6 +119,16 @@ engine's reads answer at once: `horizon.block(x, y, z)`, `horizon.block_property
 have no host: a goal reads its `mob` view instead. `mob:block_below()` and `block:above()` are the modkit's
 shorthands for the block under a mob and over a block.
 
+### Commands and effects
+
+`M:command(usage, level, fn)` puts a command in the server's tree (`"mymod count [kind:word] [n:integer]"`:
+the words, then `<name:kind>` required and `[name:kind]` optional arguments; kinds `word`, `text`, `integer`,
+`number`, `boolean`, `player`, `item`, `block_pos`) for players of operator `level` and above, and runs
+`fn(player, args)` with the arguments by name; `horizon.feedback(text)` answers the player. Effects, from any
+callback with a host: `modkit.sound(name, x, y, z, volume, pitch)` for the players in range,
+`modkit.particles(name, x, y, z, count, spread, speed)` for the players near, `modkit.title(player, text, subtitle)`,
+`modkit.action_bar(player, text)`, `modkit.tell(player, text)` (`player` a table or a name).
+
 ### Timers and saved data
 
 `horizon.after(ticks, fn)` runs `fn` once after `ticks` server ticks, `horizon.every(ticks, fn)` every `ticks`
@@ -146,5 +156,4 @@ the callback, a number keeps its NBT type, a key set to nil is gone), and `block
 
 ## Not yet
 
-Models of your own, natural spawning, spawn eggs, timers and saved data per world or player, sounds and commands:
-each arrives as the engine's hook points do.
+Models of your own, natural spawning, spawn eggs: each arrives as the engine's hook points do.
