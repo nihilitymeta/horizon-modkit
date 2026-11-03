@@ -81,6 +81,11 @@ function Mob:broadcast(line) horizon.broadcast(line) end
 
 -- Reading.
 function Mob:distance_to(p) return horizon.distance(self._view.position, p) end
+--- The block the mob stands on (a callback with a host; see docs/api.md).
+function Mob:block_below()
+  local p = self._view.position
+  return horizon.block(math.floor(p.x), math.floor(p.y) - 1, math.floor(p.z))
+end
 
 --- Whether a player stands within `range` blocks.
 function Mob:player_within(range)

@@ -86,6 +86,15 @@ id or nil), `target_position`, `target_in_melee_range`, `navigation_done`, `near
 
 Actions are applied in order after the callback returns; a script never holds the mob.
 
+### Reading the world
+
+Inside any callback with a host (`on_tick`, `on_death`, `on_interact`, `on_spawned`, the block callbacks) the
+engine's reads answer at once: `horizon.block(x, y, z)`, `horizon.block_property(x, y, z, key)`, `horizon.mob(id)`,
+`horizon.mobs()`, `horizon.players()`, `horizon.player(name_or_uuid)`, `horizon.time()` (`day`, `time_of_day`,
+`rain`, `thunder`) and `horizon.raycast(player, distance)` (what a player points at). `on_hurt` and goal functions
+have no host: a goal reads its `mob` view instead. `mob:block_below()` and `block:above()` are the modkit's
+shorthands for the block under a mob and over a block.
+
 ### Blocks: `M:block(name)`
 
 | | |

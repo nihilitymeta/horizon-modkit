@@ -14,6 +14,11 @@
 local Block = {}
 Block.__index = Block
 
+--- The block over this one (`dy` blocks up, 1 by default), by id.
+function Block:above(dy) return horizon.block(self.x, self.y + (dy or 1), self.z) end
+--- The block under this one.
+function Block:below(dy) return horizon.block(self.x, self.y - (dy or 1), self.z) end
+
 function Block.new(mod, id)
   return setmetatable({ mod = mod, id = id }, Block)
 end
