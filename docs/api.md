@@ -154,6 +154,15 @@ the callback, a number keeps its NBT type, a key set to nil is gone), and `block
 `block:schedule_tick(delay)`, `block:handled()` (skip the vanilla tick), `block:cancel()` (eat the click),
 `block:summon(kind, dx, dy, dz)`, `block:broadcast(line)`.
 
+### A mob's look and sounds
+
+`registry.entity_type(name, def)` may give the mob a `model` of its own (`registry.id .. ":entity/" .. name`:
+`assets/<id>/models/entity/<name>.json`, or `registry.asset("models/entity/<name>", {...})`: `texture_size` and
+`parts` by name, each with `offset`, `rotation` in degrees, `cubes` of `origin`, `size`, `uv`, `inflate`, `mirror`,
+and `children`), an `animation` set that moves the parts by their vanilla names (`zombie`, `skeleton`, `quadruped`,
+`iron_golem`, `spider`...), and `sounds` by `ambient`, `hurt`, `death` and `step`. The parasite mod's
+`scripts/registry.lua` has a worked model.
+
 ### Spawning
 
 In `scripts/registry.lua`: a spawn egg is an item whose id ends in `_spawn_egg` and names the kind
@@ -165,4 +174,4 @@ category of the mob's template (`monster`, `creature`...; say `category` to choo
 
 ## Not yet
 
-Models and animations of your own: they arrive as the engine's hook points do.
+Nothing from the plan is left; what a hook point does not cover yet is listed in the engine's docs.
