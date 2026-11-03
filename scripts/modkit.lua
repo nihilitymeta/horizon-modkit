@@ -11,7 +11,7 @@
 --   function Hive:on_random_tick(block) ... end
 --
 -- The library runs inside the mod's own Lua state; one `modkit.mod` per mod.
-local modkit = { VERSION = "0.1.0" }
+local modkit = { VERSION = "0.2.0" }
 
 local Mob = require("modkit.mob")
 local Goal = require("modkit.goal")

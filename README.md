@@ -84,8 +84,17 @@ kinds and blocks work), `M:on(hook, fn)` for a raw hook handler.
 | `E:goals { {priority, goal}, ... }` | goals every mob of this type gets, lower priority first |
 | `E:target_goals { ... }` | the target selector's |
 | `E.replace_goals = true` | drop the vanilla goals first (for a type that kept its template's) |
-| `function E:on_tick(mob, state)` | every AI tick, as a goal of its own |
-| `function E:on_spawned(ev)` | a mob of this type spawned: `ev.dimension`, `.x`, `.y`, `.z`, `.natural` |
+| `function E:on_spawned(ev)` | a mob of this type spawned: `ev.dimension`, `.kind`, `.x`, `.y`, `.z`, `.natural` |
+| `function E:on_tick(mob)` | every server tick of every mob of this type (NeoForge's `tick`): `mob` is the view with `mob.data` and the host actions; keep it light |
+| `function E:on_ai_tick(mob, state)` | every AI tick, as a goal of its own: the steering and fighting actions, `state` the goal's table |
+| `function E:on_hurt(mob, hit)` | about to take damage: `hit.damage_type` (`minecraft:on_fire`...), `.causing`, `.direct` (entity ids, -1 none), `.amount`; `hit:set_amount(n)`, `hit:cancel()` refuses the hit. `mob` is `id` and `kind` only, no actions: the game is mid-hit |
+| `function E:on_death(mob, killer)` | a player's melee blow killed it (other deaths are not told yet): `killer` is the player; `mob.data` still readable |
+| `function E:on_interact(mob, player, held)` | a player right-clicked it, before the mob and the item act; `held` has `item`, `count`, `plain` or is nil. Return `true` to take the click |
+
+A callback is wired to the game's hook for the class's kind as soon as it is defined, so a kind without one costs
+nothing each tick. `mob.data` in `on_tick`, `on_death` and `on_interact` is the mod's own saved table on that mob,
+empty at first and kept with the mob through saves (the engine's attachment under the mod's id); what you change
+in it is written back after the callback (a number keeps its NBT type, nil removes a key).
 
 ### Goals: `modkit.Goal { ... }`
 
@@ -95,18 +104,22 @@ Fields: `flags` (`"move"`, `"look"`, `"jump"`, `"target"`: what the goal locks, 
 `self:every(name, ticks)` (true once per `ticks` calls) and `self:cooldown(name, ticks)` (true when ready, then
 waits `ticks`). Ready-made: `modkit.goals.Wander(reach, wait, radius)`, `modkit.goals.HuntPlayer(range, speed, cooldown)`.
 
-### The mob (`mob` in a goal)
+### The mob (`mob` in a goal or a callback)
 
 Fields of the view: `id`, `kind`, `position`, `velocity` (`{x, y, z}`), `yaw`, `head_pitch`, `health`,
 `max_health`, `age`, `on_ground`, `in_water`, `in_lava`, `hurt_time`, `last_hurt_by`, `target` (`"player"`, a mob
-id or nil), `target_position`, `target_in_melee_range`, `navigation_done`, `nearest_player`, `home`, `nearby`.
+id or nil), `target_position`, `target_in_melee_range`, `navigation_done`, `nearest_player`, `home`, `nearby`
+(in a goal; empty in a callback, where the world is not at hand). In a callback also `mob.dimension` and
+`mob.data`; in `on_death` only `id` and `kind` remain.
 
 | Method | Does |
 |---|---|
 | `mob:navigate_to(x, y, z, speed)`, `mob:navigate_to_target(speed)`, `mob:stop_navigation()` | paths |
 | `mob:move_toward(x, y, z, speed)`, `mob:look_at(x, y, z)`, `mob:look_at_target()`, `mob:jump()` | steering |
 | `mob:set_target(who)`, `mob:attack(who)`, `mob:swing()`, `mob:hurt(who, amount)` | fighting; `who` is `"player"`, a mob id or nil |
-| `mob:convert(kind)`, `mob:summon(kind, x, y, z)`, `mob:despawn()`, `mob:heal(amount)`, `mob:effect(name, ticks, amplifier)` | life |
+| `mob:convert(kind)`, `mob:effect(name, ticks, amplifier)` | life, in a goal |
+| `mob:summon(kind, x, y, z)`, `mob:despawn()`, `mob:heal(amount)` | life, in a goal or a callback |
+| `mob:set_health(h)`, `mob:kill()`, `mob:push(x, y, z)`, `mob:teleport(x, y, z)`, `mob:broadcast(line)` | by id, in a callback (`on_tick`, `on_death`, `on_interact`) |
 | `mob:player_within(range)`, `mob:distance_to(p)`, `mob:nearby(filter)`, `mob:nearest(filter, range)` | reading; `filter` is a kind id or a function of a nearby record (`id`, `kind`, `position`, `distance`, `health`, `alive`, `hostile`, `baby`, `target`) |
 
 Actions are applied in order after the callback returns; a script never holds the mob.
@@ -129,8 +142,8 @@ the callback, a number keeps its NBT type, a key set to nil is gone), and `block
 
 ## Not yet
 
-Hurt/death/interact callbacks on entities, saved data on mobs, models of your own, natural spawning,
-spawn eggs: each arrives as the engine's hook points do. The registry entries (entity types, blocks, items) stay in
+Deaths other than a player's melee blow, models of your own, natural spawning, spawn eggs, items with callbacks:
+each arrives as the engine's hook points do. The registry entries (entity types, blocks, items) stay in
 your mod's data files for now.
 
 ## License
