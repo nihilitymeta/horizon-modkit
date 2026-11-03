@@ -11,7 +11,7 @@
 --   function Hive:on_random_tick(block) ... end
 --
 -- The library runs inside the mod's own Lua state; one `modkit.mod` per mod.
-local modkit = { VERSION = "0.4.0" }
+local modkit = { VERSION = "0.5.0" }
 
 local Mob = require("modkit.mob")
 local Goal = require("modkit.goal")
@@ -19,8 +19,11 @@ local Entity = require("modkit.entity")
 local Block = require("modkit.block")
 local Item = require("modkit.item")
 local Players = require("modkit.players")
+local Player = require("modkit.player")
 
 modkit.Mob = Mob
+modkit.Player = Player
+modkit.player = Player.wrap
 modkit.Goal = Goal.new
 modkit.goals = require("modkit.goals")
 
@@ -85,8 +88,24 @@ end
 --- `horizon.feedback(text)` answers the player. Level 0 is everyone, 4 the operators.
 function Mod:command(usage, level, fn)
   if type(level) == "function" then level, fn = 0, level end
-  horizon.command(usage, level, fn)
+  horizon.command(usage, level, function(player, args) return fn(Player.wrap(player), args) end)
 end
+
+--- The mod's settings (`config/<id>.json` in the game folder) with
+--- `defaults` filled in for the keys the file lacks, saved when that added
+--- any, so the file is there to edit after the first run. At load too.
+function Mod:config(defaults)
+  local c = horizon.config()
+  local added = false
+  for k, v in pairs(defaults or {}) do
+    if c[k] == nil then c[k] = v; added = true end
+  end
+  if added then horizon.save_config(c) end
+  self._config = c
+  return c
+end
+--- Writes the settings back (after a command changed them).
+function Mod:save_config(c) horizon.save_config(c or self._config) end
 
 --- A hook handler as the game takes it (`horizon.on`), for what the classes
 --- do not cover.
@@ -105,5 +124,18 @@ end
 function modkit.tell(player, text) horizon.tell(player.uuid or player, text) end
 function modkit.action_bar(player, text) horizon.action_bar(player.uuid or player, text) end
 function modkit.distance(a, b) return horizon.distance(a, b) end
+--- The world (docs/api.md): the engine's actions and reads, from a callback with a host.
+function modkit.set_block(x, y, z, id, props, flags) horizon.set_block(x, y, z, id, props, flags) end
+function modkit.fill(x1, y1, z1, x2, y2, z2, id, props) horizon.fill(x1, y1, z1, x2, y2, z2, id, props) end
+function modkit.drop_item(x, y, z, id, count) horizon.drop_item(x, y, z, id, count) end
+function modkit.falling_block(x, y, z, id, vx, vy, vz) horizon.falling_block(x, y, z, id, vx, vy, vz) end
+function modkit.light(x, y, z) return horizon.light(x, y, z) end
+function modkit.surface_height(x, z, heightmap) return horizon.surface_height(x, z, heightmap) end
+--- A command as the server's console runs it (not inside a player's own
+--- callback: there it is queued for the next tick).
+function modkit.run_command(line) horizon.run_command(line) end
+function modkit.data(path) return horizon.data(path) end
+--- A status effect on a mob (by id) or a player (a table, a name or a UUID).
+function modkit.effect(target, name, ticks, amplifier) horizon.effect(target, name, ticks or 200, amplifier or 0) end
 
 return modkit

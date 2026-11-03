@@ -37,7 +37,7 @@ registry.data("minecraft:tags/block/mineable/hoe", { values = { registry.id .. "
 ### `modkit.mod(id)`
 
 The mod: `M:entity(name)`, `M:block(name)`, `M:item(name)`, `M:players()`, `M:command(usage, level, fn)` (`name` is `my_mod:name` unless it has a namespace already, so vanilla
-kinds and blocks work), `M:on(hook, fn)` for a raw hook handler.
+kinds and blocks work), `M:config(defaults)` for its settings, `M:on(hook, fn)` for a raw hook handler.
 
 ### Entities: `M:entity(name)`
 
@@ -79,8 +79,8 @@ id or nil), `target_position`, `target_in_melee_range`, `navigation_done`, `near
 | `mob:navigate_to(x, y, z, speed)`, `mob:navigate_to_target(speed)`, `mob:stop_navigation()` | paths |
 | `mob:move_toward(x, y, z, speed)`, `mob:look_at(x, y, z)`, `mob:look_at_target()`, `mob:jump()` | steering |
 | `mob:set_target(who)`, `mob:attack(who)`, `mob:swing()`, `mob:hurt(who, amount)` | fighting; `who` is `"player"`, a mob id or nil |
-| `mob:convert(kind)`, `mob:effect(name, ticks, amplifier)` | life, in a goal |
-| `mob:summon(kind, x, y, z)`, `mob:despawn()`, `mob:heal(amount)` | life, in a goal or a callback |
+| `mob:convert(kind)` | life, in a goal |
+| `mob:effect(name, ticks, amplifier)`, `mob:summon(kind, x, y, z)`, `mob:despawn()`, `mob:heal(amount)` | life, in a goal or a callback (`effect` as `/effect give`: 200 ticks and amplifier 0 by default; `summon` in a callback answers the new mob's id) |
 | `mob:set_health(h)`, `mob:kill()`, `mob:push(x, y, z)`, `mob:teleport(x, y, z)`, `mob:broadcast(line)` | by id, in a callback (`on_tick`, `on_death`, `on_interact`) |
 | `mob:player_within(range)`, `mob:distance_to(p)`, `mob:nearby(filter)`, `mob:nearest(filter, range)` | reading; `filter` is a kind id or a function of a nearby record (`id`, `kind`, `position`, `distance`, `health`, `alive`, `hostile`, `baby`, `target`) |
 
@@ -100,7 +100,7 @@ Actions are applied in order after the callback returns; a script never holds th
 The item itself is declared in `scripts/registry.lua` (`registry.item(name, { template = "minecraft:bone" })`)
 with its model under `assets/`.
 
-### Players: `M:players()`
+### Players: `M:players()`, and the player
 
 | | |
 |---|---|
@@ -110,6 +110,25 @@ with its model under `assets/`.
 | `function P:on_place_block(player, block, item)` | a player placed a block from `item` |
 | `function P:on_pickup(player, item, count)` | a player is about to pick up `count` of `item` (an id); return `true` to leave it |
 
+`player`, in these and in every other callback that names one (`on_interact`, the item and block callbacks, a
+command), is the engine's table (`uuid`, `name`, `dimension`, `position`, `game_mode`, `health`, and `held`, the
+main hand's `{item, count, plain}`, for the player whose action the callback hears) with methods on it; a player
+read from the world (`horizon.player(name)`) gets them with `modkit.player(t)`:
+
+| | |
+|---|---|
+| `player:give(id, n)`, `player:take(id, n)` | `n` (1) of a plain item into their inventory where it fits (nothing drops), or out of it, the main hand first; from any callback with a host, a timer too |
+| `player:inventory()`, `player:count(id)`, `player:carried()` | the 36 slots by number (1 to 36, the hotbar first; an empty slot is absent) of `{id, count, damage, plain}`; how many of a plain item they carry; every plain item with how many, by id. Reads, answered at once |
+| `player:effect(name, ticks, amplifier)` | a status effect as `/effect give` gives it (200 ticks, amplifier 0 by default; -1 forever) |
+| `player:experience(points)`, `player:levels(n)` | experience as an orb gives it, levels (negative takes them) |
+| `player:nickname(name)` | the name shown in chat and the tab list; nil shows their own again |
+| `player:tell(text)`, `player:action_bar(text)`, `player:title(text, subtitle)`, `player:title_times(fade_in, stay, fade_out)` | words on their screen |
+| `player:data()`, `player:raycast(distance)`, `player:block_below()`, `player:distance_to(p)` | the mod's saved table on them, what they point at, the block under their feet, a distance |
+
+Inside another player's callback (their click, their command) only that player is reached: a give to someone
+else does nothing then, and their inventory reads nil. Do it from a timer (`horizon.after(1, ...)`) or a mob or
+block callback instead.
+
 ### Reading the world
 
 Inside any callback with a host (`on_tick`, `on_death`, `on_interact`, `on_spawned`, the block callbacks) the
@@ -118,6 +137,30 @@ engine's reads answer at once: `horizon.block(x, y, z)`, `horizon.block_property
 `rain`, `thunder`) and `horizon.raycast(player, distance)` (what a player points at). `on_hurt` and goal functions
 have no host: a goal reads its `mob` view instead. `mob:block_below()` and `block:above()` are the modkit's
 shorthands for the block under a mob and over a block.
+
+### The world
+
+From any callback with a host (not `on_hurt`, not a goal):
+
+| | |
+|---|---|
+| `modkit.set_block(x, y, z, id, props, flags)`, `block:replace(id, props, flags)` | a block set as `/setblock` does: `id` with its state properties (`{ axis = "x" }`, the rest default) and `Level.setBlock`'s flags (3: neighbours told, clients see it). Not in a random or scheduled tick (there `block:set` changes a property) |
+| `modkit.fill(x1, y1, z1, x2, y2, z2, id, props)` | a box of one state straight into the chunks, as `/fill ... strict`; at most 256 by 256 columns |
+| `modkit.drop_item(x, y, z, id, count)`, `block:drop(id, count)` | an item entity at the point, or over the block |
+| `modkit.falling_block(x, y, z, id, vx, vy, vz)` | a falling block thrown from the point at that velocity, which lands as sand does |
+| `modkit.light(x, y, z)`, `block:light()` | `{block, sky}` light, 0 to 15, at a position or over a block |
+| `modkit.surface_height(x, z, heightmap)` | the column's top by `world_surface` (default), `motion_blocking`, `motion_blocking_no_leaves` or `ocean_floor`; nil where nothing is loaded |
+| `modkit.run_command(line)` | a command as the server's console runs it (level 4, no output). Not inside a player's own callback (a click, a command): queue it with `horizon.after(1, ...)` there. What the API has no method for yet (time and weather, `/tp` of a player, game rules) goes through it |
+| `modkit.data(path)` | a data file of the game's resources (`data/minecraft/recipe/stick.json`): JSON as a table, any other file as a string, nil for none |
+| `modkit.effect(target, name, ticks, amplifier)` | a status effect on a mob (by id) or a player, as `mob:effect` and `player:effect` |
+
+### Settings: `M:config(defaults)`
+
+`local cfg = M:config { max_crawlers = 12, hive_charge = 400 }` at the top of `init.lua` reads the mod's own
+settings file, `config/<id>.json` in the game folder (the `config/` every mod's settings share, as on NeoForge),
+fills in the defaults for the keys it lacks and saves it when that added any, so the file is there to edit after
+the first run; the table is what the scripts read. `M:save_config()` writes it back after a command changed it.
+Both work at load, with no host.
 
 ### Commands and effects
 
@@ -156,7 +199,8 @@ alone; other blocks' random ticks (hundreds a second across the loaded world) ne
 block entity's saved table in every callback, nil for a block without one; what you change in it is saved after
 the callback, a number keeps its NBT type, a key set to nil is gone), and `block:set(key, value)`,
 `block:schedule_tick(delay)`, `block:handled()` (skip the vanilla tick), `block:cancel()` (eat the click),
-`block:summon(kind, dx, dy, dz)`, `block:broadcast(line)`.
+`block:summon(kind, dx, dy, dz)` (the mob's id, in a callback with a host), `block:replace(id, props, flags)`,
+`block:drop(id, count)`, `block:light()`, `block:above()`, `block:below()`, `block:broadcast(line)`.
 
 ### A mob's look and sounds
 

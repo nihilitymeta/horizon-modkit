@@ -13,6 +13,8 @@
 -- `block.id`, its state properties as fields (`block.stage`), `block.data`
 -- (the block entity's saved table, written back after the callback; nil
 -- without a block entity), and methods that ask the game to act after the call.
+local Player = require("modkit.player")
+
 local Block = {}
 Block.__index = Block
 
@@ -49,10 +51,20 @@ function Instance:schedule_tick(delay) horizon.schedule_tick(delay) end
 function Instance:handled() horizon.handled() end
 --- Eats the click: neither the block nor the held item acts.
 function Instance:cancel() horizon.cancel() end
---- Makes a mob at an offset from the block's centre.
+--- Makes a mob at an offset from the block's centre; its id, when the
+--- callback has a host (nil in a random or scheduled tick, where it is made
+--- after the level's pass).
 function Instance:summon(kind, dx, dy, dz)
-  horizon.summon(self.dimension, kind, self.x + 0.5 + (dx or 0), self.y + (dy or 1), self.z + 0.5 + (dz or 0))
+  return horizon.summon(self.dimension, kind, self.x + 0.5 + (dx or 0), self.y + (dy or 1), self.z + 0.5 + (dz or 0))
 end
+--- Replaces the block with another (`block:replace("minecraft:air")`),
+--- with its state properties and `Level.setBlock` flags (3). Not in a
+--- random or scheduled tick: there `block:set` changes a property.
+function Instance:replace(id, props, flags) horizon.set_block(self.x, self.y, self.z, id, props, flags) end
+--- Drops `count` (1) of an item over the block.
+function Instance:drop(id, count) horizon.drop_item(self.x + 0.5, self.y + 1, self.z + 0.5, id, count) end
+--- `{block, sky}` light at the block over this one.
+function Instance:light() return horizon.light(self.x, self.y + 1, self.z) end
 function Instance:broadcast(line) horizon.broadcast(line) end
 --- The block over this one (`dy` blocks up, 1 by default), by id.
 function Instance:above(dy) return horizon.block(self.x, self.y + (dy or 1), self.z) end
@@ -74,10 +86,10 @@ function Block.new(mod, id)
     if b.on_block_entity_tick then b:on_block_entity_tick(instance(dimension, id, x, y, z, nil, data)) end
   end, id)
   horizon.on("block_broken", function(x, y, z, _, player)
-    if b.on_break and b:on_break(instance(dimension_of(player), id, x, y, z, nil, nil), player) == true then horizon.cancel() end
+    if b.on_break and b:on_break(instance(dimension_of(player), id, x, y, z, nil, nil), Player.wrap(player)) == true then horizon.cancel() end
   end, id)
   horizon.on("block_placed", function(x, y, z, _, player, item)
-    if b.on_place then b:on_place(instance(dimension_of(player), id, x, y, z, nil, nil), player, item) end
+    if b.on_place then b:on_place(instance(dimension_of(player), id, x, y, z, nil, nil), Player.wrap(player), item) end
   end, id)
   return b
 end
@@ -87,7 +99,7 @@ function Block.install(mod)
   horizon.on("right_click_block", function(x, y, z, id, face, player, held, data)
     local b = mod.blocks[id]
     if b and b.on_use then
-      b:on_use(instance(dimension_of(player), id, x, y, z, nil, data), player, held, face)
+      b:on_use(instance(dimension_of(player), id, x, y, z, nil, data), Player.wrap(player), held, face)
     end
   end)
 end

@@ -53,7 +53,17 @@ function Mob:attack(who) goal_out(self, "attack").attack(who) end
 function Mob:swing() goal_out(self, "swing").swing() end
 function Mob:hurt(who, amount) goal_out(self, "hurt").hurt(who, amount) end
 function Mob:convert(kind) goal_out(self, "convert").convert(kind) end
-function Mob:effect(name, ticks, amplifier) goal_out(self, "effect").effect(name, ticks or 200, amplifier or 0) end
+--- A status effect for `ticks` (200) at `amplifier` (0): in a goal through
+--- its actions, in a callback with a host by the mob's id.
+function Mob:effect(name, ticks, amplifier)
+  if self._out then
+    self._out.effect(name, ticks or 200, amplifier or 0)
+  elseif self.dimension then
+    horizon.effect(self._view.id, name, ticks or 200, amplifier or 0)
+  else
+    error("mob:effect needs a goal or a hook with a host (not on_hurt)", 2)
+  end
+end
 
 -- Life: in a goal through its actions, in a callback through the host.
 function Mob:summon(kind, x, y, z)

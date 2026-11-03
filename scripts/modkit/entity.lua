@@ -16,6 +16,7 @@
 -- is defined, so a kind without one costs nothing each tick.
 local Goal = require("modkit.goal")
 local Mob = require("modkit.mob")
+local Player = require("modkit.player")
 
 local Entity = {}
 
@@ -40,7 +41,7 @@ local CALLBACKS = {
     e:on_death(Mob.host(mob, dimension, data), cause)
   end },
   on_interact = { "mob_interact", function(e, dimension, mob, player, held, data)
-    if e:on_interact(Mob.host(mob, dimension, data), player, held) == true then horizon.cancel() end
+    if e:on_interact(Mob.host(mob, dimension, data), Player.wrap(player), held) == true then horizon.cancel() end
   end },
 }
 

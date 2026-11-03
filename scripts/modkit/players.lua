@@ -9,22 +9,26 @@
 --   function Players:on_place_block(player, block, item) end
 --   function Players:on_pickup(player, item, count) end  -- about to pick an item (an id) up; return true to leave it
 --
--- `player` is the engine's table (`uuid`, `name`, `position`...).
+-- `player` is the engine's table (`uuid`, `name`, `position`...) with the
+-- player's methods (modkit.player: `player:give`, `player:effect`...).
+local Player = require("modkit.player")
+local wrap = Player.wrap
+
 local Players = {}
 
 local CALLBACKS = {
-  on_join = { "player_joined", function(e, player) e:on_join(player) end },
-  on_leave = { "player_left", function(e, player) e:on_leave(player) end },
-  on_respawn = { "player_respawned", function(e, player) e:on_respawn(player) end },
-  on_death = { "player_died", function(e, player, cause) e:on_death(player, cause) end },
+  on_join = { "player_joined", function(e, player) e:on_join(wrap(player)) end },
+  on_leave = { "player_left", function(e, player) e:on_leave(wrap(player)) end },
+  on_respawn = { "player_respawned", function(e, player) e:on_respawn(wrap(player)) end },
+  on_death = { "player_died", function(e, player, cause) e:on_death(wrap(player), cause) end },
   on_break_block = { "block_broken", function(e, x, y, z, block, player)
-    if e:on_break_block(player, { x = x, y = y, z = z, id = block }) == true then horizon.cancel() end
+    if e:on_break_block(wrap(player), { x = x, y = y, z = z, id = block }) == true then horizon.cancel() end
   end },
   on_place_block = { "block_placed", function(e, x, y, z, block, player, item)
-    e:on_place_block(player, { x = x, y = y, z = z, id = block }, item)
+    e:on_place_block(wrap(player), { x = x, y = y, z = z, id = block }, item)
   end },
   on_pickup = { "item_picked_up", function(e, player, item, count)
-    if e:on_pickup(player, item, count) == true then horizon.cancel() end
+    if e:on_pickup(wrap(player), item, count) == true then horizon.cancel() end
   end },
 }
 

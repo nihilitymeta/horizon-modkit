@@ -12,6 +12,9 @@
 -- on the acting player's inventory; `player`, `block` and `target` are the
 -- engine's tables (docs/api.md). A callback is wired to the game's hook for
 -- the item the moment it is defined.
+local Player = require("modkit.player")
+local wrap_player = Player.wrap
+
 local Item = {}
 
 local Stack = {}
@@ -22,20 +25,20 @@ local function wrap(item) return setmetatable(item, Stack) end
 
 local CALLBACKS = {
   on_use = { "item_use", function(e, item, player)
-    if e:on_use(wrap(item), player) == true then horizon.cancel() end
+    if e:on_use(wrap(item), wrap_player(player)) == true then horizon.cancel() end
   end },
   on_use_on = { "item_use_on", function(e, item, player, block, face)
-    if e:on_use_on(wrap(item), player, block, face) == true then horizon.cancel() end
+    if e:on_use_on(wrap(item), wrap_player(player), block, face) == true then horizon.cancel() end
   end },
   on_hit = { "item_hit", function(e, item, player, target)
-    if e:on_hit(wrap(item), player, target) == true then horizon.cancel() end
+    if e:on_hit(wrap(item), wrap_player(player), target) == true then horizon.cancel() end
   end },
   on_finished = { "item_finished", function(e, item, player)
-    local id, count = e:on_finished(wrap(item), player)
+    local id, count = e:on_finished(wrap(item), wrap_player(player))
     if id ~= nil then horizon.set_result(id, count) end
   end },
   on_tick = { "item_tick", function(e, item, player, slot, selected)
-    e:on_tick(wrap(item), player, slot, selected)
+    e:on_tick(wrap(item), wrap_player(player), slot, selected)
   end },
 }
 
