@@ -11,7 +11,7 @@
 --     tick = function(self, mob) end,
 --     stop = function(self, mob) end,
 --   }
-local Mob = require("modkit.mob")
+local Mob = require("@modkit/mob")
 
 local State = {}
 State.__index = State

@@ -2,6 +2,14 @@
 
 The modkit's classes and callbacks, over the engine's Lua hook API ([lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md); every hook point of the engine and the Lua handler it reaches: [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md)); the data a mod's files or registry script declare are in the engine's [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md).
 
+## Versions
+
+The modkit's version is written once, in its `horizon-mod.toml`; `modkit.VERSION` reads it from the engine
+(`horizon.libraries.horizon_modkit` in a mod that depends on it). A mod names the least version it needs with
+`depends = ["horizon_modkit >= 0.7"]`: the game checks it at load and does not load the mod when the modkit is
+older, with a log line that says what it found (`Horizon: Lua mod my_mod not loaded: it needs horizon_modkit >= 0.7
+(found 0.6.0), ...`); `cargo horizon-mod check` says the same without a game.
+
 ## Starting a mod
 
 `cargo horizon-mod new <path> --template lua` scaffolds a scripted mod on the modkit: a manifest with
@@ -15,6 +23,21 @@ headlessly in the game's Lua runtime before any world: a script that fails to lo
 know, a command that errors when declared, each with its file and line, exit code 1. The modkit's
 `tools/check.sh` runs it on the modkit itself and on a mod folder given (`--self-test` shows a misspelled hook
 refused with its line).
+
+## In an editor
+
+`types/horizon.d.lua` (the engine's generated `docs/api/horizon.d.lua`) declares `horizon` and `registry`, every
+function, every hook's handler signature and the tables a script gets; the modkit's own classes are annotated with
+them. With [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) in the editor, pointed at that file as a
+definitions file, `M:entity`, `M:block`, `M:item`, `M:players`, `M:command` and the `player`, `mob` and `block`
+tables complete, and a misspelled function or hook is marked. A mod's `.luaurc` names this checkout so
+`require("@modkit")` resolves (the Lua template writes one). From a shell:
+
+```sh
+luau-lsp analyze --definitions @horizon=/path/to/horizon-modkit/types/horizon.d.lua --platform=standard scripts
+```
+
+`tools/check.sh` runs it on the modkit and on the mods given, after the headless load.
 
 ## Declaring what the mod adds: `scripts/registry.lua`
 

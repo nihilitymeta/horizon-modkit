@@ -12,7 +12,7 @@ local Mob = {}
 Mob.__index = function(self, key)
   local method = Mob[key]
   if method ~= nil then return method end
-  return rawget(self, "_view")[key]
+  return (rawget(self, "_view") :: any)[key]
 end
 
 --- Wraps a view and an `out` table of a goal call.
@@ -80,25 +80,25 @@ end
 
 -- By id, in a callback with a host.
 --- Health, cut to the mob's maximum.
-function Mob:set_health(health) host_action(self, "set_mob_health", health) end
+function Mob:set_health(health: number) host_action(self, "set_mob_health", health) end
 --- Dies as `/kill` does: it falls and drops its loot.
 function Mob:kill() host_action(self, "kill_mob") end
 --- Adds to the mob's velocity.
-function Mob:push(x, y, z) host_action(self, "push_mob", x, y, z) end
+function Mob:push(x: number, y: number, z: number) host_action(self, "push_mob", x, y, z) end
 --- Moves it at once, as `/tp` does.
-function Mob:teleport(x, y, z) host_action(self, "teleport_mob", x, y, z) end
-function Mob:broadcast(line) horizon.broadcast(line) end
+function Mob:teleport(x: number, y: number, z: number) host_action(self, "teleport_mob", x, y, z) end
+function Mob:broadcast(line: string) horizon.broadcast(line) end
 
 -- Reading.
-function Mob:distance_to(p) return horizon.distance(self._view.position, p) end
+function Mob:distance_to(p: Vec3): number return horizon.distance(self._view.position, p) end
 --- The block the mob stands on (a callback with a host; see docs/api.md).
-function Mob:block_below()
+function Mob:block_below(): string
   local p = self._view.position
   return horizon.block(math.floor(p.x), math.floor(p.y) - 1, math.floor(p.z))
 end
 
 --- Whether a player stands within `range` blocks.
-function Mob:player_within(range)
+function Mob:player_within(range: number): boolean
   local p = self._view.nearest_player
   return p ~= nil and horizon.distance(self._view.position, p) <= range
 end
@@ -106,7 +106,7 @@ end
 --- The nearby mobs (nearest first) that `filter` accepts: a kind id, or a
 --- function of the nearby record; all of them without one. Empty outside a
 --- goal: only there the world is at hand.
-function Mob:nearby(filter)
+function Mob:nearby(filter: (string | (Nearby) -> boolean)?): { Nearby }
   local out = {}
   for _, other in ipairs(self._view.nearby or {}) do
     if filter == nil
@@ -119,7 +119,7 @@ function Mob:nearby(filter)
 end
 
 --- The nearest mob `filter` accepts within `range` blocks, or nil.
-function Mob:nearest(filter, range)
+function Mob:nearest(filter: (string | (Nearby) -> boolean)?, range: number?): Nearby?
   for _, other in ipairs(self:nearby(filter)) do
     if range == nil or other.distance <= range then return other end
   end

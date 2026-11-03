@@ -1,5 +1,5 @@
 -- Goals that come with the library.
-local Goal = require("modkit.goal")
+local Goal = require("@modkit/goal")
 local goals = {}
 
 --- Wander: every `wait` ticks (80) with nobody within `radius` (32) blocks,

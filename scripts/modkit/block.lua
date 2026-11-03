@@ -14,7 +14,7 @@
 -- `block.id`, its state properties as fields (`block.stage`), `block.data`
 -- (the block entity's saved table, written back after the callback; nil
 -- without a block entity), and methods that ask the game to act after the call.
-local Player = require("modkit.player")
+local Player = require("@modkit/player")
 
 local Block = {}
 Block.__index = Block
@@ -23,7 +23,7 @@ Block.__index = Block
 --- Gives every placed block of this kind a block entity: `ticks` runs
 --- `on_block_entity_tick` each server tick, `data` is what a new one starts
 --- with (numbers, strings, booleans, nested tables; saved with the chunk).
-function Block:block_entity(def)
+function Block:block_entity(def: { ticks: boolean?, data: Data? }?)
   horizon.block_entity(self.id, def or {})
   return self
 end
@@ -32,7 +32,7 @@ local Instance = {}
 Instance.__index = function(self, key)
   local method = Instance[key]
   if method ~= nil then return method end
-  local v = rawget(self, "props")[key]
+  local v = (rawget(self, "props") :: any)[key]
   if v ~= nil or not rawget(self, "live") or type(key) ~= "string" then return v end
   -- A callback without the state's properties at hand reads them from the world.
   return horizon.block_property(self.x, self.y, self.z, key)
@@ -45,9 +45,9 @@ local function instance(dimension, id, x, y, z, props, data)
 end
 
 --- Sets a state property of the block (`block:set("stage", "growing")`).
-function Instance:set(key, value, flags) horizon.set_block_property(key, value, flags) end
+function Instance:set(key: string, value: string, flags: number?) horizon.set_block_property(key, value, flags) end
 --- Ticks the block again in `delay` ticks (`on_tick`).
-function Instance:schedule_tick(delay) horizon.schedule_tick(delay) end
+function Instance:schedule_tick(delay: number) horizon.schedule_tick(delay) end
 --- Takes the tick: the block's own (vanilla) tick is skipped.
 function Instance:handled() horizon.handled() end
 --- Eats the click: neither the block nor the held item acts.
@@ -55,22 +55,22 @@ function Instance:cancel() horizon.cancel() end
 --- Makes a mob at an offset from the block's centre; its id, when the
 --- callback has a host (nil in a random or scheduled tick, where it is made
 --- after the level's pass).
-function Instance:summon(kind, dx, dy, dz)
+function Instance:summon(kind: string, dx: number?, dy: number?, dz: number?): number?
   return horizon.summon(self.dimension, kind, self.x + 0.5 + (dx or 0), self.y + (dy or 1), self.z + 0.5 + (dz or 0))
 end
 --- Replaces the block with another (`block:replace("minecraft:air")`),
 --- with its state properties and `Level.setBlock` flags (3). Not in a
 --- random or scheduled tick: there `block:set` changes a property.
-function Instance:replace(id, props, flags) horizon.set_block(self.x, self.y, self.z, id, props, flags) end
+function Instance:replace(id: string, props: Props?, flags: number?) horizon.set_block(self.x, self.y, self.z, id, props, flags) end
 --- Drops `count` (1) of an item over the block.
-function Instance:drop(id, count) horizon.drop_item(self.x + 0.5, self.y + 1, self.z + 0.5, id, count) end
+function Instance:drop(id: string, count: number?) horizon.drop_item(self.x + 0.5, self.y + 1, self.z + 0.5, id, count) end
 --- `{block, sky}` light at the block over this one.
-function Instance:light() return horizon.light(self.x, self.y + 1, self.z) end
-function Instance:broadcast(line) horizon.broadcast(line) end
+function Instance:light(): Light return horizon.light(self.x, self.y + 1, self.z) end
+function Instance:broadcast(line: string) horizon.broadcast(line) end
 --- The block over this one (`dy` blocks up, 1 by default), by id.
-function Instance:above(dy) return horizon.block(self.x, self.y + (dy or 1), self.z) end
+function Instance:above(dy: number?): string return horizon.block(self.x, self.y + (dy or 1), self.z) end
 --- The block under this one.
-function Instance:below(dy) return horizon.block(self.x, self.y - (dy or 1), self.z) end
+function Instance:below(dy: number?): string return horizon.block(self.x, self.y - (dy or 1), self.z) end
 
 --- A block class, with its hooks registered for its id alone: the engine
 --- calls them for this block's ticks and events only (a handler for every

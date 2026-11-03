@@ -21,7 +21,7 @@
 --
 -- `player` is the engine's table (`uuid`, `name`, `position`...) with the
 -- player's methods (modkit.player: `player:give`, `player:effect`...).
-local Player = require("modkit.player")
+local Player = require("@modkit/player")
 local wrap = Player.wrap
 
 local Players = {}

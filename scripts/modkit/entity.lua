@@ -18,9 +18,9 @@
 --
 -- A callback is wired to the game's hook for the class's kind the moment it
 -- is defined, so a kind without one costs nothing each tick.
-local Goal = require("modkit.goal")
-local Mob = require("modkit.mob")
-local Player = require("modkit.player")
+local Goal = require("@modkit/goal")
+local Mob = require("@modkit/mob")
+local Player = require("@modkit/player")
 
 local Entity = {}
 
@@ -95,12 +95,12 @@ function Entity:_listen(name, hook, adapt)
 end
 
 --- `{ {priority, goal}, ... }`: the goals every mob of this type gets.
-function Entity:goals(list)
+function Entity:goals(list: { { any } })
   for _, row in ipairs(list) do self.goal_list[#self.goal_list + 1] = row end
   return self
 end
 
-function Entity:target_goals(list)
+function Entity:target_goals(list: { { any } })
   for _, row in ipairs(list) do self.target_list[#self.target_list + 1] = row end
   return self
 end

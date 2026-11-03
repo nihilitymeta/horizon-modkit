@@ -16,7 +16,7 @@
 -- on the acting player's inventory; `player`, `block` and `target` are the
 -- engine's tables (docs/api.md). A callback is wired to the game's hook for
 -- the item the moment it is defined.
-local Player = require("modkit.player")
+local Player = require("@modkit/player")
 local wrap_player = Player.wrap
 
 local Item = {}
