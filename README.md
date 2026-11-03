@@ -22,8 +22,8 @@ depends = ["horizon_modkit"]
 local modkit = require("modkit")
 local M = modkit.mod("my_mod")
 
--- An entity: data/my_mod/horizon/entity_type/crawler.json declares it (a vanilla template with
--- your attributes, size, texture, flags and "goals": "none"); this is what it does.
+-- An entity: scripts/registry.lua declares it (below: a vanilla template with your attributes,
+-- size, texture, flags and goals = "none"); this is what it does.
 local Crawler = M:entity("crawler")
 Crawler:goals {
   { 1, modkit.goals.HuntPlayer(32, 1.2, 20) },
@@ -46,7 +46,7 @@ local Zombie = M:entity("minecraft:zombie")
 Zombie:goals { { 0, modkit.Goal { flags = {}, can_use = function(self, mob) return mob:nearest("my_mod:crawler", 2) ~= nil end,
   tick = function(self, mob) if self:every("t", 60) then mob:convert("my_mod:crawler") end end } } }
 
--- A block: data/my_mod/horizon/block/hive.json declares it (template, states, random_ticks).
+-- A block: scripts/registry.lua declares it (template, states, random_ticks).
 -- With a block entity it keeps data of its own, saved with the chunk.
 local Hive = M:block("hive")
 Hive:block_entity { ticks = true, data = { charge = 0 } }
@@ -69,6 +69,36 @@ end
 Run: `horizon-client … --dev-mod /path/to/horizon-modkit --dev-mod /path/to/my_mod` (or install both `.hmod`s and
 turn them on). Edits are live on `/reload`. With `--dev-tools`, `/goals <mob>` shows the goals with their names,
 `/lua` the mods, their handlers and errors ([dev-tools.md](https://github.com/whos-carmen/horizon/blob/egui-tools/docs/dev-tools.md)).
+
+## Declaring what the mod adds: `scripts/registry.lua`
+
+The entity types, blocks, items, loot tables, recipes and tags a mod adds are declared in `scripts/registry.lua`,
+which the game runs once at start (the engine's [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md),
+"Registering content from Lua"); JSON files under `data/` work too, and textures stay under `assets/`. The
+modkit is not loaded there: the script is plain Luau with the `registry` table.
+
+```lua
+-- scripts/registry.lua
+registry.entity_type("crawler", {
+  template = "minecraft:zombie",
+  attributes = { max_health = 30, movement_speed = 0.3, attack_damage = 4 },
+  texture = registry.id .. ":entity/crawler",   -- assets/my_mod/textures/entity/crawler.png
+  goals = "none",                                -- the class's goals are all it has
+  flags = { burns_in_day = false },
+})
+registry.data("loot_table/entities/crawler", {
+  type = "minecraft:entity",
+  pools = { { rolls = 1, entries = { { type = "minecraft:item", name = "minecraft:slime_ball" } } } },
+})
+registry.block("hive", {
+  template = "minecraft:sculk",
+  properties = { hardness = 1.5, random_ticks = { property = "stage", values = { "dormant", "mature" } } },
+  state_properties = { stage = { type = "enum", values = { "dormant", "mature" } } },
+  default_state = { stage = "dormant" },
+  item = true,
+})
+registry.data("minecraft:tags/block/mineable/hoe", { values = { registry.id .. ":hive" } })
+```
 
 ## API
 
@@ -143,8 +173,7 @@ the callback, a number keeps its NBT type, a key set to nil is gone), and `block
 ## Not yet
 
 Deaths other than a player's melee blow, models of your own, natural spawning, spawn eggs, items with callbacks:
-each arrives as the engine's hook points do. The registry entries (entity types, blocks, items) stay in
-your mod's data files for now.
+each arrives as the engine's hook points do.
 
 ## License
 
