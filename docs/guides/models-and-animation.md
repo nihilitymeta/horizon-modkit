@@ -3,7 +3,8 @@
 A mob of yours is drawn as its template unless its declaration says otherwise: a `texture` laid out as the
 template's, or a `model` of its own with an `animation` set that moves its parts, and `sounds`. The worked
 example is the parasite mod's
-[scripts/registry.lua](https://github.com/whos-carmen/horizon-parasite-mod/blob/example-block/scripts/registry.lua),
+[scripts/registry.lua](https://github.com/whos-carmen/horizon-parasite-mod/blob/example-archive/scripts/registry.lua)
+(the `example-archive` tag of that repo),
 a zombie's layout with a swollen head and spines. Reference: [api.md, A mob's look and sounds](../api.md#a-mobs-look-and-sounds).
 
 ```lua

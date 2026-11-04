@@ -29,7 +29,8 @@ One screen each, one code block lifted from the example mod, a link to the refer
 | [Reload and restart](docs/guides/reload-and-restart.md) | what a change needs |
 
 **Reference:** [docs/api.md](docs/api.md), every class and callback; [ids](docs/reference/ids.md) a mod keeps
-reaching for; the [FAQ](docs/reference/faq.md). The engine's
+reaching for; the [FAQ](docs/reference/faq.md); [testing](docs/testing.md), what to see in game and the checks
+that drive one. The engine's
 [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md) is the layer
 under it all.
 
@@ -63,10 +64,13 @@ Run: `horizon-client --dev-tools --dev-mod /path/to/horizon-modkit --dev-mod /pa
 
 ## Tools
 
-`tools/check.sh` loads the modkit, the example mod and a mod given headlessly in the game's runtime and runs
-luau-lsp over them; `tools/scaffold-check.sh` builds, checks and plays a scaffolded mod; `tools/example-check.sh`
-plays the example mod through every concept; `tools/docs-check.sh` checks the docs' links and that every
-guide's code is in the example it names. Each takes `HORIZON=/path/to/horizon` (built).
+`tools/check.sh` loads the modkit, the example mod, the probes and a mod given headlessly in the game's runtime
+and runs luau-lsp over them; `tools/scaffold-check.sh` builds, checks and plays a scaffolded mod;
+`tools/example-check.sh` plays the example mod through every concept; `tools/hook-coverage.sh` drives every hook
+the engine lists and every modkit callback (`tools/hook-probe`, `tools/modkit-probe`); `tools/steps-check.sh`
+shows one observable per step of the Lua API (`tools/step-probe`); `tools/docs-check.sh` checks the docs' links
+and that every guide's code is in the example it names. Each takes `HORIZON=/path/to/horizon` (built);
+[docs/testing.md](docs/testing.md) says what each shows.
 
 ## License
 

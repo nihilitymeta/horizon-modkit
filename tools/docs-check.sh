@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # The docs' links resolve (files and headings, as GitHub slugs them), and every Lua block in a guide, the README
 # and getting-started is lifted as it is from a file that runs: the example mod's file the guide links, the
-# parasite's registry (models) when that checkout is beside this one, the scaffold's init.lua (with HORIZON).
+# parasite repo's archived registry (the model) when that checkout is beside this one, the scaffold's init.lua
+# (with HORIZON).
 #
 #   [HORIZON=/path/to/horizon] tools/docs-check.sh
 set -u
@@ -45,15 +46,21 @@ for doc in docs:
         if 'examples/example_mod' in link and link.endswith('.lua'):
             sources.append(os.path.normpath(os.path.join(os.path.dirname(doc), link)))
         if 'horizon-parasite-mod' in link and link.endswith('registry.lua'):
-            p = os.path.join(root, '..', 'horizon-parasite-mod', 'scripts', 'registry.lua')
-            if os.path.exists(p): sources.append(p)
+            # The example that moved here left its registry (the model) at that repo's example-archive tag.
+            repo = os.path.join(root, '..', 'horizon-parasite-mod')
+            if os.path.isdir(os.path.join(repo, '.git')):
+                import subprocess
+                r = subprocess.run(['git', '-C', repo, 'show', 'example-archive:scripts/registry.lua'], capture_output=True, text=True)
+                if r.returncode == 0: sources.append(('archive', r.stdout))
     if rel in ('README.md', 'docs/getting-started.md') and horizon:
         p = os.path.join(horizon, 'crates', 'cargo-horizon-mod', 'template', 'lua', 'init.lua')
         if os.path.exists(p): sources.append(('template', p))
     for block in blocks:
         found = False
         for src in sources:
-            if isinstance(src, tuple):
+            if isinstance(src, tuple) and src[0] == 'archive':
+                code = src[1]
+            elif isinstance(src, tuple):
                 code = open(src[1], encoding='utf-8').read().replace('{id}', 'my_mod')
             else:
                 code = open(src, encoding='utf-8').read()
@@ -62,7 +69,8 @@ for doc in docs:
             if not sources:
                 print(f"UNCHECKED {rel}: a Lua block with no example file linked" + ("" if horizon else " (set HORIZON for the scaffold's)"))
             else:
-                print(f"NOT LIFTED {rel}: a Lua block is not in {', '.join(os.path.relpath(s[1] if isinstance(s, tuple) else s, root) for s in sources)}:\n  " + block.strip().splitlines()[0]); failed = 1
+                names = [s[0] if isinstance(s, tuple) and s[0] == 'archive' else os.path.relpath(s[1] if isinstance(s, tuple) else s, root) for s in sources]
+                print(f"NOT LIFTED {rel}: a Lua block is not in {', '.join(names)}:\n  " + block.strip().splitlines()[0]); failed = 1
 print("docs-check:", "FAILED" if failed else "ok, every link resolves and every Lua block is lifted from a file that runs")
 sys.exit(failed)
 PY

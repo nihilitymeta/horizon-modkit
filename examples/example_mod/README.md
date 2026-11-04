@@ -29,4 +29,5 @@ horizon-client --dev-tools --dev-mod /path/to/horizon-modkit --dev-mod /path/to/
 ```
 
 Then `/example` in the chat lists its commands. Every file logs an `EXAMPLE ...` line when its concept runs;
-`tools/example-check.sh` drives them all from a script, and `tools/check.sh` loads the scripts without a game.
+`tools/example-check.sh` drives them all from a script, and `tools/check.sh` loads the scripts without a game
+([docs/testing.md](../../docs/testing.md) has the other checks).
