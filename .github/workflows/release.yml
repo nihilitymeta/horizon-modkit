@@ -1,12 +1,23 @@
 name: release
-# Pushing a tag v<version> publishes the modkit as horizon_modkit.hmod on that tag's GitHub release, which Event
-# Horizon's launcher installs into its instances (docs/getting-started.md). The tag must match horizon-mod.toml's version.
-#   git tag v0.7.1 && git push origin v0.7.1
+# Publishes the modkit as horizon_modkit.hmod on a GitHub release, which Event Horizon's launcher installs into its
+# Event Horizon instances (the Mods page's modkit card).
+# - A version of your choosing: push a tag v<version>, which must match horizon-mod.toml's version.
+#     git tag v0.7.1 && git push origin v0.7.1
+# - A nightly, nightly-<date>: every day at 09:00 UTC (4am Eastern in winter, 5am in summer), from main, when it
+#   changed since the last release. The repository variable NIGHTLY_PAUSED=1 skips nightlies until it is removed:
+#     gh variable set NIGHTLY_PAUSED -R whos-carmen/horizon-modkit --body 1      # gh variable delete NIGHTLY_PAUSED to resume
+#   Run one now from the Actions tab or with: gh workflow run release -R whos-carmen/horizon-modkit
 on:
   push:
     tags: ['v*']
+  schedule:
+    - cron: '0 9 * * *'
+  workflow_dispatch:
 permissions:
   contents: read
+concurrency:
+  group: modkit-release
+  cancel-in-progress: false
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -15,24 +26,49 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v7
-      - name: The tag is the manifest's version
-        run: |
-          version=$(sed -n 's/^version = "\(.*\)"/\1/p' horizon-mod.toml)
-          [[ "v$version" == "$GITHUB_REF_NAME" ]] || { echo "::error::tag $GITHUB_REF_NAME, horizon-mod.toml says $version"; exit 1; }
-      - uses: dtolnay/rust-toolchain@stable
-      - uses: Swatinem/rust-cache@v2
-      # cargo-horizon-mod from Event Horizon, the engine the modkit's scripts run on.
-      - name: cargo-horizon-mod
-        run: cargo install --locked --git https://github.com/whos-carmen/horizon --branch engine-work cargo-horizon-mod
-      - name: Pack the modkit
-        run: cargo horizon-mod build && ls -l target/horizon-mod/
-      - name: Publish
+      - id: decide
         env:
           GH_TOKEN: ${{ github.token }}
+          PAUSED: ${{ vars.NIGHTLY_PAUSED }}
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' horizon-mod.toml)
+          if [[ "$GITHUB_REF" == refs/tags/v* ]]; then
+            [[ "v$version" == "$GITHUB_REF_NAME" ]] || { echo "::error::tag $GITHUB_REF_NAME, horizon-mod.toml says $version"; exit 1; }
+            echo "tag=$GITHUB_REF_NAME" >> "$GITHUB_OUTPUT"; echo "title=Horizon Modkit $version" >> "$GITHUB_OUTPUT"
+            echo "go=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if [[ "$GITHUB_EVENT_NAME" == schedule && "$PAUSED" == 1 ]]; then
+            echo "::notice::NIGHTLY_PAUSED=1: no nightly"; echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          last=$(gh api "repos/$GITHUB_REPOSITORY/releases/latest" --jq .target_commitish 2>/dev/null || true)
+          if [[ "$GITHUB_EVENT_NAME" == schedule && "$last" == "$GITHUB_SHA" ]]; then
+            echo "::notice::main is what the last release packed: no nightly"; echo "go=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          tag="nightly-$(date -u +%Y-%m-%d)"
+          n=1; base=$tag
+          while gh api "repos/$GITHUB_REPOSITORY/releases/tags/$tag" >/dev/null 2>&1; do n=$((n+1)); tag="$base-$n"; done
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"; echo "title=Horizon Modkit $version, nightly ${tag#nightly-}" >> "$GITHUB_OUTPUT"
+          echo "go=true" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@stable
+        if: steps.decide.outputs.go == 'true'
+      - uses: Swatinem/rust-cache@v2
+        if: steps.decide.outputs.go == 'true'
+      # cargo-horizon-mod from Event Horizon, the engine the modkit's scripts run on.
+      - name: cargo-horizon-mod
+        if: steps.decide.outputs.go == 'true'
+        run: cargo install --locked --git https://github.com/whos-carmen/horizon --branch engine-work cargo-horizon-mod
+      - name: Pack the modkit
+        if: steps.decide.outputs.go == 'true'
+        run: cargo horizon-mod build && ls -l target/horizon-mod/
+      - name: Publish
+        if: steps.decide.outputs.go == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.decide.outputs.tag }}
+          TITLE: ${{ steps.decide.outputs.title }}
         run: |
           cd target/horizon-mod
           sha256sum horizon_modkit.hmod > SHA256SUMS
-          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "Horizon Modkit ${GITHUB_REF_NAME#v}" \
-            --notes "Horizon Modkit ${GITHUB_REF_NAME#v}. Event Horizon's launcher installs it into its instances." \
+          gh release create "$TAG" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --title "$TITLE" \
+            --notes "$TITLE, packed from $GITHUB_SHA. Event Horizon's launcher installs it into its Event Horizon instances." \
             horizon_modkit.hmod SHA256SUMS
