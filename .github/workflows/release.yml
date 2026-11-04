@@ -1,0 +1,38 @@
+name: release
+# Pushing a tag v<version> publishes the modkit as horizon_modkit.hmod on that tag's GitHub release, which Event
+# Horizon's launcher installs into its instances (docs/getting-started.md). The tag must match horizon-mod.toml's version.
+#   git tag v0.7.1 && git push origin v0.7.1
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: The tag is the manifest's version
+        run: |
+          version=$(sed -n 's/^version = "\(.*\)"/\1/p' horizon-mod.toml)
+          [[ "v$version" == "$GITHUB_REF_NAME" ]] || { echo "::error::tag $GITHUB_REF_NAME, horizon-mod.toml says $version"; exit 1; }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      # cargo-horizon-mod from Event Horizon, the engine the modkit's scripts run on.
+      - name: cargo-horizon-mod
+        run: cargo install --locked --git https://github.com/whos-carmen/horizon --branch engine-work cargo-horizon-mod
+      - name: Pack the modkit
+        run: cargo horizon-mod build && ls -l target/horizon-mod/
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd target/horizon-mod
+          sha256sum horizon_modkit.hmod > SHA256SUMS
+          gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "Horizon Modkit ${GITHUB_REF_NAME#v}" \
+            --notes "Horizon Modkit ${GITHUB_REF_NAME#v}. Event Horizon's launcher installs it into its instances." \
+            horizon_modkit.hmod SHA256SUMS
