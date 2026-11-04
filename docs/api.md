@@ -163,7 +163,7 @@ Natural spawning is a NeoForge biome modifier:
 registry.data("neoforge/biome_modifier/crawlers", {
   type = "neoforge:add_spawns",
   biomes = "#minecraft:is_overworld",
-  spawners = { { type = registry.id .. ":crawler", weight = 20, min_count = 1, max_count = 3 } },
+  spawners = { { type = registry.id .. ":crawler", weight = 20, minCount = 1, maxCount = 3 } },
 })
 ```
 

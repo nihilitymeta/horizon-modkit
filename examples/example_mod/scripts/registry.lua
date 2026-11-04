@@ -145,7 +145,7 @@ registry.asset("models/item/example_mob_spawn_egg", { parent = "minecraft:item/g
 registry.data("neoforge/biome_modifier/example_mob_spawns", {
   type = "neoforge:add_spawns",
   biomes = "#minecraft:is_overworld",
-  spawners = { { type = ns .. ":example_mob", weight = 8, min_count = 1, max_count = 2 } },
+  spawners = { { type = ns .. ":example_mob", weight = 8, minCount = 1, maxCount = 2 } },
 })
 
 -- MOB EFFECTS: a category and a colour; the scripts give it
