@@ -29,13 +29,13 @@ What a player sees without it: <!-- e.g. the item is missing from the creative t
 
 ## Where it lives
 
-| Piece | Repo / branch | New or existing |
+| Piece | Where | New or existing |
 |---|---|---|
 | Modkit API (`scripts/modkit/…`) | horizon-modkit | |
-| Engine binding (`horizon.*`), if any | whos-carmen/horizon `lua-bindings` / `egui-tools` | |
-| Engine screen or command it reuses | whos-carmen/horizon `egui-tools` | |
+| Engine binding (`horizon.*`), if any | Event Horizon, `lua_mods` | |
+| Engine screen or command it reuses | Event Horizon, `dev_tools` | |
 
-<!-- If it needs an engine change, say which branch it belongs on (main + one concern) and why it can't be done in Lua. -->
+<!-- If it needs an engine change, say what it changes in Event Horizon and why it can't be done in Lua. -->
 
 ## Done when
 

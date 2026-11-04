@@ -31,7 +31,7 @@ The folders sit side by side in `~/src`: `horizon` (Event Horizon), `horizon-res
 
 - **Modkit**, this repository: a nicer shape for something the engine already offers (a class, a callback, a
   helper). Lua only.
-- **Engine**, Event Horizon's `lua-bindings` branch: anything Lua can't reach yet (a new hook, a new `horizon.*`
+- **Engine**, Event Horizon's `engine-work`: anything Lua can't reach yet (a new hook, a new `horizon.*`
   function, a value the runtime doesn't hand over). Event Horizon's `docs/agents.md` says how to work there. After the
   engine change, copy its `docs/api/horizon.d.lua` here as `types/horizon.d.lua`, then add the modkit side.
 - Gaps the engine doesn't cover yet are listed in Event Horizon's `docs/lua-bindings.md`, "Not yet: the shapes to come".

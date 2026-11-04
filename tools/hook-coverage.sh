@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Drives a game through every hook the engine's generated reference
-# (docs/api/hook-points.md, lua-bindings branch) says reaches Lua, with
+# (Event Horizon's docs/api/hook-points.md) says reaches Lua, with
 # tools/hook-probe logging each beside this modkit and examples/example_mod,
 # and reports the ones that did not fire. tools/modkit-probe rides along:
 # every modkit callback of those hooks, each expected too.

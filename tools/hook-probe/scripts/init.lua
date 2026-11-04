@@ -1,5 +1,5 @@
--- One logging handler per Lua hook the engine's docs/api/hook-points.md lists
--- (lua-bindings branch); tools/hook-coverage.sh drives the game through each and
+-- One logging handler per Lua hook Event Horizon's docs/api/hook-points.md lists;
+-- tools/hook-coverage.sh drives the game through each and
 -- reads the log (a hook logs once per load; the engine's own "reloaded" line
 -- shows /reload reran the scripts).
 local seen = {}

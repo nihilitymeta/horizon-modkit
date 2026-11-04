@@ -46,7 +46,7 @@ To see the nest:
 ### Hooks and the console
 
 - Event Horizon's generated
-  [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md) lists the
+  [hook-points.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/api/hook-points.md) lists the
   engine hook behind each callback, and every other hook a script could listen to.
 - `/lua` opens the console. Press F8 to free the mouse. The console's first section lists each mod with its
   handlers, goals and last error, with a button that reloads the mod. `print` and `horizon.log` lines appear there
@@ -152,7 +152,7 @@ Before it starts, it writes `config/example_mod.json`, with a nest that breeds o
 ### Every hook the engine lists
 
 `tools/hook-coverage.sh` reads Event Horizon's generated
-[hook reference](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md). It runs the game
+[hook reference](https://github.com/whos-carmen/horizon/blob/engine-work/docs/api/hook-points.md). It runs the game
 with `tools/hook-probe`, a mod with one logging handler for each Lua hook, next to the example mod. Then it drives
 the game through each hook: blocks, mobs, items, a command, `/reload`, a death, a fall, a snowball, a dropped stick,
 crafted planks, a chest and a bed, an orb, a hurt and a heal, an armed zombie, and TNT. It reports the hooks that did

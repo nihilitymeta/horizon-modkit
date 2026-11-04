@@ -73,5 +73,5 @@ Settings go to `config/<mod id>.json` in the game folder. The file is written wi
 
 No. Every script runs on the server side of the game. Titles, the action bar, chat and commands are a script's user
 interface. The engine's
-[lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md) lists what is not
+[lua-bindings.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/lua-bindings.md) lists what is not
 there yet, and the shape it is planned to take.

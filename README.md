@@ -39,7 +39,7 @@ the reference.
 - [Ids](docs/reference/ids.md): vanilla ids that mods often need
 - [FAQ](docs/reference/faq.md): common problems and their fixes
 - [Testing](docs/testing.md): what to look for in the game, and the scripts that check a mod
-- The engine's [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md):
+- The engine's [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/lua-bindings.md):
   the engine API under the modkit
 
 ## A first mod
