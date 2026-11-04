@@ -4,8 +4,8 @@ Horizon Modkit is a Lua library for writing [Horizon](https://playhorizon.dev) m
 mobs, goals, players and commands as classes with callbacks, the way a NeoForge or Fabric mod declares them. You
 don't need Rust or patches.
 
-The modkit runs on the engine fork [whos-carmen/horizon](https://github.com/whos-carmen/horizon), branch
-`engine-work`. Scripted mods are an experimental feature of that fork.
+The modkit runs on Event Horizon ([whos-carmen/horizon](https://github.com/whos-carmen/horizon)), branch
+`engine-work`. Scripted mods are an experimental feature of Event Horizon.
 
 ## Start here
 

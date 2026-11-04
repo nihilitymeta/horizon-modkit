@@ -4,9 +4,9 @@ This guide takes you from nothing to an item of your own in the game. It takes a
 
 You need:
 
-- the fork's `engine-work` build of the game
+- Event Horizon's `engine-work` build of the game
   ([building it](https://github.com/whos-carmen/horizon/blob/engine-work/docs/building.md))
-- the fork's `cargo-horizon-mod`, which you build in the fork's checkout with `cargo build -p cargo-horizon-mod`
+- Event Horizon's `cargo-horizon-mod`, which you build in Event Horizon's checkout with `cargo build -p cargo-horizon-mod`
 - a clone of this repository, next to the folder where your mod will live
 
 ## 1. Create the mod

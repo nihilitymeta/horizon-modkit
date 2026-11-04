@@ -2,7 +2,7 @@
 
 The modkit is a Lua library for [Horizon](https://playhorizon.dev) mods. A mod declares items, blocks, mobs, goals,
 players and commands as classes with callbacks, the way a NeoForge or Fabric mod does, and needs no Rust. It runs
-only on the engine fork [whos-carmen/horizon](https://github.com/whos-carmen/horizon), branch `engine-work`, which
+only on Event Horizon ([whos-carmen/horizon](https://github.com/whos-carmen/horizon)), branch `engine-work`, which
 adds the Lua runtime. The mod it exists for is
 [horizon-parasite-mod](https://github.com/whos-carmen/horizon-parasite-mod).
 
@@ -24,17 +24,17 @@ before they ask. When you find something a mod can't do yet, say so. Don't work 
 | `docs/` | getting started, guides, reference, testing |
 | `tools/` | the checks, and the probe mods the in-game checks load |
 
-The folders sit side by side in `~/src`: `horizon` (the fork), `horizon-resources/26.3` (the vanilla data),
-`horizon-modkit`, `horizon-parasite-mod`. The fork's `docs/dev-setup.md` sets a machine up that way.
+The folders sit side by side in `~/src`: `horizon` (Event Horizon), `horizon-resources/26.3` (the vanilla data),
+`horizon-modkit`, `horizon-parasite-mod`. Event Horizon's `docs/dev-setup.md` sets a machine up that way.
 
 ## Modkit or engine?
 
 - **Modkit**, this repository: a nicer shape for something the engine already offers (a class, a callback, a
   helper). Lua only.
-- **Engine**, the fork's `lua-bindings` branch: anything Lua can't reach yet (a new hook, a new `horizon.*`
-  function, a value the runtime doesn't hand over). The fork's `docs/agents.md` says how to work there. After the
+- **Engine**, Event Horizon's `lua-bindings` branch: anything Lua can't reach yet (a new hook, a new `horizon.*`
+  function, a value the runtime doesn't hand over). Event Horizon's `docs/agents.md` says how to work there. After the
   engine change, copy its `docs/api/horizon.d.lua` here as `types/horizon.d.lua`, then add the modkit side.
-- Gaps the engine doesn't cover yet are listed in the fork's `docs/lua-bindings.md`, "Not yet: the shapes to come".
+- Gaps the engine doesn't cover yet are listed in Event Horizon's `docs/lua-bindings.md`, "Not yet: the shapes to come".
 
 ## Issue first
 
@@ -45,7 +45,7 @@ person, and post it with the label `dev-feature-request` when they agree.
 ## Check every change
 
 Set `HORIZON=~/src/horizon`, `RESOURCES=~/src/horizon-resources/26.3` and `GAME_DIR` to a scratch folder. The game
-must be built in the fork (`target/fast/horizon-client`, `horizon-ctl`, and `target/debug/cargo-horizon-mod`).
+must be built in Event Horizon (`target/fast/horizon-client`, `horizon-ctl`, and `target/debug/cargo-horizon-mod`).
 
 | Check | What it proves |
 |---|---|

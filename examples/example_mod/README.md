@@ -25,7 +25,7 @@ they make.
 
 ## Running it
 
-Run the example mod next to the modkit, with the fork's `engine-work` build:
+Run the example mod next to the modkit, with Event Horizon's `engine-work` build:
 
 ```sh
 horizon-client --dev-tools --dev-mod /path/to/horizon-modkit --dev-mod /path/to/horizon-modkit/examples/example_mod

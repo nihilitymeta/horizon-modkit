@@ -3,7 +3,7 @@
 This page explains how to see a mod working in the game, and describes the scripts that check the modkit and the
 example mod automatically.
 
-To test a mod, run the fork's `engine-work` build with `--dev-tools`, a `--dev-mod` for the modkit and one for your
+To test a mod, run Event Horizon's `engine-work` build with `--dev-tools`, a `--dev-mod` for the modkit and one for your
 mod ([getting started](getting-started.md)). `--game-dir` sets where saves, options and logs go. `--dev-mod` reads a
 mod folder as it is and keeps the mod on.
 
@@ -45,7 +45,7 @@ To see the nest:
 
 ### Hooks and the console
 
-- The fork's generated
+- Event Horizon's generated
   [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md) lists the
   engine hook behind each callback, and every other hook a script could listen to.
 - `/lua` opens the console. Press F8 to free the mouse. The console's first section lists each mod with its
@@ -55,7 +55,7 @@ To see the nest:
 ## Checking scripts without a game
 
 `cargo horizon-mod check <mod folder> --game <horizon-client> --dev-mod <horizon-modkit>` loads a scripted mod's
-scripts in the game's Lua runtime, with no world. Build it in the fork with `cargo build -p cargo-horizon-mod`. It
+scripts in the game's Lua runtime, with no world. Build it in Event Horizon with `cargo build -p cargo-horizon-mod`. It
 names the file and line of each problem, and exits with code 1:
 
 - a script that fails to load
@@ -74,7 +74,7 @@ each one against `types/horizon.d.lua`. The in-game checks below run both before
 ## Driving the game from a script
 
 `horizon-ctl` starts the game and drives it from a shell, without a window if you want. It is built with the game,
-with `-p horizon-client-lib`. The fork's
+with `-p horizon-client-lib`. Event Horizon's
 [horizon-ctl-commands.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/horizon-ctl-commands.md)
 lists every command.
 
@@ -111,7 +111,7 @@ HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/ex
 
 | Variable | What it is |
 |---|---|
-| `HORIZON` | a built checkout of the fork |
+| `HORIZON` | a built checkout of Event Horizon |
 | `RESOURCES` | the game's 26.3 resources folder |
 | `GAME_DIR` | the game folder to use |
 
@@ -151,7 +151,7 @@ Before it starts, it writes `config/example_mod.json`, with a nest that breeds o
 
 ### Every hook the engine lists
 
-`tools/hook-coverage.sh` reads the fork's generated
+`tools/hook-coverage.sh` reads Event Horizon's generated
 [hook reference](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md). It runs the game
 with `tools/hook-probe`, a mod with one logging handler for each Lua hook, next to the example mod. Then it drives
 the game through each hook: blocks, mobs, items, a command, `/reload`, a death, a fall, a snowball, a dropped stick,
@@ -175,6 +175,6 @@ message is harmless and known (whos-carmen/horizon#15).
 
 ## Playing through the launcher
 
-To play through the launcher instead, install the build as a launcher version: run the fork's
+To play through the launcher instead, install the build as a launcher version: run Event Horizon's
 `tools/deploy_local_mac.sh` on macOS, or `tools/deploy_test_launcher.sh` on Linux. Then add
 `--dev-tools --dev-mod …` to the launcher's `settings.json` as `game_args`.
