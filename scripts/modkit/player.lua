@@ -12,7 +12,8 @@
 local Player = {}
 Player.__index = Player
 
---- Wraps the engine's player table (once; a wrapped one is returned as is).
+--- Adds the player methods to the engine's player table, and returns it.
+--- A table that already has them is returned as it is.
 function Player.wrap(t: Player)
   local raw: any = t
   if raw == nil or getmetatable(raw) == Player then return raw end
@@ -20,46 +21,53 @@ function Player.wrap(t: Player)
 end
 
 -- The inventory.
---- Gives `n` (1) of a plain item where it fits; nothing drops.
+--- Gives `n` (1) of a plain item where it fits. Nothing drops.
 function Player:give(id: string, n: number?) horizon.give_items(self.uuid, id, n or 1) end
 --- Takes up to `n` (1) of a plain item, the main hand first.
 function Player:take(id: string, n: number?) horizon.take_items(self.uuid, id, n or 1) end
---- The 36 slots by number (1 to 36, the hotbar first) of `{id, count, damage, plain}`, or nil.
+--- Gets the 36 slots by number (1 to 36, the hotbar first) as
+--- `{id, count, damage, plain}`, or nil. An empty slot is absent.
 function Player:inventory(): Inventory? return horizon.inventory(self.uuid) end
---- How many of a plain item they carry.
+--- Gets how many of a plain item the player carries.
 function Player:count(id: string): number return horizon.count_items(self.uuid, id) or 0 end
---- Every plain item they carry, with how many, by id.
+--- Gets every plain item the player carries, with how many, by id.
 function Player:carried(): Carried return horizon.carried_items(self.uuid) or {} end
 
 -- Life.
---- A status effect for `ticks` (200) at `amplifier` (0), as `/effect give`.
+--- Gives a status effect for `ticks` (200) at `amplifier` (0), as
+--- `/effect give` does.
 function Player:effect(name: string, ticks: number?, amplifier: number?) horizon.effect(self.uuid, name, ticks or 200, amplifier or 0) end
---- Experience points, as an orb gives them.
+--- Gives experience points, as an orb does.
 function Player:experience(points: number) horizon.give_experience(self.uuid, points) end
---- Levels; negative takes them off.
+--- Gives levels; a negative number takes them away.
 function Player:levels(n: number) horizon.give_levels(self.uuid, n) end
---- The name shown in chat and the tab list; nil shows their own again.
+--- Sets the name shown in chat and the tab list; nil shows their own again.
 function Player:nickname(name: string?) horizon.set_nickname(self.uuid, name) end
 
 -- Words and effects.
+--- Sends a chat line to the player.
 function Player:tell(text: string) horizon.tell(self.uuid, text) end
+--- Shows a line over the player's hotbar.
 function Player:action_bar(text: string) horizon.action_bar(self.uuid, text) end
+--- Shows a title, and an optional subtitle, across the player's screen.
 function Player:title(text: string, subtitle: string?)
   horizon.title(self.uuid, text)
   if subtitle then horizon.subtitle(self.uuid, subtitle) end
 end
+--- Sets how long titles fade in, stay and fade out, in ticks.
 function Player:title_times(fade_in: number, stay: number, fade_out: number) horizon.title_times(self.uuid, fade_in, stay, fade_out) end
 
 -- Reading.
---- The mod's saved table on this player (`horizon.player_data`), or nil.
+--- Gets the mod's saved table on the player (`horizon.player_data`), or nil.
 function Player:data(): Data? return horizon.player_data(self.uuid) end
---- The first block within `distance` (64) along their look, or nil.
+--- Gets the first block within `distance` (64) along the player's look, or nil.
 function Player:raycast(distance: number?): Raycast? return horizon.raycast(self.uuid, distance) end
---- The block under their feet, by id.
+--- Gets the id of the block under the player's feet.
 function Player:block_below(): string
   local p = self.position
   return horizon.block(math.floor(p.x), math.floor(p.y) - 1, math.floor(p.z))
 end
+--- Gets the distance to a position, in blocks.
 function Player:distance_to(p: Vec3): number return horizon.distance(self.position, p) end
 
 return Player

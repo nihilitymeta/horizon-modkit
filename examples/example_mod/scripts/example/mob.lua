@@ -1,6 +1,6 @@
 -- Mobs and goals: a class per entity type, the mod's own or a vanilla kind,
 -- with its goals and callbacks (guide: docs/guides/mobs.md; reference:
--- docs/api.md, "Entities", "Goals", "The mob"). The type is declared in
+-- docs/api.md, "Entity classes", "Goals", "The mob"). The type is declared in
 -- scripts/registry.lua as a pig with `goals = "none"`, so everything it
 -- does is here. `mob` is the mob's view (position, health, target...) with
 -- actions the game applies after the callback; `mob.data` its saved table.

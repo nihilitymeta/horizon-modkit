@@ -1,11 +1,20 @@
 # Items
 
-An item is declared once, in `scripts/registry.lua`, as a vanilla template and what differs; its behaviour is
-an item class in a script, with a callback per thing a player does with it. Examples:
-[scripts/example/item.lua](../../examples/example_mod/scripts/example/item.lua) (a feather and a snack) and
-[scripts/example/lure.lua](../../examples/example_mod/scripts/example/lure.lua) (an item that summons and
-converts), declared in [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua). Reference:
-[api.md, Items](../api.md#items-mitemname).
+You declare an item once, in `scripts/registry.lua`, as a vanilla template and what differs from it. Its behaviour
+lives in an item class in a script, with one callback for each thing a player does with it.
+
+The examples on this page come from the example mod:
+
+- [scripts/example/item.lua](../../examples/example_mod/scripts/example/item.lua): a feather and a snack
+- [scripts/example/lure.lua](../../examples/example_mod/scripts/example/lure.lua): an item that summons and converts
+  mobs
+- [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua): the declarations
+
+The reference is [Item classes](../api.md#item-classes).
+
+## A feather
+
+The feather lifts the player who uses it, and names the block it is used on:
 
 ```lua
 local Feather = M:item("example_item")
@@ -30,19 +39,28 @@ function Feather:on_use_on(item, player, block, face)
 end
 ```
 
-**The callbacks.** `on_use` (a right click in the air), `on_use_on` (on a block), `on_hit` (a blow, before the
-damage; return true and it does nothing), `on_hurt_enemy` (after it landed), `on_crafted`, `on_dropped`,
-`on_use_start` (eating, drinking, drawing starts; return a number of ticks to change how long), `on_finished`
-(eaten or drunk; return an item id for what stays in the hand), `on_tick` (every tick it sits in an inventory:
-keep it light).
+## The callbacks
 
-**`item`** is the stack in hand, `{id, count, damage, plain}`, with `item:take(n)` and `item:give(n)` on the
-player's inventory. **`player`** is the player acting, with `player:effect`, `player:tell`, `player:action_bar`,
-`player:give` and the rest ([players and events](players-and-events.md)).
+| Callback | When it runs |
+|---|---|
+| `on_use` | a right click in the air |
+| `on_use_on` | a right click on a block |
+| `on_hit` | a blow, before the damage. Return true to cancel the blow |
+| `on_hurt_enemy` | after a blow has landed |
+| `on_crafted` | a player takes the item from a crafting grid |
+| `on_dropped` | a player throws the item |
+| `on_use_start` | eating, drinking or drawing starts. Return a number of ticks to change how long it takes |
+| `on_finished` | the item is eaten or drunk. Return an item id for what stays in the hand |
+| `on_tick` | every tick the item sits in an inventory. Keep it light |
 
-**An item that acts on the world.** The lure is a bone by template whose `on_use_on` summons an example mob at the
-clicked face (`horizon.summon` answers the id, so the new mob gets an effect at once), spends one and takes the
-click, and whose `on_hit` turns a zombie into an example mob and takes the blow:
+`item` is the stack in hand: `{id, count, damage, plain}`, with `item:take(n)` and `item:give(n)` on the player's
+inventory. `player` is the acting player, with `player:effect`, `player:tell`, `player:action_bar`, `player:give` and
+the rest ([players and events](players-and-events.md)).
+
+## An item that acts on the world
+
+The lure is a bone by template. Its `on_use_on` summons an example mob on the clicked face. `horizon.summon` returns
+the new mob's id, so the mob gets an effect at once. Then the callback uses up one lure and takes the click:
 
 ```lua
 function Lure:on_use_on(item, player, block, face)
@@ -57,13 +75,24 @@ function Lure:on_use_on(item, player, block, face)
 end
 ```
 
-**Vanilla items too.** `M:item("minecraft:stick")` gives a stick callbacks.
+The lure's `on_hit` turns a zombie into an example mob, and cancels the blow.
 
-**Declaring one.** `registry.item("example_item", { template = "minecraft:feather", max_stack_size = 16, rarity = "uncommon" })`,
-then its look (`items/<name>` and `models/item/<name>` under assets, written as tables with `registry.asset`) and
-a name in the lang file. A sword gets its damage through `components` (the engine's
-[mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md)). Templates known to work:
-[reference/ids.md](../reference/ids.md#item-templates).
+## Vanilla items
 
-See it in game: `/example feather`, right-click in the air, on a block, hit a mob with it; `/example lure`,
-right-click the ground, hit a zombie.
+`M:item("minecraft:stick")` gives every stick your callbacks.
+
+## Declaring an item
+
+```lua
+registry.item("example_item", { template = "minecraft:feather", max_stack_size = 16, rarity = "uncommon" })
+```
+
+Then give it a look: `items/<name>` and `models/item/<name>` under `assets/`, written as tables with
+`registry.asset`, and a name in the lang file. A sword gets its damage through `components`, as the engine's
+[mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md) describes. The
+[ids reference](../reference/ids.md#item-templates) lists templates that are known to work.
+
+## See it in the game
+
+- `/example feather`: right-click in the air, right-click a block, then hit a mob with the feather.
+- `/example lure`: right-click the ground, then hit a zombie.

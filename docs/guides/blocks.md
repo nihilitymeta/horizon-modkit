@@ -1,11 +1,20 @@
 # Blocks
 
-A block is declared in `scripts/registry.lua` (a template, the properties that differ, state properties of its
-own, an item, the blockstate and models for its look) and gets a block class in a script. Examples:
-[scripts/example/block.lua](../../examples/example_mod/scripts/example/block.lua) (a lamp with a boolean state)
-and [scripts/example/nest.lua](../../examples/example_mod/scripts/example/nest.lua) (a staged block that breeds),
-declared in [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua). Reference:
-[api.md, Blocks](../api.md#blocks-mblockname).
+A block has two parts. You declare it in `scripts/registry.lua`, and you give it behaviour with a block class in a
+script.
+
+The examples on this page come from the example mod:
+
+- [scripts/example/block.lua](../../examples/example_mod/scripts/example/block.lua): a lamp with a boolean state
+- [scripts/example/nest.lua](../../examples/example_mod/scripts/example/nest.lua): a block with stages that breeds
+  mobs
+- [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua): the declarations of both
+
+The reference is [Block classes](../api.md#block-classes).
+
+## A lamp
+
+This block lights up when a player right-clicks it, and goes dark after five seconds:
 
 ```lua
 local Lamp = M:block("example_block")
@@ -41,19 +50,33 @@ function Lamp:on_block_entity_tick(block)
 end
 ```
 
-**`block`** is the block at that moment: `x`, `y`, `z`, `id`, its state properties as fields (strings, as the
-state spells them: `block.lit == "true"`), `block.data` (the block entity's saved table, written back after the
-callback), and `block:set(key, value)`, `block:cancel()`, `block:replace(id, props)`, `block:drop(id, count)`,
-`block:summon(kind, dx, dy, dz)`, `block:above()`, `block:light()`.
+## The block table
 
-**The ticks.** `on_random_tick` runs when the block declares `random_ticks`; `block:schedule_tick(delay)` there
-or in `on_tick` asks for a scheduled tick, which `on_tick` gets. Both ticks have no world at hand beyond
-`block:set` and `block:handled()` (skip the template's own tick). `on_block_entity_tick` runs every server tick
-of a block with a block entity and has the world: the nest breeds a mob from it.
+The `block` table describes the block at that moment. It has these fields:
 
-**A staged block.** An enum state (`stage`) with `random_ticks` naming the property and the values that tick; the
-nest grows on its random ticks, bone meal moves it a stage (the click runs per hand, so it reads the stage first),
-a mature one charges in its block entity and summons into the air over it, and a spent one replaces itself:
+- `x`, `y`, `z` and `id`
+- each state property, as a string spelled as the state spells it: `block.lit == "true"`
+- `block.data`, the block entity's saved table, written back after the callback
+
+Its methods include `block:set(key, value)`, `block:cancel()`, `block:replace(id, props)`, `block:drop(id, count)`,
+`block:summon(kind, dx, dy, dz)`, `block:above()` and `block:light()`. [The block](../api.md#the-block) lists them
+all, with where each one works.
+
+## Ticks
+
+A block can have three kinds of tick:
+
+- `on_random_tick` runs when the block declares `random_ticks` in its data.
+- `on_tick` runs when a scheduled tick is due. Ask for one with `block:schedule_tick(delay)` in either tick.
+- `on_block_entity_tick` runs every server tick for a block with a ticking block entity.
+
+The random and scheduled ticks can't reach the rest of the world. They can change the block with `block:set`, and
+skip the template's own tick with `block:handled()`. The block entity tick can reach the world: the nest uses it to
+breed a mob.
+
+## A block with stages
+
+The nest has an enum state property, `stage`, and declares `random_ticks` for it. It grows on its random ticks:
 
 ```lua
 -- A random tick (the block declares `random_ticks` for every stage): a
@@ -68,6 +91,10 @@ function Nest:on_random_tick(block)
   block:handled()
 end
 ```
+
+Bone meal moves the nest on by one stage. Because the click runs once for each hand, the callback reads the stage
+first. A mature nest charges up in its block entity and summons a mob into the air over it. After a set number of
+mobs, the nest is spent and replaces itself with sculk:
 
 ```lua
 function Nest:on_block_entity_tick(block)
@@ -89,15 +116,31 @@ function Nest:on_block_entity_tick(block)
 end
 ```
 
-**Placed, broken, dropped.** `on_place(block, player, item)`, `on_break(block, player)` (return true to keep it:
-the nest refuses a bare hand while mature, by `player.held`), `on_drops(block, drops, source)` (change the loot
-list in place; `source.player`, `source.tool`, `source.explosion`). The block is gone when its loot drops, so
-`block.stage` there comes from the state the engine names: the nest drops wheat instead of itself once grown.
+## Placing, breaking and loot
 
-**Declaring one.** A template, `properties` (`hardness`, `light`, `sounds`, `random_ticks`), `state_properties`
-of your own with a `default_state`, `item = true`, then `blockstates/<name>` (a model per state),
-`models/block/<name>` and `items/<name>` as tables, loot (`loot_table/blocks/<name>`) and a `mineable` tag.
-The lamp and the nest are two worked ones.
+- `on_place(block, player, item)` runs after a player places the block.
+- `on_break(block, player)` runs when a player breaks it. Return true to keep the block. The nest uses
+  `player.held` to refuse a bare hand while it is mature.
+- `on_drops(block, drops, source)` runs before the loot drops. Change the `drops` list in place. `source` has
+  `player`, `tool` and `explosion`.
 
-See it in game: `/example lamp`, place it, right-click it, wait five seconds, break it; `/example nest`, place
-it, bone meal it twice, wait twenty seconds, break it with a hoe.
+The block is already gone when its loot drops, so `block.stage` comes from the state that the game reports. The nest
+uses it to drop wheat instead of itself once it has grown.
+
+## Declaring a block
+
+A block's declaration names:
+
+- a template
+- the `properties` that differ from it, such as `hardness`, `light`, `sounds` and `random_ticks`
+- `state_properties` of its own, with a `default_state`
+- `item = true`, for an item that places it
+
+Its look and loot are written as tables too: `blockstates/<name>` (a model for each state), `models/block/<name>`,
+`items/<name>`, a loot table at `loot_table/blocks/<name>`, and a `mineable` tag. The lamp and the nest in
+[scripts/registry.lua](../../examples/example_mod/scripts/registry.lua) are two complete declarations.
+
+## See it in the game
+
+- `/example lamp`: place the lamp, right-click it, wait five seconds, then break it.
+- `/example nest`: place the nest, use bone meal on it twice, wait twenty seconds, then break it with a hoe.

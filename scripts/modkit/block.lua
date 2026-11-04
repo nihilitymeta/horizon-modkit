@@ -20,9 +20,9 @@ local Block = {}
 Block.__index = Block
 
 
---- Gives every placed block of this kind a block entity: `ticks` runs
---- `on_block_entity_tick` each server tick, `data` is what a new one starts
---- with (numbers, strings, booleans, nested tables; saved with the chunk).
+--- Gives every placed block of this kind a block entity, which holds saved
+--- data per block. `ticks` calls `on_block_entity_tick` each server tick;
+--- `data` is the table a new one starts with.
 function Block:block_entity(def: { ticks: boolean?, data: Data? }?)
   horizon.block_entity(self.id, def or {})
   return self
@@ -40,8 +40,8 @@ end
 
 local function dimension_of(player) return player and player.dimension or "minecraft:overworld" end
 
---- The state properties in a state's name (`ns:hive[stage=dormant,lit=true]`), as the
---- instance's `props`; `{}` for a block without any.
+-- The state properties in a state's name (`ns:hive[stage=dormant,lit=true]`), as the
+-- instance's `props`; `{}` for a block without any.
 local function props_of(state: string?): Props
   local out = {}
   local inside = state and state:match("%[(.*)%]")
@@ -55,37 +55,38 @@ local function instance(dimension, id, x, y, z, props, data)
   return setmetatable({ dimension = dimension, id = id, x = x, y = y, z = z, props = props or {}, live = props == nil, data = data }, Instance)
 end
 
---- Sets a state property of the block (`block:set("stage", "growing")`).
+--- Sets a state property of the block: `block:set("stage", "growing")`.
 function Instance:set(key: string, value: string, flags: number?) horizon.set_block_property(key, value, flags) end
---- Ticks the block again in `delay` ticks (`on_tick`).
+--- Asks for a scheduled tick (`on_tick`) in `delay` ticks. In the random
+--- and scheduled ticks only.
 function Instance:schedule_tick(delay: number) horizon.schedule_tick(delay) end
---- Takes the tick: the block's own (vanilla) tick is skipped.
+--- Skips the block's own vanilla tick. In the random and scheduled ticks only.
 function Instance:handled() horizon.handled() end
---- Eats the click: neither the block nor the held item acts.
+--- Takes the click, so neither the block nor the held item acts.
 function Instance:cancel() horizon.cancel() end
---- Makes a mob at an offset from the block's centre; its id, when the
---- callback has a host (nil in a random or scheduled tick, where it is made
---- after the level's pass).
+--- Makes a mob at an offset from the block's bottom centre (`dy` 1 by
+--- default) and returns its id. In a random or scheduled tick the mob is
+--- made after the level's pass, and nil is returned.
 function Instance:summon(kind: string, dx: number?, dy: number?, dz: number?): number?
   return horizon.summon(self.dimension, kind, self.x + 0.5 + (dx or 0), self.y + (dy or 1), self.z + 0.5 + (dz or 0))
 end
---- Replaces the block with another (`block:replace("minecraft:air")`),
+--- Replaces the block with another, such as `block:replace("minecraft:air")`,
 --- with its state properties and `Level.setBlock` flags (3). Not in a
 --- random or scheduled tick: there `block:set` changes a property.
 function Instance:replace(id: string, props: Props?, flags: number?) horizon.set_block(self.x, self.y, self.z, id, props, flags) end
 --- Drops `count` (1) of an item over the block.
 function Instance:drop(id: string, count: number?) horizon.drop_item(self.x + 0.5, self.y + 1, self.z + 0.5, id, count) end
---- `{block, sky}` light at the block over this one.
+--- Gets the `{block, sky}` light at the block over this one.
 function Instance:light(): Light return horizon.light(self.x, self.y + 1, self.z) end
+--- Sends a chat line to every player.
 function Instance:broadcast(line: string) horizon.broadcast(line) end
---- The block over this one (`dy` blocks up, 1 by default), by id.
+--- Gets the id of the block `dy` (1) blocks above this one.
 function Instance:above(dy: number?): string return horizon.block(self.x, self.y + (dy or 1), self.z) end
---- The block under this one.
+--- Gets the id of the block `dy` (1) blocks below this one.
 function Instance:below(dy: number?): string return horizon.block(self.x, self.y - (dy or 1), self.z) end
 
---- A block class, with its hooks registered for its id alone: the engine
---- calls them for this block's ticks and events only (a handler for every
---- block would hear every random tick of the level).
+--- Creates a new block class, with its hooks registered for its id alone,
+--- so the engine calls them for this block's ticks and events only.
 function Block.new(mod, id)
   local b = setmetatable({ mod = mod, id = id }, Block)
   horizon.on("random_tick", function(dimension, _, x, y, z, props, data)
@@ -112,7 +113,7 @@ function Block.new(mod, id)
   return b
 end
 
---- Installs the mod's handlers once (the clicks are not registered by block).
+-- Installs the mod's handlers once (the clicks are not registered by block).
 function Block.install(mod)
   horizon.on("right_click_block", function(x, y, z, id, face, player, held, data)
     local b = mod.blocks[id]

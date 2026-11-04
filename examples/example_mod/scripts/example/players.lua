@@ -1,5 +1,5 @@
 -- Players: one class for what every player does (guide:
--- docs/guides/players-and-events.md; reference: docs/api.md, "Players").
+-- docs/guides/players-and-events.md; reference: docs/api.md, "The players class").
 -- `player` is the engine's table (uuid, name, position, dimension,
 -- game_mode, health, held) with methods: give, take, effect, tell, title,
 -- action_bar, data... See it in game: join (a title, a feather the first

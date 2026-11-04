@@ -1,6 +1,6 @@
 -- Sounds, particles, titles, the action bar and status effects (guide:
--- docs/guides/sounds-and-effects.md; reference: docs/api.md, "Commands and
--- effects", and the player's methods). Each is an action from a callback
+-- docs/guides/sounds-and-effects.md; reference: docs/api.md, "The modkit
+-- table" and "The player"). Each is an action from a callback
 -- with a world at hand; a command has none, so they run next tick, from a
 -- timer. See it in game: /example show.
 local modkit = require("@modkit")

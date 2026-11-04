@@ -1,50 +1,112 @@
-# Horizon Modkit API
+# Horizon Modkit API Reference
 
-The modkit's classes and callbacks, over the engine's Lua hook API ([lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md); every hook point of the engine and the Lua handler it reaches: [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md)); the data a mod's files or registry script declare are in the engine's [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md).
+This page describes every function, class and callback of the modkit. The modkit is written over the engine's own
+Lua API, which has its own references:
+
+- [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md) describes the
+  `horizon` table and the `registry` table.
+- [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md) lists every
+  engine hook point and the Lua handler it reaches.
+- [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md) describes the data files a mod declares.
+
+For a walkthrough, start with [getting started](getting-started.md) and the [guides](../README.md#guides).
+
+## Conventions
+
+The examples on this page use these names:
+
+| Name | What it is |
+|---|---|
+| `modkit` | the library, from `local modkit = require("@modkit")` |
+| `M` | a mod, from `modkit.mod(id)` |
+| `E`, `B`, `I`, `P` | an entity class, a block class, an item class and the players class of a mod |
+| `mob`, `block`, `player`, `item` | the tables a callback receives |
+
+A callback is a function that you define on a class, such as `function I:on_use(item, player)`. The modkit
+connects it to the game's hook as soon as you define it, so a callback that you never define costs nothing.
+
+An *id* is a namespaced name, such as `minecraft:zombie` or `my_mod:wand`. The mod's methods, such as `M:item`, add
+the mod's own id to a name without a namespace.
+
+Positions are block coordinates. A *tick* is one server tick; the game runs 20 ticks a second.
+
+## What a callback can reach
+
+Some callbacks run while the game has the world at hand (the engine calls this a *host*). Others run in the middle
+of an event, such as a hit, when the game cannot act on the world. This decides which functions work inside a
+callback.
+
+- **With the whole world**: a timer, `E:on_tick`, `E:on_death` and `B:on_block_entity_tick`. The world reads, the
+  actions and every player work.
+- **In a player's own action**: the item callbacks, `B:on_use`, `E:on_interact`, `P:on_join` and a command. The
+  reads and actions work, but only the acting player is reached. A command queues summons and block changes for the
+  next tick.
+- **In a random or scheduled tick**: `B:on_random_tick` and `B:on_tick` read blocks only, and act through
+  `block:set`, `block:schedule_tick`, `block:handled` and `block:summon`.
+- **In a goal**: the goal reads its `mob` view and acts through the mob's goal methods only.
+- **In the middle of an event**: `E:on_hurt`, `E:on_fall`, `E:on_knockback`, `P:on_hurt`, `P:on_fall`,
+  `P:on_knockback` and `P:on_chat` have no host. Only the callback's own methods, such as `hit:cancel()`, work.
+
+When a callback cannot do something, queue it for the next tick with a timer:
+
+```lua
+horizon.after(1, function()
+  local p = horizon.player(name)
+  if p then modkit.player(p):give("my_mod:wand", 1) end
+end)
+```
+
+Actions run in order after the callback returns. A script never holds the mob, block or player itself.
 
 ## Versions
 
-The modkit's version is written once, in its `horizon-mod.toml`; `modkit.VERSION` reads it from the engine
-(`horizon.libraries.horizon_modkit` in a mod that depends on it). A mod names the least version it needs with
-`depends = ["horizon_modkit >= 0.7"]`: the game checks it at load and does not load the mod when the modkit is
-older, with a log line that says what it found (`Horizon: Lua mod my_mod not loaded: it needs horizon_modkit >= 0.7
-(found 0.6.0), ...`); `cargo horizon-mod check` says the same without a game.
+The modkit's version is written once, in its `horizon-mod.toml`. A mod names the oldest modkit it works with in its
+own manifest:
 
-## Starting a mod
+```toml
+depends = ["horizon_modkit >= 0.7"]
+```
 
-`cargo horizon-mod new <path> --template lua` scaffolds a scripted mod on the modkit: a manifest with
-`registries` and `scripts` and `depends = ["horizon_modkit"]`, `scripts/registry.lua` with one item (a wand),
-`scripts/init.lua` with its `on_use`, `assets/<id>/lang/en_us.json`, a `.luaurc` that names the modkit checkout
-beside it for an editor, and a README. `cargo horizon-mod build` packs it, `cargo horizon-mod check` reads the
-`.hmod`, `cargo horizon-mod run -- --dev-mod /path/to/horizon-modkit` plays it.
+The game checks this when it loads the mod. If the installed modkit is older, the game does not load the mod, and
+the log says what it found:
 
-`cargo horizon-mod check <folder> --game <horizon-client> --dev-mod /path/to/horizon-modkit` loads the scripts
-headlessly in the game's Lua runtime before any world: a script that fails to load, a hook `horizon.on` does not
-know, a command that errors when declared, each with its file and line, exit code 1. The modkit's
-`tools/check.sh` runs it on the modkit itself and on a mod folder given (`--self-test` shows a misspelled hook
-refused with its line).
+```
+Horizon: Lua mod my_mod not loaded: it needs horizon_modkit >= 0.7 (found 0.6.0), ...
+```
 
-## In an editor
+`cargo horizon-mod check` reports the same problem without starting the game.
 
-`types/horizon.d.lua` (the engine's generated `docs/api/horizon.d.lua`) declares `horizon` and `registry`, every
-function, every hook's handler signature and the tables a script gets; the modkit's own classes are annotated with
-them. With [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) in the editor, pointed at that file as a
-definitions file, `M:entity`, `M:block`, `M:item`, `M:players`, `M:command` and the `player`, `mob` and `block`
-tables complete, and a misspelled function or hook is marked. A mod's `.luaurc` names this checkout so
-`require("@modkit")` resolves (the Lua template writes one). From a shell:
+### `modkit.VERSION`
+
+The modkit's version, such as `"0.7.0"`. The engine reads it from the modkit's manifest. A mod that depends on the
+modkit can also read it as `horizon.libraries.horizon_modkit`.
+
+## Editor support
+
+The modkit ships `types/horizon.d.lua`, a copy of the engine's generated Luau type definitions. It declares the
+`horizon` and `registry` tables, every engine function, the signature of every hook handler, and the tables a script
+receives. The modkit's own classes are annotated with these types.
+
+To use it, point [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) at the file as a definitions file. Your
+editor then completes `M:entity`, `M:block`, `M:item`, `M:players`, `M:command` and the `player`, `mob` and `block`
+tables, and marks a misspelled function or hook name.
+
+A mod's `.luaurc` names the modkit checkout, so that `require("@modkit")` resolves. The Lua template of
+`cargo horizon-mod new` writes one for you. To check a mod from a shell:
 
 ```sh
 luau-lsp analyze --definitions @horizon=/path/to/horizon-modkit/types/horizon.d.lua --platform=standard scripts
 ```
 
-`tools/check.sh` runs it on the modkit and on the mods given, after the headless load.
+## The registry script
 
-## Declaring what the mod adds: `scripts/registry.lua`
+A mod declares what it adds (entity types, blocks, items, mob effects, creative tabs, menu types, loot tables,
+recipes and tags) in `scripts/registry.lua`. The game runs this script once, at start. The modkit is not loaded
+there: the script is plain Luau with the engine's `registry` table. The engine's
+[lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md) describes that
+table. JSON files under `data/` work as well, and textures stay under `assets/`.
 
-The entity types, blocks, items, loot tables, recipes and tags a mod adds are declared in `scripts/registry.lua`,
-which the game runs once at start (the engine's [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md),
-"Registering content from Lua"); JSON files under `data/` work too, and textures stay under `assets/`. The
-modkit is not loaded there: the script is plain Luau with the `registry` table.
+This script declares a mob, its loot, and a block with two stages that a hoe mines:
 
 ```lua
 -- scripts/registry.lua
@@ -69,217 +131,1092 @@ registry.block("hive", {
 registry.data("minecraft:tags/block/mineable/hoe", { values = { registry.id .. ":hive" } })
 ```
 
-## API
-
-### `modkit.mod(id)`
-
-The mod: `M:entity(name)`, `M:block(name)`, `M:item(name)`, `M:players()`, `M:command(usage, level, fn)` (`name` is `my_mod:name` unless it has a namespace already, so vanilla
-kinds and blocks work), `M:config(defaults)` for its settings, `M:on(hook, fn)` for a raw hook handler.
-
-### Entities: `M:entity(name)`
-
-| | |
-|---|---|
-| `E:goals { {priority, goal}, ... }` | goals every mob of this type gets, lower priority first |
-| `E:target_goals { ... }` | the target selector's |
-| `E.replace_goals = true` | drop the vanilla goals first (for a type that kept its template's) |
-| `function E:on_spawned(ev)` | a mob of this type spawned: `ev.dimension`, `.kind`, `.x`, `.y`, `.z`, `.natural` |
-| `function E:on_tick(mob)` | every server tick of every mob of this type (NeoForge's `tick`): `mob` is the view with `mob.data` and the host actions; keep it light |
-| `function E:on_ai_tick(mob, state)` | every AI tick, as a goal of its own: the steering and fighting actions, `state` the goal's table |
-| `function E:on_hurt(mob, hit)` | about to take damage: `hit.damage_type` (`minecraft:on_fire`...), `.causing`, `.direct` (entity ids, -1 none), `.amount`; `hit:set_amount(n)`, `hit:cancel()` refuses the hit. `mob` is `id` and `kind` only, no actions: the game is mid-hit |
-| `function E:on_death(mob, cause)` | it died, by any cause: `cause.damage_type` (`minecraft:on_fire`...), `cause.causing` (the mob behind it, or 0), `cause.player` (the player credited, or nil); `mob` is `id` and `kind`, `mob.data` still readable |
-| `function E:on_interact(mob, player, held)` | a player right-clicked it, before the mob and the item act; `held` has `item`, `count`, `plain` or is nil. Return `true` to take the click |
-| `function E:on_fall(mob, fall)` | about to land: `fall.distance`, `fall.multiplier`; `fall:set_distance(n)`, `fall:set_multiplier(n)`, `fall:cancel()` (no fall damage). `mob` is `id` and `kind` only: no host |
-| `function E:on_knockback(mob, hit)` | about to be pushed back: `hit.strength` (raw), `hit.x`, `hit.z` (the direction), `hit.damage_type`, `hit.causing`; `hit:set_strength(n)`, `hit:cancel()`. No host |
-| `function E:on_equip(mob, slot, from, to)` | an equipment slot (`mainhand`, `offhand`, `head`...) took a different stack: `from` and `to` are item tables or nil |
-| `function E:on_drops(mob, drops, source)` | it died and its loot is about to drop: `drops` is a sequence of `{id, count, damage, plain}` to change in place (add entries, change counts, remove some); `source` has `table`, `player` (the killer, or nil), `tool` |
-
-A callback is wired to the game's hook for the class's kind as soon as it is defined, so a kind without one costs
-nothing each tick. `mob.data` in `on_tick`, `on_death` and `on_interact` is the mod's own saved table on that mob,
-empty at first and kept with the mob through saves (the engine's attachment under the mod's id); what you change
-in it is written back after the callback (a number keeps its NBT type, nil removes a key).
-
-### Goals: `modkit.Goal { ... }`
-
-Fields: `flags` (`"move"`, `"look"`, `"jump"`, `"target"`: what the goal locks, as vanilla's `Goal.Flag`),
-`every_tick`, `interruptable`, and the callbacks `can_use(self, mob)` (required), `can_continue`, `start`, `tick`,
-`stop`. `self` is this goal's state for this mob, a table you may write to, with
-`self:every(name, ticks)` (true once per `ticks` calls) and `self:cooldown(name, ticks)` (true when ready, then
-waits `ticks`). Ready-made: `modkit.goals.Wander(reach, wait, radius)`, `modkit.goals.HuntPlayer(range, speed, cooldown)`.
-
-### The mob (`mob` in a goal or a callback)
-
-Fields of the view: `id`, `kind`, `position`, `velocity` (`{x, y, z}`), `yaw`, `head_pitch`, `health`,
-`max_health`, `age`, `on_ground`, `in_water`, `in_lava`, `hurt_time`, `last_hurt_by`, `target` (`"player"`, a mob
-id or nil), `target_position`, `target_in_melee_range`, `navigation_done`, `nearest_player`, `home`, `nearby`
-(in a goal; empty in a callback, where the world is not at hand). In a callback also `mob.dimension` and
-`mob.data`; in `on_death` only `id` and `kind` remain.
-
-| Method | Does |
-|---|---|
-| `mob:navigate_to(x, y, z, speed)`, `mob:navigate_to_target(speed)`, `mob:stop_navigation()` | paths |
-| `mob:move_toward(x, y, z, speed)`, `mob:look_at(x, y, z)`, `mob:look_at_target()`, `mob:jump()` | steering |
-| `mob:set_target(who)`, `mob:attack(who)`, `mob:swing()`, `mob:hurt(who, amount)` | fighting; `who` is `"player"`, a mob id or nil |
-| `mob:convert(kind)` | life, in a goal |
-| `mob:effect(name, ticks, amplifier)`, `mob:summon(kind, x, y, z)`, `mob:despawn()`, `mob:heal(amount)` | life, in a goal or a callback (`effect` as `/effect give`: 200 ticks and amplifier 0 by default; `summon` in a callback answers the new mob's id) |
-| `mob:set_health(h)`, `mob:kill()`, `mob:push(x, y, z)`, `mob:teleport(x, y, z)`, `mob:broadcast(line)` | by id, in a callback (`on_tick`, `on_death`, `on_interact`) |
-| `mob:player_within(range)`, `mob:distance_to(p)`, `mob:nearby(filter)`, `mob:nearest(filter, range)` | reading; `filter` is a kind id or a function of a nearby record (`id`, `kind`, `position`, `distance`, `health`, `alive`, `hostile`, `baby`, `target`) |
-
-Actions are applied in order after the callback returns; a script never holds the mob.
-
-### Items: `M:item(name)`
-
-| | |
-|---|---|
-| `function I:on_use(item, player)` | a right click in the air (or on a block that let it through); return `true` to take the use |
-| `function I:on_use_on(item, player, block, face)` | a right click on a block (`block` has `x`, `y`, `z`, `id`; `face` is `{x, y, z}`); return `true` to take it |
-| `function I:on_hit(item, player, target)` | a blow at `target` (`id`, `kind`, `position`) holding the item; return `true` and the blow does nothing |
-| `function I:on_finished(item, player)` | eaten, drunk, or held for its `use_duration`; return an item id (and a count) for what stays in the hand |
-| `function I:on_tick(item, player, slot, selected)` | every server tick the item sits in an inventory; keep it light |
-| `function I:on_crafted(item, player, recipe)` | a player took it from a crafting grid (`recipe` the recipe's id) |
-| `function I:on_dropped(item, player, count)` | a player threw `count` of it |
-| `function I:on_hurt_enemy(item, player, target)` | a blow with it landed on `target` (`id`, `kind`), after the damage (`on_hit` is before it) |
-| `function I:on_use_start(item, player, hand, duration)` | a use over time starts (eating, drinking, drawing; `hand` `"main"` or `"off"`, `duration` in ticks): return a number to change the duration, `true` to stop the use |
-
-`item` is `{id, count, damage, plain}` with `item:take(n)` and `item:give(n)` on the acting player's inventory.
-The item itself is declared in `scripts/registry.lua` (`registry.item(name, { template = "minecraft:bone" })`)
-with its model under `assets/`.
-
-### Players: `M:players()`, and the player
-
-| | |
-|---|---|
-| `function P:on_join(player)`, `on_leave`, `on_respawn` | a player joined the game, left it (by any path), respawned after a death |
-| `function P:on_death(player, cause)` | a player died; `cause` is the death message's key (`death.attack.lava`) or nil |
-| `function P:on_break_block(player, block)` | a player breaks a block (`block` has `x`, `y`, `z`, `id`); return `true` to keep it |
-| `function P:on_place_block(player, block, item)` | a player placed a block from `item` |
-| `function P:on_pickup(player, item, count)` | a player is about to pick up `count` of `item` (an id); return `true` to leave it |
-| `function P:on_tick(player)` | every server tick of every living player; keep it light |
-| `function P:on_hurt(player, hit)` | about to take damage: `hit.damage_type`, `hit.causing`, `hit.amount`; `hit:set_amount(n)`, `hit:cancel()`. `player` is `id` and `kind` only (mid-hit: no host, no name) |
-| `function P:on_fall(player, fall)`, `function P:on_knockback(player, hit)` | as the entity's, for players (`player` is `id` and `kind`; no host) |
-| `function P:on_command(player, line)` | typed a command (without its slash), before it runs; return `true` to stop it; `player:reply(text)` answers (the only way here: no player's state is in place) |
-| `function P:on_chat(player, line)` | a chat line, after the chat filter, before anyone sees it (`player` is `uuid` and `name` only: no host); return `true` to drop it, a string to send instead (unsigned) |
-| `function P:on_change_dimension(player, from, to)` | arrived in another level (a dedicated server tells it; the window's own server does not) |
-| `function P:on_sleep(player, x, y, z)` | entering the bed at that position; return `true` to keep them out |
-| `function P:on_exp(player, amount)` | about to gain `amount` experience from an orb; return a number to change it |
-| `function P:on_open_menu(player, menu, pos)` | opened a menu: `menu` its type (`minecraft:generic_9x3`, `minecraft:crafting`...), `pos` its block (`{x, y, z}`) or nil |
-
-What has no class: `M:on("explosion", function(dimension, center, blocks) ... end)` (take entries out of `blocks` to spare them),
-`M:on("entity_joined", fn, "minecraft:arrow")` (any entity joining the level, by kind; `horizon.cancel()` keeps it out),
-`M:on("projectile_impact", fn, "minecraft:snowball")` and `M:on("projectile_launched", fn, kind)`, `M:on("mob_heal", fn)` (every
-living entity about to heal, by id only).
-
-`player`, in these and in every other callback that names one (`on_interact`, the item and block callbacks, a
-command), is the engine's table (`uuid`, `name`, `dimension`, `position`, `game_mode`, `health`, and `held`, the
-main hand's `{item, count, plain}`, for the player whose action the callback hears) with methods on it; a player
-read from the world (`horizon.player(name)`) gets them with `modkit.player(t)`:
-
-| | |
-|---|---|
-| `player:give(id, n)`, `player:take(id, n)` | `n` (1) of a plain item into their inventory where it fits (nothing drops), or out of it, the main hand first; from any callback with a host, a timer too |
-| `player:inventory()`, `player:count(id)`, `player:carried()` | the 36 slots by number (1 to 36, the hotbar first; an empty slot is absent) of `{id, count, damage, plain}`; how many of a plain item they carry; every plain item with how many, by id. Reads, answered at once |
-| `player:effect(name, ticks, amplifier)` | a status effect as `/effect give` gives it (200 ticks, amplifier 0 by default; -1 forever) |
-| `player:experience(points)`, `player:levels(n)` | experience as an orb gives it, levels (negative takes them) |
-| `player:nickname(name)` | the name shown in chat and the tab list; nil shows their own again |
-| `player:tell(text)`, `player:action_bar(text)`, `player:title(text, subtitle)`, `player:title_times(fade_in, stay, fade_out)` | words on their screen |
-| `player:data()`, `player:raycast(distance)`, `player:block_below()`, `player:distance_to(p)` | the mod's saved table on them, what they point at, the block under their feet, a distance |
-
-Inside another player's callback (their click, their command) only that player is reached: a give to someone
-else does nothing then, and their inventory reads nil. Do it from a timer (`horizon.after(1, ...)`) or a mob or
-block callback instead.
-
-### Reading the world
-
-Inside any callback with a host (`on_tick`, `on_death`, `on_interact`, `on_spawned`, the block callbacks) the
-engine's reads answer at once: `horizon.block(x, y, z)`, `horizon.block_property(x, y, z, key)`, `horizon.mob(id)`,
-`horizon.mobs()`, `horizon.players()`, `horizon.player(name_or_uuid)`, `horizon.time()` (`day`, `time_of_day`,
-`rain`, `thunder`) and `horizon.raycast(player, distance)` (what a player points at). `on_hurt` and goal functions
-have no host: a goal reads its `mob` view instead. `mob:block_below()` and `block:above()` are the modkit's
-shorthands for the block under a mob and over a block.
-
-### The world
-
-From any callback with a host (not `on_hurt`, not a goal):
-
-| | |
-|---|---|
-| `modkit.set_block(x, y, z, id, props, flags)`, `block:replace(id, props, flags)` | a block set as `/setblock` does: `id` with its state properties (`{ axis = "x" }`, the rest default) and `Level.setBlock`'s flags (3: neighbours told, clients see it). Not in a random or scheduled tick (there `block:set` changes a property) |
-| `modkit.fill(x1, y1, z1, x2, y2, z2, id, props)` | a box of one state straight into the chunks, as `/fill ... strict`; at most 256 by 256 columns |
-| `modkit.drop_item(x, y, z, id, count)`, `block:drop(id, count)` | an item entity at the point, or over the block |
-| `modkit.falling_block(x, y, z, id, vx, vy, vz)` | a falling block thrown from the point at that velocity, which lands as sand does |
-| `modkit.light(x, y, z)`, `block:light()` | `{block, sky}` light, 0 to 15, at a position or over a block |
-| `modkit.surface_height(x, z, heightmap)` | the column's top by `world_surface` (default), `motion_blocking`, `motion_blocking_no_leaves` or `ocean_floor`; nil where nothing is loaded |
-| `modkit.run_command(line)` | a command as the server's console runs it (level 4, no output). Not inside a player's own callback (a click, a command): queue it with `horizon.after(1, ...)` there. What the API has no method for yet (time and weather, `/tp` of a player, game rules) goes through it |
-| `modkit.data(path)` | a data file of the game's resources (`data/minecraft/recipe/stick.json`): JSON as a table, any other file as a string, nil for none |
-| `modkit.effect(target, name, ticks, amplifier)` | a status effect on a mob (by id) or a player, as `mob:effect` and `player:effect` |
-
-### Settings: `M:config(defaults)`
-
-`local cfg = M:config { max_crawlers = 12, hive_charge = 400 }` at the top of `init.lua` reads the mod's own
-settings file, `config/<id>.json` in the game folder (the `config/` every mod's settings share, as on NeoForge),
-fills in the defaults for the keys it lacks and saves it when that added any, so the file is there to edit after
-the first run; the table is what the scripts read. `M:save_config()` writes it back after a command changed it.
-Both work at load, with no host.
-
-### Commands and effects
-
-`M:command(usage, level, fn)` puts a command in the server's tree (`"mymod count [kind:word] [n:integer]"`:
-the words, then `<name:kind>` required and `[name:kind]` optional arguments; kinds `word`, `text`, `integer`,
-`number`, `boolean`, `player`, `item`, `block_pos`) for players of operator `level` and above, and runs
-`fn(player, args)` with the arguments by name; `horizon.feedback(text)` answers the player. Effects, from any
-callback with a host: `modkit.sound(name, x, y, z, volume, pitch)` for the players in range,
-`modkit.particles(name, x, y, z, count, spread, speed)` for the players near, `modkit.title(player, text, subtitle)`,
-`modkit.action_bar(player, text)`, `modkit.tell(player, text)` (`player` a table or a name).
-
-### Timers and saved data
-
-`horizon.after(ticks, fn)` runs `fn` once after `ticks` server ticks, `horizon.every(ticks, fn)` every `ticks`
-(a failing timer is logged, and a repeating one kept); inside, the reads and actions work. `horizon.world_data()`
-is the mod's own saved table on the world and `horizon.player_data(player)` on a player (by name or UUID),
-written back after the callback like `mob.data`, and kept through saves.
-
-### Blocks: `M:block(name)`
-
-| | |
-|---|---|
-| `function B:on_random_tick(block)` | the block's random tick (declare `random_ticks` in its data) |
-| `function B:on_tick(block)` | a scheduled tick (`block:schedule_tick(delay)`) |
-| `function B:on_use(block, player, held, face)` | a right click; `player` has `name`, `dimension`, `position`, `game_mode`; `held` has `item`, `count`. It runs once per hand (the main hand, then the off hand, as the game tries both; `held` is the main hand's both times): do one thing that is the same done twice, such as lighting a lamp rather than toggling it, or read the state first |
-| `B:block_entity { ticks = true, data = { charge = 0 } }` | every placed block of this kind gets a block entity: saved data per block (`data` is what a new one starts with), ticked each server tick when `ticks` |
-| `function B:on_block_entity_tick(block)` | every server tick of a block with a block entity |
-| `function B:on_break(block, player)` | a player breaks it; return `true` to keep it |
-| `function B:on_place(block, player, item)` | a player placed it from `item` |
-| `function B:on_drops(block, drops, source)` | a player, an explosion or a mob broke it and its loot is about to drop: `drops` as `E:on_drops`; `source.tool`, `source.player`, `source.explosion` |
-
-Each block class registers its callbacks with the engine for its own block id (`horizon.on(hook, fn, id)`), so
-`on_random_tick`, `on_tick`, `on_block_entity_tick`, `on_break` and `on_place` run for this block's ticks and events
-alone; other blocks' random ticks (hundreds a second across the loaded world) never reach Lua.
-
-`block` has `x`, `y`, `z`, `dimension`, `id`, its state properties as fields (`block.stage`; strings as the state spells them, `"true"` for a boolean), `block.data` (the
-block entity's saved table in every callback, nil for a block without one; what you change in it is saved after
-the callback, a number keeps its NBT type, a key set to nil is gone), and `block:set(key, value)` (in `on_use`, the ticks and `on_block_entity_tick`),
-`block:schedule_tick(delay)` and `block:handled()` (skip the vanilla tick), in `on_random_tick` and `on_tick` only, `block:cancel()` (eat the click),
-`block:summon(kind, dx, dy, dz)` (the mob's id, in a callback with a host), `block:replace(id, props, flags)`,
-`block:drop(id, count)`, `block:light()`, `block:above()`, `block:below()`, `block:broadcast(line)`.
+A change to this script needs the game restarted.
 
 ### A mob's look and sounds
 
-`registry.entity_type(name, def)` may give the mob a `model` of its own (`registry.id .. ":entity/" .. name`:
-`assets/<id>/models/entity/<name>.json`, or `registry.asset("models/entity/<name>", {...})`: `texture_size` and
-`parts` by name, each with `offset`, `rotation` in degrees, `cubes` of `origin`, `size`, `uv`, `inflate`, `mirror`,
-and `children`), an `animation` set that moves the parts by their vanilla names (`zombie`, `skeleton`, `quadruped`,
-`iron_golem`, `spider`...), and `sounds` by `ambient`, `hurt`, `death` and `step`. A worked model is in
-[models and animation](guides/models-and-animation.md).
+An entity type can name a look of its own. Each of these falls back to the template's when you leave it out.
 
-### Spawning
+- `texture`: `<id>:entity/<name>`, a PNG laid out as the template's texture
+- `model`: `<id>:entity/<name>`, which is `assets/<id>/models/entity/<name>.json`, or a table written with
+  `registry.asset("models/entity/<name>", {...})`. A model has a `texture_size` and `parts` by name. Each part has an
+  `offset`, a `rotation` in degrees, `cubes` (each with `origin`, `size`, `uv`, `inflate` and `mirror`) and `children`.
+- `animation`: the vanilla animation set that moves the parts by their vanilla names, such as `zombie`, `skeleton`,
+  `quadruped`, `iron_golem` or `spider`
+- `sounds`: vanilla sound events by `ambient`, `hurt`, `death` and `step`
 
-In `scripts/registry.lua`: a spawn egg is an item whose id ends in `_spawn_egg` and names the kind
-(`registry.item("crawler_spawn_egg", { template = "minecraft:zombie_spawn_egg" })`, with a texture and model of
-your own under `assets/`); natural spawning is a biome modifier
-(`registry.data("neoforge/biome_modifier/crawlers", { type = "neoforge:add_spawns", biomes = "#minecraft:is_overworld",
-spawners = { { type = registry.id .. ":crawler", weight = 20, min_count = 1, max_count = 3 } } })`), in the
-category of the mob's template (`monster`, `creature`...; say `category` to choose). Both need a restart.
+The [models and animation](guides/models-and-animation.md) guide has a worked model.
 
-## Not yet
+### Spawn eggs and natural spawning
 
-Nothing from the plan is left; what a hook point does not cover yet is listed in the engine's docs.
+A spawn egg is an item whose id ends in `_spawn_egg` and names the kind before it:
+
+```lua
+registry.item("crawler_spawn_egg", { template = "minecraft:zombie_spawn_egg" })
+```
+
+Give it a texture and model of your own under `assets/`.
+
+Natural spawning is a NeoForge biome modifier:
+
+```lua
+registry.data("neoforge/biome_modifier/crawlers", {
+  type = "neoforge:add_spawns",
+  biomes = "#minecraft:is_overworld",
+  spawners = { { type = registry.id .. ":crawler", weight = 20, min_count = 1, max_count = 3 } },
+})
+```
+
+The mob spawns in the category of its template, such as `monster` or `creature`. Add `category` to a spawner entry
+to choose another. Both need the game restarted.
+
+## The modkit table
+
+### `modkit.mod(id)`
+
+Creates a new mod object. Call it once per mod, at the top of `scripts/init.lua`.
+
+- *id*: the mod's id, as in its manifest
+
+**Returns**: the mod, with the methods under [The mod](#the-mod).
+
+```lua
+local modkit = require("@modkit")
+local M = modkit.mod("my_mod")
+```
+
+### `modkit.Goal(def)`
+
+Creates a new goal class. Add it to an entity class with `E:goals` or `E:target_goals`.
+
+- *def*: the goal's definition, with the fields under [Goals](#goals)
+
+**Returns**: the goal class.
+
+### `modkit.goals.Wander(reach, wait, radius)`
+
+Creates a goal that walks the mob to a random point near it. Every *wait* ticks, if no player is within *radius*
+blocks, the mob walks to a point up to *reach* blocks away. The goal is named `wander` and locks movement.
+
+- *reach*: the farthest the point may be, in blocks; 6 by default
+- *wait*: the ticks between walks; 80 by default
+- *radius*: the distance within which a player stops the wander; 32 by default
+
+**Returns**: the goal class.
+
+### `modkit.goals.HuntPlayer(range, speed, cooldown)`
+
+Creates a goal that hunts the nearest player. The mob targets a player within *range*, walks at them, and hits
+them every *cooldown* ticks while they are in reach. The goal is named `hunt_player` and locks movement, looking and
+targeting.
+
+- *range*: the distance within which a player is hunted; 32 by default
+- *speed*: the walking speed; 1.2 by default
+- *cooldown*: the ticks between hits; 20 by default
+
+**Returns**: the goal class.
+
+### `modkit.player(t)`
+
+Adds the player methods to a player table. Callbacks already receive wrapped players. Use this for a player that
+you read from the world, such as the result of `horizon.player(name)`.
+
+- *t*: a player table from the engine
+
+**Returns**: the same table, with the methods under [The player](#the-player).
+
+```lua
+local p = horizon.player("Alex")
+if p then modkit.player(p):give("minecraft:bread", 3) end
+```
+
+### `modkit.set_block(x, y, z, id, props, flags)`
+
+Sets a block, as `/setblock` does. Works in a callback with a host, except a random or scheduled tick; there,
+`block:set` changes a property instead.
+
+- *x*, *y*, *z*: the block's position
+- *id*: the new block's id
+- *props*: the state properties that differ from the default, such as `{ axis = "x" }`
+- *flags*: the flags of vanilla's `Level.setBlock`; 3 by default, which tells the neighbours and the clients
+
+### `modkit.fill(x1, y1, z1, x2, y2, z2, id, props)`
+
+Fills a box with one block state, as `/fill … strict` does. The blocks go straight into the chunks, and no
+neighbour is told. The box may be at most 256 by 256 columns, at any height. A chunk that is not loaded is left out.
+
+- *x1*, *y1*, *z1*, *x2*, *y2*, *z2*: two opposite corners of the box
+- *id*: the block's id
+- *props*: the state properties that differ from the default
+
+### `modkit.drop_item(x, y, z, id, count)`
+
+Drops an item entity at a position.
+
+- *x*, *y*, *z*: the position
+- *id*: the id of a plain item
+- *count*: the size of the stack; 1 by default
+
+### `modkit.falling_block(x, y, z, id, vx, vy, vz)`
+
+Throws a falling block from a position. It lands and places itself as sand does.
+
+- *x*, *y*, *z*: the position of the block's bottom centre
+- *id*: the block's id
+- *vx*, *vy*, *vz*: the velocity, in blocks per tick
+
+### `modkit.light(x, y, z)`
+
+Gets the light level at a position.
+
+- *x*, *y*, *z*: the position
+
+**Returns**: a table with `block` and `sky`, each from 0 to 15.
+
+### `modkit.surface_height(x, z, heightmap)`
+
+Gets the height of a column.
+
+- *x*, *z*: the column
+- *heightmap*: one of `world_surface` (the default), `motion_blocking`, `motion_blocking_no_leaves` and
+  `ocean_floor`
+
+**Returns**: the height, or nil where nothing is loaded.
+
+### `modkit.run_command(line)`
+
+Runs a command as the server console does, at permission level 4, with no output. Use it for what the API has no
+function for yet, such as the time, the weather, `/tp` of a player, or game rules.
+
+Inside a player's own callback (a click or a command), queue the command with `horizon.after(1, …)`.
+
+- *line*: the command, with or without its slash
+
+### `modkit.data(path)`
+
+Reads a data file from the game's resources, including those of content mods.
+
+- *path*: the file's path, such as `data/minecraft/recipe/stick.json`
+
+**Returns**: a JSON file as a table, any other file as a string, or nil when the file does not exist.
+
+### `modkit.effect(target, name, ticks, amplifier)`
+
+Gives a status effect to a mob or a player, as `/effect give` does.
+
+- *target*: a mob id, a player table, a player name or a UUID
+- *name*: the effect's id, such as `minecraft:speed`
+- *ticks*: how long it lasts; 200 by default, -1 for ever
+- *amplifier*: the effect's level minus one; 0 by default
+
+### `modkit.sound(name, x, y, z, volume, pitch)`
+
+Plays a sound for the players in range of a position, as `/playsound` does.
+
+- *name*: the sound event, such as `minecraft:entity.player.levelup`
+- *x*, *y*, *z*: the position
+- *volume*: the volume; 1 by default. Above 1, the sound reaches past 16 blocks
+- *pitch*: the pitch; 1 by default
+
+### `modkit.particles(name, x, y, z, count, spread, speed)`
+
+Shows particles to the players near a position, as `/particle` does.
+
+- *name*: a simple particle type, such as `minecraft:happy_villager`
+- *x*, *y*, *z*: the position
+- *count*: how many particles
+- *spread*: how far they spread, in blocks
+- *speed*: their speed
+
+### `modkit.title(player, text, subtitle)`
+
+Shows a title across a player's screen.
+
+- *player*: a player table, a name or a UUID
+- *text*: the title
+- *subtitle*: a line under the title
+
+### `modkit.action_bar(player, text)`
+
+Shows a line over a player's hotbar.
+
+- *player*: a player table, a name or a UUID
+- *text*: the line
+
+### `modkit.tell(player, text)`
+
+Sends a chat line to one player.
+
+- *player*: a player table, a name or a UUID
+- *text*: the line
+
+### `modkit.distance(a, b)`
+
+Gets the distance between two positions.
+
+- *a*, *b*: tables with `x`, `y` and `z`
+
+**Returns**: the distance in blocks.
+
+### `modkit.log(msg)`
+
+Writes a line to the game log, tagged with the mod's id. A line logged while the scripts first load is lost,
+because the log is not open yet; log from a timer or from `P:on_join` instead.
+
+- *msg*: the line
+
+## The mod
+
+The object that `modkit.mod(id)` returns. Its methods create the classes of the mod.
+
+### `M:entity(name)`
+
+Gets the entity class for an entity type, creating it the first time.
+
+- *name*: the type's name; a name without a namespace is the mod's own, and `minecraft:zombie` adds behaviour to
+  every zombie
+
+**Returns**: the entity class, described under [Entity classes](#entity-classes).
+
+### `M:block(name)`
+
+Gets the block class for a block, creating it the first time.
+
+- *name*: the block's name; a mod's own or a vanilla one
+
+**Returns**: the block class, described under [Block classes](#block-classes).
+
+### `M:item(name)`
+
+Gets the item class for an item, creating it the first time.
+
+- *name*: the item's name; a mod's own or a vanilla one, such as `minecraft:stick`
+
+**Returns**: the item class, described under [Item classes](#item-classes).
+
+### `M:players()`
+
+Gets the players class of the mod, creating it the first time.
+
+**Returns**: the players class, described under [The players class](#the-players-class).
+
+### `M:command(usage, level, fn)`
+
+Adds a command to the server's command tree. The chat box completes it as it completes vanilla's commands. The game
+checks the arguments and answers a wrong one with a usage line before *fn* runs.
+
+- *usage*: the command's words, then its arguments. `<name:kind>` is a required argument and `[name:kind]` an
+  optional one. The kinds are `word`, `text` (the rest of the line), `integer`, `number`, `boolean`, `player`,
+  `item` and `block_pos`
+- *level*: the operator level a player needs; 0 is everyone, 2 is operators (as for `/give`) and 4 is the console.
+  You can leave it out, which means 0
+- *fn*: a function of the player and a table of the arguments by name, plus `args.raw`, the whole line
+
+Several commands may share their first word; the game merges them into one tree. Inside *fn*,
+`horizon.feedback(text)` answers the player.
+
+```lua
+M:command("mymod count [kind:word]", 2, function(player, args)
+  horizon.feedback(("counting %s"):format(args.kind or "everything"))
+end)
+```
+
+### `M:config(defaults)`
+
+Gets the mod's settings from `config/<id>.json` in the game folder. Every mod's settings share that folder, as on
+NeoForge. Keys that the file lacks are filled in from *defaults*, and the file is saved when that added any, so the
+file is there to edit after the first run. Works at load, with no host.
+
+- *defaults*: the settings and their default values
+
+**Returns**: the settings table. The scripts read the settings from it.
+
+```lua
+local cfg = M:config { max_crawlers = 12, hive_charge = 400 }
+```
+
+### `M:save_config()`
+
+Saves the settings table back to the mod's settings file, such as after a command changed a setting.
+
+### `M:on(hook, fn, kind)`
+
+Registers a handler for an engine hook, as `horizon.on` does. Use it for the hooks that no class covers:
+
+- `explosion`, with `(dimension, center, blocks)`: remove entries from `blocks` to spare those blocks
+- `entity_joined`, with a kind such as `minecraft:arrow`: any entity joining the level; `horizon.cancel()` keeps it
+  out
+- `projectile_impact` and `projectile_launched`, with a kind such as `minecraft:snowball`
+- `mob_heal`: every living entity that is about to heal, by id only
+
+The parameters:
+
+- *hook*: the hook's name; the game refuses an unknown name when the script loads
+- *fn*: the handler, with the hook's arguments
+- *kind*: a mob, block or item id that limits the handler to that kind
+
+### `M:qualify(name)`
+
+Gets the full id of a name.
+
+- *name*: a name, with or without a namespace
+
+**Returns**: *name* when it has a namespace, otherwise `<mod id>:<name>`.
+
+## Entity classes
+
+An entity class holds the goals and callbacks of one entity type: the mod's own, or a vanilla one. `M:entity(name)`
+returns it.
+
+```lua
+local Crawler = M:entity("crawler")
+Crawler:goals { { 1, modkit.goals.HuntPlayer() }, { 5, modkit.goals.Wander() } }
+function Crawler:on_death(mob, cause)
+  horizon.log(("a crawler died of %s"):format(cause.damage_type))
+end
+```
+
+### `E:goals(list)`
+
+Adds goals that every mob of this type gets.
+
+- *list*: a sequence of `{ priority, goal }` pairs; a lower priority runs first
+
+**Returns**: the entity class.
+
+### `E:target_goals(list)`
+
+Adds goals to the mob's target selector, which picks what the mob attacks.
+
+- *list*: a sequence of `{ priority, goal }` pairs
+
+**Returns**: the entity class.
+
+### `E.replace_goals`
+
+Whether the vanilla goals are removed before the class's goals are added. False by default. Set it for a type that
+keeps its template's goals, or for a vanilla kind, when the class should give all the behaviour.
+
+### `E:on_spawned(ev)`
+
+Called when a mob of this type spawns, by any means.
+
+- *ev*: a table with `dimension`, `kind`, `x`, `y`, `z` and `natural`, which is true for a natural spawn
+
+### `E:on_tick(mob)`
+
+Called every server tick for every mob of this type. Keep it light. This is NeoForge's `tick`.
+
+- *mob*: the mob, with `mob.data` and the actions by id
+
+### `E:on_ai_tick(mob, state)`
+
+Called every AI tick, as a goal of its own. The mob's goal actions, such as steering and fighting, work here.
+
+- *mob*: the mob, as a goal sees it
+- *state*: the goal's table for this mob
+
+### `E:on_hurt(mob, hit)`
+
+Called when a mob of this type is about to take damage. The game is in the middle of the hit, so *mob* has only `id`
+and `kind`, and no other action works.
+
+- *mob*: the mob's `id` and `kind`
+- *hit*: the [hit](#hit)
+
+### `E:on_death(mob, cause)`
+
+Called when a mob of this type dies, by any cause.
+
+- *mob*: the mob's `id` and `kind`; `mob.data` can still be read
+- *cause*: a table with `damage_type` (such as `minecraft:on_fire`), `causing` (the id of the mob behind the death,
+  or 0) and `player` (the player credited with the kill, or nil)
+
+### `E:on_interact(mob, player, held)`
+
+Called when a player right-clicks a mob of this type, before the mob and the item act.
+
+- *mob*: the mob
+- *player*: the player who clicked
+- *held*: the stack in the hand being tried (`item`, `count` and `plain`), or nil for an empty hand
+
+**Returns**: true to take the click, so that neither the mob nor the item acts.
+
+### `E:on_fall(mob, fall)`
+
+Called when a mob of this type is about to land. There is no host, so *mob* has only `id` and `kind`.
+
+- *mob*: the mob's `id` and `kind`
+- *fall*: the [fall](#fall)
+
+### `E:on_knockback(mob, hit)`
+
+Called when a mob of this type is about to be knocked back. There is no host.
+
+- *mob*: the mob's `id` and `kind`
+- *hit*: the [knockback](#knockback)
+
+### `E:on_equip(mob, slot, from, to)`
+
+Called when an equipment slot of a mob of this type takes a different stack.
+
+- *mob*: the mob
+- *slot*: `mainhand`, `offhand`, `head`, `chest`, `legs`, `feet`, `body` or `saddle`
+- *from*: the item table that was there, or nil
+- *to*: the item table that is there now, or nil
+
+### `E:on_drops(mob, drops, source)`
+
+Called when a mob of this type died and its loot is about to drop.
+
+- *mob*: the mob
+- *drops*: the [drops](#drops-and-source)
+- *source*: where the loot comes from, described under [drops and source](#drops-and-source)
+
+## Goals
+
+A goal is something a mob does when nothing more pressing applies, as vanilla's goals are. `modkit.Goal(def)`
+creates one from a definition with these fields:
+
+| Field | Description |
+|---|---|
+| `name` | the goal's name; `/goals` shows it as `<mod>:<entity>.<name>` |
+| `flags` | what the goal locks: any of `"move"`, `"look"`, `"jump"` and `"target"`, as vanilla's `Goal.Flag`. Two goals that lock the same thing do not run at once |
+| `every_tick` | true to call `tick` every tick rather than every other tick |
+| `interruptable` | false to keep a more pressing goal (a lower priority number) from stopping this one; true by default |
+| `can_use(self, mob)` | required. Checks whether the goal should start |
+| `can_continue(self, mob)` | checks whether a running goal should go on; `can_use` by default |
+| `start(self, mob)` | called when the goal starts |
+| `tick(self, mob)` | called each tick while the goal runs |
+| `stop(self, mob)` | called when the goal stops |
+
+In each function, *self* is the goal's state for this mob, a table you can write to, and *mob* is the mob as a goal
+sees it. The mob's view is copied before each call, and its actions run after it.
+
+```lua
+local Approach = modkit.Goal {
+  name = "approach",
+  flags = { "move", "look" },
+  can_use = function(self, mob) return mob:player_within(8) end,
+  tick = function(self, mob)
+    local p = mob.nearest_player
+    if not p then return end
+    mob:look_at(p.x, p.y + 1.6, p.z)
+    if mob.navigation_done or self:every("path", 20) then mob:navigate_to(p.x, p.y, p.z, 1.0) end
+  end,
+  stop = function(self, mob) mob:stop_navigation() end,
+}
+```
+
+### `self:every(name, ticks)`
+
+Counts a call on the timer *name* and checks whether *ticks* calls have passed since it last fired. When they have,
+the timer starts again.
+
+- *name*: the timer's name
+- *ticks*: the number of calls between two firings
+
+**Returns**: true once every *ticks* calls; false otherwise.
+
+### `self:cooldown(name, ticks)`
+
+Checks whether the timer *name* is ready. When it is, the timer is set to *ticks* and counts down by one each call.
+
+- *name*: the timer's name
+- *ticks*: the number of calls to wait after it fires
+
+**Returns**: true if the timer is ready; false otherwise.
+
+## The mob
+
+The `mob` table that a goal or an entity callback receives. Its fields are a copy of the mob's state, taken before
+the call.
+
+| Field | Description |
+|---|---|
+| `id`, `kind` | the mob's entity id and its type's id |
+| `position`, `velocity` | tables with `x`, `y` and `z` |
+| `yaw`, `head_pitch` | where it faces |
+| `health`, `max_health` | its health |
+| `age` | its age in ticks |
+| `on_ground`, `in_water`, `in_lava` | where it stands |
+| `hurt_time`, `last_hurt_by` | how recently it was hurt, and by whom |
+| `target` | what it targets: `"player"`, a mob id, or nil |
+| `target_position`, `target_in_melee_range` | where its target is, and whether it can hit it |
+| `navigation_done` | true when it walks no path |
+| `nearest_player` | the nearest player's position, or nil |
+| `home` | `x`, `y`, `z` and `radius`, or nil |
+| `nearby` | in a goal: the mobs within its follow range, nearest first (`id`, `kind`, `position`, `distance`, `health`, `alive`, `hostile`, `baby`, `target`). Empty in a callback |
+| `dimension`, `data` | in a callback only: the mob's dimension, and the mod's saved table on the mob |
+
+`mob.data` is empty at first. The mod's changes to it are written back after the callback and kept with the mob
+through saves. A number keeps its NBT type, and a key set to nil is removed. In `E:on_death`, only `id`, `kind` and
+`data` remain.
+
+### Moving and looking
+
+These methods work in a goal only. *speed* is 1.0 by default.
+
+- `mob:navigate_to(x, y, z, speed)`: walks a path to a position
+- `mob:navigate_to_target(speed)`: walks a path to the mob's target
+- `mob:stop_navigation()`: stops walking
+- `mob:move_toward(x, y, z, speed)`: steps straight toward a position, with no path
+- `mob:look_at(x, y, z)`: turns the head toward a position
+- `mob:look_at_target()`: turns the head toward the target
+- `mob:jump()`: jumps
+
+### Fighting
+
+These methods work in a goal only. *who* is `"player"`, a mob id, or nil.
+
+- `mob:set_target(who)`: sets the mob's target; nil clears it
+- `mob:attack(who)`: attacks, as the mob's melee attack does
+- `mob:swing()`: swings the arm
+- `mob:hurt(who, amount)`: deals *amount* damage
+- `mob:convert(kind)`: replaces the mob with one of *kind*, keeping its equipment and name, as a zombie that drowns
+  becomes a drowned
+
+### Living
+
+These methods work in a goal, and in a callback with a host.
+
+- `mob:effect(name, ticks, amplifier)`: gives a status effect, as `modkit.effect` does
+- `mob:summon(kind, x, y, z)`: makes a mob at a position. In a callback, returns the new mob's id
+- `mob:despawn()`: removes the mob, with no death and no loot. `mob:remove()` is the same
+- `mob:heal(amount)`: adds health
+
+These methods work in a callback with a host only.
+
+- `mob:set_health(health)`: sets the health, up to the mob's maximum
+- `mob:kill()`: kills the mob as `/kill` does, with its loot
+- `mob:push(x, y, z)`: adds to the mob's velocity
+- `mob:teleport(x, y, z)`: moves the mob at once, as `/tp` does
+- `mob:broadcast(line)`: sends a chat line to every player
+
+### Reading
+
+- `mob:player_within(range)`: checks whether a player stands within *range* blocks. Returns true if one does; false
+  otherwise
+- `mob:distance_to(p)`: gets the distance to a position *p*
+- `mob:nearby(filter)`: gets the nearby mobs that *filter* accepts, nearest first. *filter* is a kind id, or a
+  function of a nearby record that returns true for the mobs to keep. Returns all nearby mobs without a filter
+- `mob:nearest(filter, range)`: gets the nearest mob that *filter* accepts within *range* blocks, or nil
+- `mob:block_below()`: gets the id of the block under the mob. Needs a callback with a host
+
+## Item classes
+
+An item class holds the callbacks of one item: the mod's own, or a vanilla one. `M:item(name)` returns it. The item
+itself is declared in `scripts/registry.lua`, such as
+`registry.item("wand", { template = "minecraft:stick" })`, with its model under `assets/`.
+
+```lua
+local Wand = M:item("wand")
+function Wand:on_use(item, player)
+  player:effect("minecraft:levitation", 20, 1)
+  return true
+end
+```
+
+In every item callback, *item* is the stack, a table with `id`, `count`, `damage` and `plain`. `plain` is true when
+the stack has no components beyond its template's. Two methods act on the acting player's inventory:
+
+- `item:take(n)`: takes *n* of the item, 1 by default, the main hand first
+- `item:give(n)`: gives *n* of the item, 1 by default
+
+### `I:on_use(item, player)`
+
+Called when a player right-clicks with the item in the air, or on a block that lets the click through.
+
+- *item*: the stack in hand
+- *player*: the player who clicked
+
+**Returns**: true to take the click, so nothing else acts on it.
+
+### `I:on_use_on(item, player, block, face)`
+
+Called when a player right-clicks a block with the item.
+
+- *item*: the stack in hand
+- *player*: the player who clicked
+- *block*: the block, with `x`, `y`, `z` and `id`
+- *face*: the side that was clicked, as a direction with `x`, `y` and `z`; `{0, 1, 0}` is the top
+
+**Returns**: true to take the click.
+
+### `I:on_hit(item, player, target)`
+
+Called when a player attacks while holding the item, before the damage.
+
+- *item*: the stack in hand
+- *player*: the attacker
+- *target*: the entity attacked, with `id`, `kind` and `position`
+
+**Returns**: true to cancel the blow.
+
+### `I:on_hurt_enemy(item, player, target)`
+
+Called after a blow with the item has landed and dealt its damage.
+
+- *item*: the stack in hand
+- *player*: the attacker
+- *target*: the entity hit, with `id` and `kind`
+
+### `I:on_use_start(item, player, hand, duration)`
+
+Called when a player starts to use the item over time, such as eating, drinking or drawing a bow.
+
+- *item*: the stack in hand
+- *player*: the player
+- *hand*: `"main"` or `"off"`
+- *duration*: how long the use takes, in ticks
+
+**Returns**: a number of ticks to change the duration, or true to stop the use.
+
+### `I:on_finished(item, player)`
+
+Called when a player has finished using the item: eaten, drunk, or held for the item's `use_duration`.
+
+- *item*: the stack in hand
+- *player*: the player
+
+**Returns**: an item id, and optionally a count, for what stays in the hand. Return nothing to keep the game's own
+result.
+
+### `I:on_tick(item, player, slot, selected)`
+
+Called every server tick for every stack of the item in a player's inventory. Keep it light.
+
+- *item*: the stack
+- *player*: the player who carries it
+- *slot*: the slot as the inventory saves it: 0 to 35, armour 100 to 103, the off hand -106
+- *selected*: true if this is the held stack
+
+### `I:on_crafted(item, player, recipe)`
+
+Called when a player takes the item from a crafting grid.
+
+- *item*: the crafted stack
+- *player*: the player
+- *recipe*: the recipe's id
+
+### `I:on_dropped(item, player, count)`
+
+Called when a player throws the item, with the drop key or from a menu. Items scattered at death do not count.
+
+- *item*: the stack thrown
+- *player*: the player
+- *count*: how many were thrown
+
+## Block classes
+
+A block class holds the callbacks of one block: the mod's own, or a vanilla one. `M:block(name)` returns it. Each
+block class registers its callbacks for its own block id, so the game calls them for this block alone. Other
+blocks' random ticks, hundreds a second, never reach Lua.
+
+```lua
+local Lamp = M:block("lamp")
+function Lamp:on_use(block, player, held)
+  if block.lit ~= "true" then block:set("lit", "true") end
+  block:cancel()
+end
+```
+
+### `B:block_entity(def)`
+
+Gives every placed block of this kind a block entity, which holds saved data per block. Call it at load.
+
+- *def*: a table with `ticks`, true to call `B:on_block_entity_tick` each server tick, and `data`, the table a new
+  block entity starts with (numbers, strings, booleans and nested tables)
+
+**Returns**: the block class.
+
+### `B:on_random_tick(block)`
+
+Called on the block's random tick. The block must declare `random_ticks` in its data.
+
+- *block*: the [block](#the-block)
+
+### `B:on_tick(block)`
+
+Called on a scheduled tick that `block:schedule_tick` asked for.
+
+- *block*: the [block](#the-block)
+
+### `B:on_block_entity_tick(block)`
+
+Called every server tick for every placed block that has a ticking block entity.
+
+- *block*: the [block](#the-block), with `block.data`
+
+### `B:on_use(block, player, held, face)`
+
+Called when a player right-clicks the block. The game tries the main hand and then the off hand, so this runs once
+for each, and *held* is the main hand's stack both times. Make the callback do something that is the same when done
+twice, such as lighting a lamp rather than toggling it, or read the block's state first.
+
+- *block*: the [block](#the-block)
+- *player*: the player who clicked
+- *held*: the stack in the main hand (`item` and `count`), or nil
+- *face*: the side that was clicked
+
+### `B:on_break(block, player)`
+
+Called when a player breaks the block, once the game has allowed it.
+
+- *block*: the [block](#the-block)
+- *player*: the player
+
+**Returns**: true to keep the block, so nothing breaks or drops.
+
+### `B:on_place(block, player, item)`
+
+Called after a player has placed the block. To stop a placement, take the click in an item's `I:on_use_on`.
+
+- *block*: the [block](#the-block)
+- *player*: the player
+- *item*: the stack it was placed from
+
+### `B:on_drops(block, drops, source)`
+
+Called when the block was broken by a player, an explosion or a mob, and its loot is about to drop. The block is
+already gone, so its state properties come from the state that the game names.
+
+- *block*: the [block](#the-block), as it was
+- *drops*: the [drops](#drops-and-source)
+- *source*: where the loot comes from, with `tool`, `player` and `explosion`
+
+## The block
+
+The `block` table that a block callback receives.
+
+| Field | Description |
+|---|---|
+| `x`, `y`, `z` | its position |
+| `dimension` | its dimension |
+| `id` | its id |
+| a state property's name | that property's value as the state spells it, such as `block.stage`; a boolean reads `"true"` or `"false"` |
+| `data` | the block entity's saved table, or nil for a block without one |
+
+The mod's changes to `block.data` are saved after the callback. A number keeps its NBT type, and a key set to nil is
+removed.
+
+These methods change the block:
+
+- `block:set(key, value, flags)`: sets a state property, such as `block:set("stage", "growing")`. Works in
+  `B:on_use`, the two ticks and `B:on_block_entity_tick`
+- `block:schedule_tick(delay)`: asks for a scheduled tick in *delay* ticks. Works in the random and scheduled ticks
+  only
+- `block:handled()`: skips the block's own vanilla tick. Works in the random and scheduled ticks only
+- `block:cancel()`: takes the click, so neither the block nor the held item acts. Works in `B:on_use`
+- `block:replace(id, props, flags)`: replaces the block, as `modkit.set_block` does. Not in the random and
+  scheduled ticks
+
+These methods act around the block. They need a callback with a host, except where noted.
+
+- `block:summon(kind, dx, dy, dz)`: makes a mob at an offset from the block's bottom centre; *dy* is 1 by default,
+  which is on top of the block.
+  Returns the mob's id. In a random or scheduled tick, the mob is made after the level's pass, and nothing is
+  returned
+- `block:drop(id, count)`: drops *count* of an item over the block; 1 by default
+- `block:broadcast(line)`: sends a chat line to every player
+
+These methods read the world:
+
+- `block:above(dy)`: gets the id of the block *dy* blocks above; 1 by default
+- `block:below(dy)`: gets the id of the block *dy* blocks below; 1 by default
+- `block:light()`: gets the light over the block, as `modkit.light` does
+
+## The players class
+
+The players class holds the callbacks for what every player does. `M:players()` returns it.
+
+```lua
+local Players = M:players()
+function Players:on_join(player)
+  player:title("Welcome", player.name)
+end
+```
+
+### `P:on_join(player)`
+
+Called when a player joins the game.
+
+- *player*: the player
+
+### `P:on_leave(player)`
+
+Called when a player leaves the game, by any path.
+
+- *player*: the player
+
+### `P:on_respawn(player)`
+
+Called when a player respawns after a death.
+
+- *player*: the player
+
+### `P:on_death(player, cause)`
+
+Called when a player dies.
+
+- *player*: the player
+- *cause*: the death message's key, such as `death.attack.lava`, or nil
+
+### `P:on_tick(player)`
+
+Called every server tick for every living player. Keep it light.
+
+- *player*: the player
+
+### `P:on_break_block(player, block)`
+
+Called when a player breaks any block.
+
+- *player*: the player
+- *block*: the block, with `x`, `y`, `z` and `id`
+
+**Returns**: true to keep the block.
+
+### `P:on_place_block(player, block, item)`
+
+Called after a player has placed any block.
+
+- *player*: the player
+- *block*: the block, with `x`, `y`, `z` and `id`
+- *item*: the stack it was placed from
+
+### `P:on_pickup(player, item, count)`
+
+Called when a player is about to pick up items from the ground.
+
+- *player*: the player
+- *item*: the item's id
+- *count*: how many
+
+**Returns**: true to leave the items on the ground.
+
+### `P:on_hurt(player, hit)`
+
+Called when a player is about to take damage. The game is in the middle of the hit: *player* has only `id` and
+`kind`, and no other action works.
+
+- *player*: the player's `id` and `kind`
+- *hit*: the [hit](#hit)
+
+### `P:on_fall(player, fall)`
+
+Called when a player is about to land. There is no host.
+
+- *player*: the player's `id` and `kind`
+- *fall*: the [fall](#fall)
+
+### `P:on_knockback(player, hit)`
+
+Called when a player is about to be knocked back. There is no host.
+
+- *player*: the player's `id` and `kind`
+- *hit*: the [knockback](#knockback)
+
+### `P:on_command(player, line)`
+
+Called when a player types a command, before it runs. No player's state is in place here, so `player:reply` is the
+only way to answer.
+
+- *player*: the player, with `player:reply(text)`
+- *line*: the command, without its slash
+
+**Returns**: true to stop the command.
+
+### `P:on_chat(player, line)`
+
+Called when a player's chat line is about to go out, after the chat filter. There is no host.
+
+- *player*: the player's `uuid` and `name`
+- *line*: the line
+
+**Returns**: true to drop the line, so nobody sees it; a string to send instead, unsigned; or nil to send the line
+as it is.
+
+### `P:on_change_dimension(player, from, to)`
+
+Called when a player arrives in another dimension. Only a dedicated server reports this; the game window's own
+server does not.
+
+- *player*: the player
+- *from*: the dimension they left
+- *to*: the dimension they arrived in
+
+### `P:on_sleep(player, x, y, z)`
+
+Called when a player is about to enter a bed. The game's own checks come first: it must be night in the overworld,
+with no monster within eight blocks.
+
+- *player*: the player
+- *x*, *y*, *z*: the bed's position
+
+**Returns**: true to keep the player out of the bed. This ends the dispatch, so another mod's `on_sleep` is not
+called.
+
+### `P:on_exp(player, amount)`
+
+Called when a player is about to gain experience from an orb, after Mending's share.
+
+- *player*: the player
+- *amount*: the experience points
+
+**Returns**: a number to change the amount.
+
+### `P:on_open_menu(player, menu, pos)`
+
+Called when a player opens a menu.
+
+- *player*: the player
+- *menu*: the menu's type, such as `minecraft:generic_9x3` or `minecraft:crafting`
+- *pos*: the position of the menu's block, or nil
+
+## The player
+
+The `player` table that a callback receives. Its fields are a copy of the player's state:
+
+| Field | Description |
+|---|---|
+| `uuid`, `name` | who the player is |
+| `dimension`, `position` | where they are; `position` has `x`, `y` and `z` |
+| `game_mode` | 0 survival, 1 creative, 2 adventure, 3 spectator |
+| `health` | their health |
+| `held` | for the player whose action the callback reports: the main hand's `item`, `count` and `plain`, or nil |
+
+The methods below work in any callback with a host, and in a timer. Inside another player's callback, such as their
+click or their command, only that player is reached: a give to someone else does nothing, and their inventory reads
+nil. Do it from a timer instead.
+
+### Inventory
+
+- `player:give(id, n)`: gives *n* of a plain item, 1 by default, where it fits. Nothing drops
+- `player:take(id, n)`: takes up to *n* of a plain item, 1 by default, the main hand first
+- `player:inventory()`: gets the 36 slots, numbered 1 to 36 with the hotbar first, as item tables. An empty slot is
+  absent
+- `player:count(id)`: gets how many of a plain item the player carries
+- `player:carried()`: gets every plain item the player carries, with how many, by id
+
+### Status
+
+- `player:effect(name, ticks, amplifier)`: gives a status effect, as `modkit.effect` does
+- `player:experience(points)`: gives experience, as an orb does
+- `player:levels(n)`: gives levels; a negative number takes them away
+- `player:nickname(name)`: sets the name shown in chat and the tab list; nil shows their own name again
+
+### Messages
+
+- `player:tell(text)`: sends a chat line to the player
+- `player:action_bar(text)`: shows a line over their hotbar
+- `player:title(text, subtitle)`: shows a title, and a subtitle under it
+- `player:title_times(fade_in, stay, fade_out)`: sets how long titles fade in, stay and fade out, in ticks
+
+### Reading
+
+- `player:data()`: gets the mod's saved table on the player, or nil
+- `player:raycast(distance)`: gets the first block within *distance* along the player's look, 64 by default.
+  Returns a table with `id`, the point hit (`x`, `y`, `z`) and the `block` position, or nil
+- `player:block_below()`: gets the id of the block under the player's feet
+- `player:distance_to(p)`: gets the distance to a position *p*
+
+## Callback tables
+
+### Hit
+
+The *hit* of `E:on_hurt` and `P:on_hurt`.
+
+| Member | Description |
+|---|---|
+| `damage_type` | the damage type, such as `minecraft:on_fire` |
+| `causing`, `direct` | the ids of the entity behind the damage and of the one that dealt it, or -1 for none |
+| `amount` | the damage |
+| `hit:set_amount(n)` | sets the damage |
+| `hit:cancel()` | refuses the hit |
+
+### Fall
+
+The *fall* of `E:on_fall` and `P:on_fall`.
+
+| Member | Description |
+|---|---|
+| `distance`, `multiplier` | the fall's distance and damage multiplier |
+| `fall:set_distance(n)`, `fall:set_multiplier(n)` | change them |
+| `fall:cancel()` | removes the fall damage |
+
+### Knockback
+
+The *hit* of `E:on_knockback` and `P:on_knockback`.
+
+| Member | Description |
+|---|---|
+| `strength` | the raw knockback strength |
+| `x`, `z` | the direction |
+| `damage_type`, `causing`, `direct` | as in a [hit](#hit) |
+| `hit:set_strength(n)` | sets the strength |
+| `hit:cancel()` | removes the knockback |
+
+### Drops and source
+
+The *drops* of `E:on_drops` and `B:on_drops` is a sequence of item tables, `{id, count, damage, plain}`. Change it in
+place: add entries, change counts, or remove some. The game reads it back after the callback. An entry whose id
+matches the stack at that place keeps that stack's components.
+
+The *source* has these fields:
+
+| Field | Description |
+|---|---|
+| `table` | the loot table's id |
+| `dimension`, `origin` | where the loot drops |
+| `block` | for a block: `x`, `y`, `z`, `id` and `state` |
+| `mob` | for a mob: `id` and `kind` |
+| `player` | the player credited, or nil |
+| `tool` | the item table of the tool used, or nil |
+| `explosion` | the explosion's radius, or nil |
+
+## Timers and saved data
+
+These are engine functions. The modkit has no wrapper for them, and none is needed.
+
+### `horizon.after(ticks, fn)`
+
+Runs a function once, after a number of server ticks. Inside it, the world reads and the actions work, and every
+player can be reached.
+
+- *ticks*: how many ticks to wait
+- *fn*: the function
+
+### `horizon.every(ticks, fn)`
+
+Runs a function every *ticks* server ticks. A timer that fails is logged and kept.
+
+- *ticks*: the interval
+- *fn*: the function
+
+### `horizon.world_data()`
+
+Gets the mod's saved table on the world.
+
+**Returns**: the table, written back after the callback and kept through saves.
+
+### `horizon.player_data(player)`
+
+Gets the mod's saved table on a player. `player:data()` is the same.
+
+- *player*: a name or a UUID
+
+**Returns**: the table, or nil for a player the server does not hold.
+
+## Reading the world
+
+Inside a callback with a host, these engine functions answer at once:
+
+- `horizon.block(x, y, z)` and `horizon.block_property(x, y, z, key)`
+- `horizon.mob(id)` and `horizon.mobs()`
+- `horizon.players()` and `horizon.player(name_or_uuid)`
+- `horizon.time()`, with `day`, `time_of_day`, `rain` and `thunder`
+- `horizon.raycast(player, distance)`
+
+A goal reads its `mob` view instead. The engine's
+[lua-bindings.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/lua-bindings.md) describes each one.

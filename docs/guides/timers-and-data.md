@@ -1,9 +1,17 @@
-# Timers and saved data
+# Timers and Saved Data
 
-Settings in a file the player can edit, timers that run later or every so often, and tables that are saved with
-the world, a player or a mob. Example:
-[scripts/example/timers_and_data.lua](../../examples/example_mod/scripts/example/timers_and_data.lua).
-Reference: [api.md, Settings](../api.md#settings-mconfigdefaults), [Timers and saved data](../api.md#timers-and-saved-data).
+This guide covers three things that keep a mod's state:
+
+- settings, in a file that players can edit
+- timers, which run code later or at intervals
+- saved tables, which are kept with the world, a player or a mob
+
+The examples come from
+[scripts/example/timers_and_data.lua](../../examples/example_mod/scripts/example/timers_and_data.lua). The reference
+is [`M:config`](../api.md#mconfigdefaults) and [Timers and saved data](../api.md#timers-and-saved-data).
+
+The example reads its settings, logs a line two seconds after loading, and every minute counts its mobs and culls
+the ones over the limit:
 
 ```lua
 local cfg = M:config {
@@ -40,10 +48,14 @@ horizon.every(1200 * cfg.report_minutes, function()
 end)
 ```
 
-**Settings.** `M:config(defaults)` reads `config/<mod id>.json` from the game folder, fills in the defaults for
-the keys it lacks and saves it when that added any, so the file is there to edit after the first run; the
-table is what the scripts read. `M:save_config()` writes it back after a command changed it: a setting the
-scripts act on, such as the cull's limit, is read live from the table.
+## Settings
+
+`M:config(defaults)` reads `config/<mod id>.json` from the game folder. It fills in the defaults for the keys that
+the file lacks, and saves the file when that added any, so the file is there to edit after the first run. The scripts
+read the settings from the table it returns.
+
+`M:save_config()` writes the table back after a command has changed it. The cull reads its limit from the table each
+time, so a change takes effect at once:
 
 ```lua
 M:command("example max [limit:integer]", 2, function(player, args)
@@ -56,13 +68,28 @@ M:command("example max [limit:integer]", 2, function(player, args)
 end)
 ```
 
-**Timers.** `horizon.after(ticks, fn)` once, `horizon.every(ticks, fn)` repeating (20 ticks a second). Inside,
-the world is at hand: reads, summons, blocks, every player. A timer is the way out of a callback that has no
-world, or that reaches one player only.
+## Timers
 
-**Saved tables.** `horizon.world_data()` on the world, `player:data()` on a player, `mob.data` on a mob,
-`block.data` on a block with a block entity: a table, empty at first, written back after the callback, kept
-through saves under the mod's own id apart from any other mod's. Numbers, strings, booleans and nested tables.
+- `horizon.after(ticks, fn)` runs `fn` once, after *ticks* ticks.
+- `horizon.every(ticks, fn)` runs `fn` every *ticks* ticks.
 
-See it in game: `config/example_mod.json` after the first run, `/example report`, `/example greeting <text>`,
-`/example max 1` with a few example mobs about (culled within the minute).
+There are 20 ticks in a second. Inside a timer the whole world is at hand: reads, summons, blocks and every player.
+A timer is the way out of a callback that can't reach the world, or that reaches one player only.
+
+## Saved tables
+
+| Table | Where it is kept |
+|---|---|
+| `horizon.world_data()` | the world |
+| `player:data()` | a player |
+| `mob.data` | a mob |
+| `block.data` | a block with a block entity |
+
+Each table is empty at first. It is written back after the callback, and kept through saves under the mod's own id,
+apart from any other mod's data. It can hold numbers, strings, booleans and nested tables.
+
+## See it in the game
+
+- After the first run, open `config/example_mod.json` in the game folder.
+- Type `/example report`, or `/example greeting <text>`.
+- Type `/example max 1` with a few example mobs about. They are culled within the minute.

@@ -2,8 +2,8 @@
 local Goal = require("@modkit/goal")
 local goals = {}
 
---- Wander: every `wait` ticks (80) with nobody within `radius` (32) blocks,
---- walk to a point up to `reach` (6) blocks away.
+--- Creates a goal that walks the mob to a point up to `reach` (6) blocks
+--- away, every `wait` (80) ticks, while no player is within `radius` (32).
 function goals.Wander(reach, wait, radius)
   reach, wait, radius = reach or 6, wait or 80, radius or 32
   return Goal.new {
@@ -21,8 +21,9 @@ function goals.Wander(reach, wait, radius)
   }
 end
 
---- Hunt: target the nearest player within `range` (32), walk at them at
---- `speed` (1.2) and hit every `cooldown` (20) ticks when in reach.
+--- Creates a goal that targets the nearest player within `range` (32),
+--- walks at them at `speed` (1.2), and hits every `cooldown` (20) ticks
+--- while they are in reach.
 function goals.HuntPlayer(range, speed, cooldown)
   range, speed, cooldown = range or 32, speed or 1.2, cooldown or 20
   return Goal.new {

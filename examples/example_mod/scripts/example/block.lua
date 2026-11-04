@@ -1,5 +1,5 @@
 -- Blocks: a class per block id (guide: docs/guides/blocks.md; reference:
--- docs/api.md, "Blocks"). The block is declared in scripts/registry.lua
+-- docs/api.md, "Block classes"). The block is declared in scripts/registry.lua
 -- with a `lit` state of its own, random ticks and an item. `block` is the
 -- block at that moment: x, y, z, id, its state properties as fields
 -- (strings, as the state spells them: block.lit is "true" or "false"), and

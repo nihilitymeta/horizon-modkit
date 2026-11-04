@@ -1,43 +1,76 @@
-# Testing a mod in game
+# Testing a Mod
 
-The game is the fork's `engine-work` build run with `--dev-tools` and a `--dev-mod` for the modkit and one for the
-mod ([getting started](getting-started.md)). `--game-dir` is where saves, options and logs go; `--dev-mod` reads a
-mod folder as it is and keeps it on. The check scripts below turn the master volume off in the game dir's options
-before they launch (the game has no mute flag), so a check runs silent; turn it back up in the game's options when
-playing there.
+This page explains how to see a mod working in the game, and describes the scripts that check the modkit and the
+example mod automatically.
 
-## What to see
+To test a mod, run the fork's `engine-work` build with `--dev-tools`, a `--dev-mod` for the modkit and one for your
+mod ([getting started](getting-started.md)). `--game-dir` sets where saves, options and logs go. `--dev-mod` reads a
+mod folder as it is and keeps the mod on.
 
-- The log (`<game dir>/logs/latest.log`) says `Horizon: Lua mod example_mod running from …` when the world opens;
-  a script error is logged with its file and line as `[lua:<mod id>] …`. Lines a script broadcasts are plain
-  `INFO` lines there. Nothing logged at load shows: the log is not open yet ([FAQ](reference/faq.md)).
-- `/example` lists the example mod's commands; each file of
-  [examples/example_mod](../examples/example_mod) starts with a comment that says how to see its concept.
-- `/summon example_mod:example_mob`: it comes to you, eats wheat (three feedings make you its keeper, by name),
-  shrugs fire off, lands softly. `/summon zombie` beside it and wait three seconds: the zombie becomes one.
-  `/goals @e[type=zombie,sort=nearest,limit=1]` lists `example_mod:zombie.succumb` and `zombie.stalk`; `/nav`
-  on the same selector draws the path it walks.
-- `/setblock ~ ~ ~2 example_mod:example_nest`, then bone meal on it: the stage goes to `growing` and the bone meal
-  is kept. `/gamerule random_tick_speed 300` grows it to `mature` within seconds; mature, it charges (`/data get
-  block` shows `charge` and `bred`) and breeds an example mob every 400 ticks.
-- Which engine hook each callback rides on, and what else a script could listen to, is the fork's generated
-  [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md).
-- `/lua` opens the console (F8 frees the mouse): its first fold lists each mod with its handlers, goals and last
-  error and reloads it on a click; `print` and `horizon.log` lines appear there.
+The check scripts turn the master volume off in the game folder's options before they start the game, because the
+game has no mute option. If you play in that game folder afterwards, turn the volume back up in the game's options.
 
-## Before a game: the scripts load headlessly
+## What to look for
 
-`cargo horizon-mod check <mod folder> --game <horizon-client> --dev-mod <horizon-modkit>` (the fork's
-`cargo-horizon-mod`, `cargo build -p cargo-horizon-mod`) loads a scripted mod's scripts in the game's Lua runtime
-with no world: a script that fails to load, a hook `horizon.on` does not know, a command that errors when declared,
-each with its file and line, exit code 1. `tools/check.sh` runs it on the modkit, the example mod and the three
-probes under `tools/` (`--self-test` shows a misspelled hook refused with its line), and, with luau-lsp installed,
-analyzes each against `types/horizon.d.lua`. The in-game checks below run both first, before launching.
+### The log
 
-## Driving it from a script
+The log is `<game dir>/logs/latest.log`.
 
-`horizon-ctl` (built with the game: `-p horizon-client-lib`) launches and drives the game from a shell, offscreen
-if wanted; the fork's [horizon-ctl-commands.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/horizon-ctl-commands.md)
+- When the world opens, it says `Horizon: Lua mod example_mod running from …`.
+- A script error appears as `[lua:<mod id>] …`, with its file and line.
+- Lines that a script broadcasts appear as plain `INFO` lines.
+
+Nothing logged while the scripts first load appears, because the log is not open yet ([FAQ](reference/faq.md)).
+
+### The example mod
+
+Type `/example` to list the example mod's commands. Each file in
+[examples/example_mod](../examples/example_mod) starts with a comment that says how to see its concept.
+
+To see the example mob:
+
+1. Type `/summon example_mod:example_mob`. It comes to you, eats wheat, shrugs off fire and lands softly. Three
+  feedings make you its keeper, by name.
+2. Type `/summon zombie` next to it, and wait three seconds. The zombie becomes an example mob.
+3. Type `/goals @e[type=zombie,sort=nearest,limit=1]` to list the zombie's goals, including
+  `example_mod:zombie.succumb` and `zombie.stalk`. `/nav` with the same selector draws the path it walks.
+
+To see the nest:
+
+1. Type `/setblock ~ ~ ~2 example_mod:example_nest`.
+2. Use bone meal on it. Its stage changes to `growing`, and you keep the bone meal.
+3. Type `/gamerule random_tick_speed 300`. Within seconds the nest grows to `mature`.
+4. A mature nest charges up, and breeds an example mob every 400 ticks. `/data get block` shows its `charge` and
+  `bred` counts.
+
+### Hooks and the console
+
+- The fork's generated
+  [hook-points.md](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md) lists the
+  engine hook behind each callback, and every other hook a script could listen to.
+- `/lua` opens the console. Press F8 to free the mouse. The console's first section lists each mod with its
+  handlers, goals and last error, with a button that reloads the mod. `print` and `horizon.log` lines appear there
+  too.
+
+## Checking scripts without a game
+
+`cargo horizon-mod check <mod folder> --game <horizon-client> --dev-mod <horizon-modkit>` loads a scripted mod's
+scripts in the game's Lua runtime, with no world. Build it in the fork with `cargo build -p cargo-horizon-mod`. It
+names the file and line of each problem, and exits with code 1:
+
+- a script that fails to load
+- a hook that `horizon.on` does not know
+- a command that fails when it is declared
+
+`tools/check.sh` runs this check on the modkit, the example mod and the three probes under `tools/`. With
+`--self-test`, it shows a misspelled hook being refused with its line. When luau-lsp is installed, it also analyses
+each one against `types/horizon.d.lua`. The in-game checks below run both before they start the game.
+
+## Driving the game from a script
+
+`horizon-ctl` starts the game and drives it from a shell, without a window if you want. It is built with the game,
+with `-p horizon-client-lib`. The fork's
+[horizon-ctl-commands.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/horizon-ctl-commands.md)
 lists every command.
 
 ```sh
@@ -51,54 +84,92 @@ $CTL screenshot shot.png
 $CTL quit
 ```
 
-Things that bite: `command` runs on the console's path, so a player's command (`Players:on_command`) is
-`chat "/cmd"`; `select` takes a full item id and reaches the hotbar only; a bed takes a player at night with no
-monster within 8 blocks; `right_click_block` runs once per hand. The game writes `logs/` under `HORIZON_HOME` when
-that is set: the scripts export it as the game dir, so the log is there.
+Run these lines from bash. zsh does not split `$CTL` into words.
 
-## Every concept of the example mod
+Some details to keep in mind:
 
-`tools/example-check.sh` plays the example mod through every concept and expects each file's `EXAMPLE ...` line:
-the feather, the lamp, the mob, the keeper, the conversion, the lure, the nest (grown, bred, spent, kept from a
-bare hand, hoed), the chat, the commands, the effects, the timer, the settings file, the bed refused, the cull, a
-death. It writes `config/example_mod.json` in the game dir first, with a nest that breeds once.
+- `command` runs a command as the console. To run a command as the player, so that `P:on_command` sees it, use
+  `chat "/cmd"`.
+- `select` takes a full item id, and reaches the hotbar only.
+- A bed needs a player at night, with no monster within eight blocks.
+- `right_click_block` runs once for each hand.
+- When `HORIZON_HOME` is set, the game writes `logs/` there. The scripts set it to the game folder, so the log is
+  where they expect it.
+
+## The check scripts
+
+The three scripts below each start the game, drive it, and read the log. They take the same variables:
 
 ```sh
 HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/example-check.sh
 ```
 
-## One observable per step of the modding API
+| Variable | What it is |
+|---|---|
+| `HORIZON` | a built checkout of the fork |
+| `RESOURCES` | the game's 26.3 resources folder |
+| `GAME_DIR` | the game folder to use |
 
-`tools/steps-check.sh` runs one session with `tools/step-probe` beside the example mod and shows each part of the
-Lua API working on the build at hand: the reads and a raycast at join, the lure (an item callback), the deaths and
-the join name, a timer and the world and player data across launches, a command that plays a sound, particles and a
-title, the spawn egg, a screenshot of the mob, and the world and player helpers (a block set and a box filled, a
-falling block and a dropped item, items given to and taken from a named player, effects, experience, a nickname, a
-console command, the settings file written at load); then the example mod's use of them: feeding an example mob,
-`/example max`, a spent nest turning to sculk, a soft landing, the bed refused; then every modkit callback
-(`tools/modkit-probe`). It writes `config/example_mod.json` first, with a nest that breeds once. The natural-spawn
-step at the end is a warning, not a failure: natural spawning produced nothing at all in a fresh world on this
-build, zombies included, an open engine question. Same variables as above.
+`tools/steps-check.sh` and `tools/hook-coverage.sh` open a fresh `modkit-check` world on each run.
+`tools/example-check.sh` opens the world named by `WORLD`, which is `New World` by default.
 
-## Every hook the engine lists
+### Every concept of the example mod
 
-`tools/hook-coverage.sh` reads the fork's generated [hook reference](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md),
-runs the game with `tools/hook-probe` (a mod with one logging handler per Lua hook) beside the example mod, drives
-the game through each of them (blocks, mobs, items, a command, `/reload`, a death; a fall, a snowball, a dropped
-stick, planks crafted, a chest and a bed, an orb, a hurt and a heal, a zombie armed, tnt) and reports the hooks that
-did not fire and any script error. `tools/modkit-probe` rides along: every modkit callback of those hooks, written
-as a mod writes it, logging once when it runs, and the check expects each. A hook the example mod itself cancels
-(its `on_sleep` while example mobs roam) is driven with no example mob alive, since a cancel ends the dispatch
-before the probes are asked; the bed is driven at night (`time set night`), since the game's own checks come before
-the hook and a saved world's time drifts between runs. Run it after an engine change or a new hook:
+`tools/example-check.sh` plays the example mod through every concept, and expects each file's `EXAMPLE ...` line:
+the feather, the lamp, the mob, the keeper, the conversion, the lure, the nest, the chat, the commands, the effects,
+the timer, the settings file, the refused bed, the cull and a death. For the nest, it checks growing, breeding,
+being spent, refusing a bare hand, and breaking with a hoe.
 
-```sh
-HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/hook-coverage.sh
-```
+Before it starts, it writes `config/example_mod.json` in the game folder, with a nest that breeds once.
 
-`/reload` logs `content mods not loaded: example_mod: ... is already a block` for a mod that registers a block:
-pre-existing, and harmless (whos-carmen/horizon#15).
+### One result for each part of the API
 
-To play through the launcher instead, install the build as a launcher version (the fork's
-`tools/deploy_local_mac.sh` on macOS, `tools/deploy_test_launcher.sh` on Linux) and put `--dev-tools --dev-mod …`
-in the launcher's `settings.json` as `game_args`.
+`tools/steps-check.sh` runs one session with `tools/step-probe` next to the example mod. It shows each part of the
+Lua API working on the build at hand:
+
+- The reads and a raycast when the player joins.
+- An item callback, the lure.
+- Deaths, and the name at join.
+- A timer, and the world and player data across two launches.
+- A command that plays a sound and shows particles and a title.
+- The spawn egg, and a screenshot of the mob.
+- The world and player functions: setting a block, filling a box, a falling block, a dropped item, items given to
+  and taken from a named player, effects, experience, a nickname, a console command, and the settings file written
+  at load.
+- The example mod's use of them: feeding an example mob, `/example max`, a spent nest turning to sculk, a soft
+  landing, and the refused bed.
+- Every modkit callback, through `tools/modkit-probe`.
+- Natural spawning: an example mob that the biome modifier adds, either generated with the world's chunks or
+  spawned at midnight.
+
+Before it starts, it writes `config/example_mod.json`, with a nest that breeds once.
+
+### Every hook the engine lists
+
+`tools/hook-coverage.sh` reads the fork's generated
+[hook reference](https://github.com/whos-carmen/horizon/blob/lua-bindings/docs/api/hook-points.md). It runs the game
+with `tools/hook-probe`, a mod with one logging handler for each Lua hook, next to the example mod. Then it drives
+the game through each hook: blocks, mobs, items, a command, `/reload`, a death, a fall, a snowball, a dropped stick,
+crafted planks, a chest and a bed, an orb, a hurt and a heal, an armed zombie, and TNT. It reports the hooks that did
+not fire, and any script error.
+
+`tools/modkit-probe` runs alongside. It defines every modkit callback of those hooks, as a mod writes them, and logs
+once when each runs. The check expects all of them.
+
+Two details make the drive reliable:
+
+- The example mod cancels `on_sleep` while example mobs roam, and a cancel stops the other mods from hearing the
+  hook. So the check drives the bed with no example mob alive.
+- The game checks for night before it calls the bed hook, and a saved world's time drifts between runs. So the
+  check sets the time to night first.
+
+Run it after an engine change, or after adding a hook.
+
+`/reload` logs `content mods not loaded: example_mod: ... is already a block` for a mod that registers a block. This
+message is harmless and known (whos-carmen/horizon#15).
+
+## Playing through the launcher
+
+To play through the launcher instead, install the build as a launcher version: run the fork's
+`tools/deploy_local_mac.sh` on macOS, or `tools/deploy_test_launcher.sh` on Linux. Then add
+`--dev-tools --dev-mod …` to the launcher's `settings.json` as `game_args`.

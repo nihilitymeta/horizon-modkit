@@ -1,5 +1,5 @@
 -- Settings, timers and saved data (guide: docs/guides/timers-and-data.md;
--- reference: docs/api.md, "Settings", "Timers and saved data").
+-- reference: docs/api.md, "The mod", "Timers and saved data").
 -- See it in game: config/example_mod.json in the game folder after the first
 -- run; "EXAMPLE timer" in the log two seconds after a load, a report every
 -- minute, which culls example mobs past the settings' limit; /example report

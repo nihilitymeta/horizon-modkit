@@ -1,8 +1,12 @@
 # Commands
 
-`M:command(usage, level, fn)` puts a command of the mod's in the server's tree. Example:
-[scripts/example/command.lua](../../examples/example_mod/scripts/example/command.lua). Reference:
-[api.md, Commands and effects](../api.md#commands-and-effects).
+`M:command(usage, level, fn)` adds a command of your mod to the server's command tree. The chat box completes it as
+it completes vanilla's commands.
+
+The example comes from [scripts/example/command.lua](../../examples/example_mod/scripts/example/command.lua). The
+reference is [`M:command`](../api.md#mcommandusage-level-fn).
+
+This command gives feathers to the player who typed it, or to another player:
 
 ```lua
 M:command("example feather [count:integer] [to:player]", 2, function(player, args)
@@ -22,17 +26,42 @@ M:command("example feather [count:integer] [to:player]", 2, function(player, arg
 end)
 ```
 
-**The usage string** is the words, then the arguments: `<name:kind>` required, `[name:kind]` optional, kinds
-`word`, `text`, `integer`, `number`, `boolean`, `player`, `item`, `block_pos`. The game parses them and refuses a
-bad one with its own message before `fn` runs; `args` has them by name. Several commands may share the first
-word (`example feather`, `example lamp`): the tree merges them.
+## The usage string
 
-**The level** is the operator level the caller needs: 0 for everyone, 2 for operators (as `/give`), 4 for the
-console. **`fn(player, args)`** runs for the caller; `horizon.feedback(text)` answers them, and only they are
-reached inside it (another player next tick, from a timer, as above). A command has no world at hand for
-summons or blocks either: queue those the same way ([spawning](spawning.md) does).
+The usage string is the command's words, then its arguments:
 
-**From a script.** `modkit.run_command(line)` runs any command as the console does, for what the API has no
-method for yet (`time set`, `weather`, `tp`, game rules), from a timer or a mob or block callback.
+- `<name:kind>` is a required argument.
+- `[name:kind]` is an optional argument.
 
-See it in game: `/example`, `/example feather 3`, `/example where`.
+The kinds are `word`, `text`, `integer`, `number`, `boolean`, `player`, `item` and `block_pos`. The game parses the
+arguments and refuses a wrong one with its own message, before `fn` runs. `args` holds the arguments by name.
+
+Several commands can share their first word, such as `example feather` and `example lamp`. The game merges them into
+one tree.
+
+## The level
+
+The level is the operator level a player needs to run the command:
+
+| Level | Who |
+|---|---|
+| 0 | everyone |
+| 2 | operators, as for `/give` |
+| 4 | the server console |
+
+## The handler
+
+`fn(player, args)` runs for the player who typed the command. `horizon.feedback(text)` answers them.
+
+Inside the handler, only that player is reached. To give items to another player, summon a mob or change blocks,
+queue the work for the next tick with `horizon.after(1, ...)`, as the example above does. The
+[spawning](spawning.md) guide does the same.
+
+## Running a command from a script
+
+`modkit.run_command(line)` runs any command as the server console does. Use it for what the API has no function for
+yet, such as `time set`, `weather`, `tp` and game rules. Call it from a timer, or from a mob or block callback.
+
+## See it in the game
+
+Type `/example`, `/example feather 3` or `/example where`.

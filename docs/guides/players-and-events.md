@@ -1,9 +1,18 @@
-# Players and events
+# Players and Events
 
-What every player does reaches one class, `M:players()`, with a callback per event. Example:
-[scripts/example/players.lua](../../examples/example_mod/scripts/example/players.lua); the keeper's count in
-[scripts/example/mob.lua](../../examples/example_mod/scripts/example/mob.lua). Reference:
-[api.md, Players](../api.md#players-mplayers-and-the-player).
+Everything players do reaches one class, `M:players()`, with one callback for each event.
+
+The examples on this page come from the example mod:
+
+- [scripts/example/players.lua](../../examples/example_mod/scripts/example/players.lua): the players class
+- [scripts/example/mob.lua](../../examples/example_mod/scripts/example/mob.lua): counting the players who feed a mob
+
+The reference is [The players class](../api.md#the-players-class) and [The player](../api.md#the-player).
+
+## Greeting a player
+
+When a player joins, this callback shows a title, counts the visit in the player's saved table, and gives a feather
+on the first visit:
 
 ```lua
 local Players = M:players()
@@ -35,27 +44,48 @@ function Players:on_join(player)
 end
 ```
 
-**The events.** `on_join`, `on_leave`, `on_respawn`, `on_death(player, cause)` (the death message's key),
-`on_break_block(player, block)` and `on_place_block(player, block, item)` (return true from the first to keep
-the block), `on_pickup(player, item, count)` (return true to leave it), `on_chat(player, line)` (return a string
-to send instead, true to drop it), `on_command(player, line)` (return true to stop it; `player:reply` answers),
-`on_sleep(player, x, y, z)` (return true to keep them out), `on_hurt`, `on_fall`, `on_knockback`, `on_exp`,
-`on_open_menu`, `on_change_dimension`, and `on_tick(player)` every tick (keep it light).
+## The events
 
-**The player** in these and in every other callback that names one is a table: `uuid`, `name`, `position`,
-`dimension`, `game_mode`, `health`, `held`, and the methods `give`, `take`, `inventory`, `count`, `effect`,
-`experience`, `levels`, `nickname`, `tell`, `action_bar`, `title`, `data` (the mod's saved table on them),
-`raycast`, `block_below`. A player read from the world (`horizon.player(name)`) gets the methods with
-`modkit.player(t)`.
+| Callback | When it runs |
+|---|---|
+| `on_join`, `on_leave`, `on_respawn` | a player joins, leaves, or respawns |
+| `on_death(player, cause)` | a player dies; `cause` is the death message's key |
+| `on_break_block(player, block)` | a player breaks a block. Return true to keep it |
+| `on_place_block(player, block, item)` | a player places a block |
+| `on_pickup(player, item, count)` | a player is about to pick up items. Return true to leave them |
+| `on_chat(player, line)` | a chat line. Return a string to send instead, or true to drop it |
+| `on_command(player, line)` | a command, before it runs. Return true to stop it; `player:reply` answers |
+| `on_sleep(player, x, y, z)` | a player is about to enter a bed. Return true to keep them out |
+| `on_hurt`, `on_fall`, `on_knockback` | a player is about to take damage, land, or be knocked back |
+| `on_exp` | a player is about to gain experience |
+| `on_open_menu` | a player opens a menu |
+| `on_change_dimension` | a player arrives in another dimension |
+| `on_tick(player)` | every tick. Keep it light |
 
-**One rule to know.** Inside a player's own callback (their click, their command) only that player is reached;
-a give to someone else does nothing there. Do it next tick from `horizon.after(1, ...)`, as the join above does
-and as the nickname below does. Some callbacks come mid-event with no world at hand (`on_hurt`, `on_chat`): the
-player is `id` and `kind`, or `uuid` and `name`, and nothing else.
+## The player table
 
-**Saved data driving a name and the chat.** Feeding the example mob counts in the feeder's `player:data()`; at
-three they are nicknamed, and a set the chat callback can read (it has no host for saved data) gives their lines
-a suffix. The count, in mob.lua:
+In these callbacks, and in every other callback that names a player, `player` is a table with:
+
+- the fields `uuid`, `name`, `position`, `dimension`, `game_mode`, `health` and `held`
+- the methods `give`, `take`, `inventory`, `count`, `effect`, `experience`, `levels`, `nickname`, `tell`,
+  `action_bar`, `title`, `data` (the mod's saved table on the player), `raycast` and `block_below`
+
+A player that you read from the world with `horizon.player(name)` gets the methods from `modkit.player(t)`.
+
+## Reaching other players
+
+Inside a player's own callback, such as their click or their command, only that player is reached. A give to
+anyone else does nothing there. Do it on the next tick with `horizon.after(1, ...)`, as the join above does, and as
+the nickname below does.
+
+Some callbacks run in the middle of an event and can't reach the world at all, such as `on_hurt` and `on_chat`.
+There the player is only `id` and `kind`, or only `uuid` and `name`.
+
+## Saved data, a nickname and the chat
+
+When a player feeds an example mob, mob.lua counts it in `player:data()`. At three feedings, the player gets a
+nickname. The chat callback can't read saved data, so mob.lua also adds the player to a set that the chat callback
+can read:
 
 ```lua
     local mine = player:data()
@@ -73,7 +103,8 @@ a suffix. The count, in mob.lua:
     end
 ```
 
-The chat, and a bed refused (a cancel ends the dispatch: another mod's `on_sleep` is not asked):
+The chat callback answers `ping`, and adds a suffix to a keeper's lines. The bed callback keeps players out of bed
+while example mobs roam. A cancel ends the dispatch, so another mod's `on_sleep` is not called:
 
 ```lua
 function Players:on_chat(player, line)
@@ -105,5 +136,10 @@ function Players:on_sleep(player, x, y, z)
 end
 ```
 
-See it in game: join (a title, a feather the first time), say `ping` in the chat, break a block, die; feed three
-example mobs and chat; try a bed at night with an example mob about.
+## See it in the game
+
+- Join a world. You see a title, and get a feather on your first visit.
+- Type `ping` in the chat.
+- Break a block, and die.
+- Feed three example mobs, then chat.
+- Try a bed at night with an example mob nearby.

@@ -1,5 +1,5 @@
 -- An item that summons on use and converts on a blow (guide:
--- docs/guides/items.md; reference: docs/api.md, "Items"). The lure is a bone
+-- docs/guides/items.md; reference: docs/api.md, "Item classes"). The lure is a bone
 -- by template (scripts/registry.lua). Used on a block, an example mob climbs
 -- out of the clicked face and one lure is spent; a zombie struck with it is
 -- an example mob on the spot (removed, one summoned where it stood). Both

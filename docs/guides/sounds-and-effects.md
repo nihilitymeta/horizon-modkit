@@ -1,9 +1,12 @@
-# Sounds and effects
+# Sounds and Effects
 
-Sounds and particles in the world, words on a player's screen, status effects on a player or a mob. Example:
-[scripts/example/effects.lua](../../examples/example_mod/scripts/example/effects.lua). Reference:
-[api.md, Commands and effects](../api.md#commands-and-effects) and the player's methods under
-[Players](../api.md#players-mplayers-and-the-player).
+A mod can play sounds and show particles in the world, put words on a player's screen, and give status effects to
+a player or a mob.
+
+The example comes from [scripts/example/effects.lua](../../examples/example_mod/scripts/example/effects.lua). The
+reference is [the modkit table](../api.md#the-modkit-table) and the player's [messages](../api.md#messages).
+
+This command shows the player one of each:
 
 ```lua
 M:command("example show", 0, function(player, args)
@@ -25,21 +28,39 @@ M:command("example show", 0, function(player, args)
 end)
 ```
 
-**In the world.** `modkit.sound(name, x, y, z, volume, pitch)` for the players in range,
-`modkit.particles(name, x, y, z, count, spread, speed)` for the players near. Names are vanilla's
-(`minecraft:entity.zombie.infect`, `minecraft:crimson_spore`): [reference/ids.md](../reference/ids.md#sounds-and-particles).
+## In the world
 
-**On a screen.** `player:tell(text)` in the chat, `player:action_bar(text)` over the hotbar,
-`player:title(text, subtitle)` across the screen with `player:title_times(fade_in, stay, fade_out)`;
-`horizon.broadcast(line)` tells everyone. `modkit.title`, `modkit.tell` and `modkit.action_bar` take a player
-table or a name.
+- `modkit.sound(name, x, y, z, volume, pitch)` plays a sound for the players in range.
+- `modkit.particles(name, x, y, z, count, spread, speed)` shows particles to the players near.
 
-**Status effects.** `player:effect(name, ticks, amplifier)` and `mob:effect(...)` as `/effect give` gives them
-(200 ticks and amplifier 0 by default, -1 forever); `modkit.effect(target, ...)` by a mob's id or a player's
-name. An effect of the mod's own is a `registry.mob_effect` with a category and a colour; it does nothing on its
-own, the scripts give it meaning.
+The names are vanilla's, such as `minecraft:entity.zombie.infect` and `minecraft:crimson_spore`. The
+[ids reference](../reference/ids.md#sounds-and-particles) lists some that are known to work.
 
-**Where.** Each is an action from a callback with a world at hand (a mob's tick, a block's, an item's use, a
-timer). A command has none, so the example queues them for the next tick.
+## On a screen
 
-See it in game: `/example show`.
+| Function | Where the text shows |
+|---|---|
+| `player:tell(text)` | in the chat |
+| `player:action_bar(text)` | over the hotbar |
+| `player:title(text, subtitle)` | across the screen; `player:title_times(fade_in, stay, fade_out)` sets the timing |
+| `horizon.broadcast(line)` | in every player's chat |
+
+`modkit.title`, `modkit.tell` and `modkit.action_bar` do the same, and take a player table or a name.
+
+## Status effects
+
+`player:effect(name, ticks, amplifier)` and `mob:effect(...)` give an effect as `/effect give` does. The defaults
+are 200 ticks and amplifier 0; -1 ticks lasts for ever. `modkit.effect(target, ...)` takes a mob's id or a player's
+name.
+
+A mod can declare an effect of its own with `registry.mob_effect`, a category and a colour. Such an effect does
+nothing by itself; your scripts give it meaning.
+
+## Where they work
+
+Each of these is an action, so it needs a callback with the world at hand, such as a mob's tick, a block's tick, an
+item's use or a timer. A command queues them for the next tick, as the example does.
+
+## See it in the game
+
+Type `/example show`.

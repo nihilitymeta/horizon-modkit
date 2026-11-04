@@ -1,5 +1,5 @@
 -- A staged block with a block entity that breeds (guide: docs/guides/blocks.md;
--- reference: docs/api.md, "Blocks"). The nest is declared in
+-- reference: docs/api.md, "Block classes"). The nest is declared in
 -- scripts/registry.lua with an enum `stage` state (dormant, growing, mature),
 -- random ticks on every stage and a hoe tag. Here: it grows on its random
 -- ticks, bone meal moves it a stage, a mature one charges and breeds an

@@ -1,12 +1,22 @@
-# Mobs and goals
+# Mobs and Goals
 
-A mob is an entity type declared in `scripts/registry.lua` (a vanilla mob as the template, the attributes that
-differ, `goals = "none"` so the scripts give it all of its behaviour) and an entity class in a script with its
-goals and callbacks. Example: [scripts/example/mob.lua](../../examples/example_mod/scripts/example/mob.lua),
-declared in [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua); goals on a vanilla kind in
-[scripts/example/conversion.lua](../../examples/example_mod/scripts/example/conversion.lua). Reference:
-[api.md, Entities](../api.md#entities-mentityname), [Goals](../api.md#goals-modkitgoal---),
-[The mob](../api.md#the-mob-mob-in-a-goal-or-a-callback).
+A mob has two parts. You declare its entity type in `scripts/registry.lua`: a vanilla mob as the template, the
+attributes that differ, and `goals = "none"`, so that your scripts give it all its behaviour. Then an entity class in
+a script gives it goals and callbacks.
+
+The examples on this page come from the example mod:
+
+- [scripts/example/mob.lua](../../examples/example_mod/scripts/example/mob.lua): a mob of the mod's own
+- [scripts/example/conversion.lua](../../examples/example_mod/scripts/example/conversion.lua): goals added to a
+  vanilla mob
+- [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua): the mob's declaration
+
+The reference is [Entity classes](../api.md#entity-classes), [Goals](../api.md#goals) and
+[The mob](../api.md#the-mob).
+
+## A mob that follows players
+
+This mob walks up to the nearest player, and wanders when nobody is near:
 
 ```lua
 local Mob = M:entity("example_mob")
@@ -34,22 +44,46 @@ Mob:goals {
 }
 ```
 
-**Goals** are what a mob does when nothing more pressing applies: `can_use(self, mob)` says when, `tick` acts
-each tick, `start` and `stop` bracket it, `flags` are what it locks (two goals that both move cannot run at
-once), and the priority orders them. `modkit.goals.Wander` and `modkit.goals.HuntPlayer` are ready-made;
-conversion.lua's `Stalk` and `Succumb` are two more. Inside a goal, `mob` is the view: `position`, `health`,
-`target`, `nearest_player`, `navigation_done`, `nearby`, and the steering and fighting actions (`navigate_to`,
-`look_at`, `attack`, `set_target`, `effect`, `summon`, `convert`).
+## Goals
 
-**Callbacks** come as things happen: `on_spawned(ev)`, `on_tick(mob)`, `on_interact(mob, player, held)` (a
-right click; return true to take it), `on_hurt(mob, hit)` (`hit:cancel()`, `hit:set_amount(n)`), `on_fall`,
-`on_knockback`, `on_equip`, `on_death(mob, cause)`, `on_drops(mob, drops, source)` (change the loot in place).
-`mob.data` in a callback is the mod's own saved table on that mob, kept through saves.
+A goal is something a mob does when nothing more pressing applies:
 
-**Vanilla mobs too.** `M:entity("minecraft:zombie")` adds goals and callbacks to every zombie, beside the ones it
-has. The example makes zombies stalk players and, beside an example mob for three seconds, become one:
-`mob:nearest(kind, range)` reads the goal's view of the mobs around, `mob:convert(kind)` swaps the mob for another
-kind, equipment and name kept.
+- `can_use(self, mob)` decides when the goal starts.
+- `tick` acts each tick while it runs.
+- `start` and `stop` run when it starts and stops.
+- `flags` say what the goal locks. Two goals that both lock movement can't run at once.
+- The priority orders the goals. A lower number comes first.
+
+`modkit.goals.Wander` and `modkit.goals.HuntPlayer` are ready to use. conversion.lua's `Stalk` and `Succumb` are two
+more examples.
+
+Inside a goal, `mob` is a view of the mob: `position`, `health`, `target`, `nearest_player`, `navigation_done` and
+`nearby`, with the steering and fighting actions, such as `navigate_to`, `look_at`, `attack`, `set_target`,
+`effect`, `summon` and `convert`.
+
+## Callbacks
+
+Callbacks run when something happens to the mob:
+
+| Callback | When it runs |
+|---|---|
+| `on_spawned(ev)` | the mob spawns |
+| `on_tick(mob)` | every tick |
+| `on_interact(mob, player, held)` | a player right-clicks it. Return true to take the click |
+| `on_hurt(mob, hit)` | it is about to take damage. `hit:cancel()` and `hit:set_amount(n)` change the hit |
+| `on_fall`, `on_knockback` | it is about to land, or to be knocked back |
+| `on_equip` | its equipment changes |
+| `on_death(mob, cause)` | it dies |
+| `on_drops(mob, drops, source)` | its loot is about to drop. Change `drops` in place |
+
+In a callback, `mob.data` is the mod's own saved table on that mob. It is kept through saves.
+
+## Vanilla mobs
+
+`M:entity("minecraft:zombie")` adds goals and callbacks to every zombie, next to the goals it already has. The
+example makes zombies stalk players. A zombie that stays next to an example mob for three seconds becomes one.
+`mob:nearest(kind, range)` finds the mobs around, and `mob:convert(kind)` replaces the zombie with another kind,
+keeping its equipment and name:
 
 ```lua
 local Succumb = modkit.Goal {
@@ -68,8 +102,13 @@ local Succumb = modkit.Goal {
 }
 ```
 
-**Its look** is the template's unless the declaration names a `texture`, a `model`, an `animation` set and
-`sounds`: [models and animation](models-and-animation.md). **Where it appears:** [spawning](spawning.md).
+## Look and spawning
 
-See it in game: `/example spawn`, hold wheat and right-click it, hit it with the feather, set it on fire;
-`/summon zombie` beside it and wait three seconds.
+A mob looks like its template unless its declaration names a `texture`, a `model`, an `animation` set and `sounds`.
+The [models and animation](models-and-animation.md) guide covers these. The [spawning](spawning.md) guide covers
+where mobs appear.
+
+## See it in the game
+
+- `/example spawn`, then hold wheat and right-click the mob, hit it with the feather, and set it on fire.
+- `/summon zombie` next to an example mob, then wait three seconds.

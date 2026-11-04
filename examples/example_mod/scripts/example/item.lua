@@ -1,5 +1,5 @@
 -- Items: a class per item id with its callbacks (guide: docs/guides/items.md;
--- reference: docs/api.md, "Items"). The items are declared in
+-- reference: docs/api.md, "Item classes"). The items are declared in
 -- scripts/registry.lua. `item` is the stack in hand ({id, count, damage,
 -- plain}, with item:take(n) and item:give(n)), `player` the player acting.
 -- See it in game: /example feather, then right-click in the air (a hop,

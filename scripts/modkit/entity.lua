@@ -71,8 +71,8 @@ local CALLBACKS = {
 }
 
 Entity.__index = Entity
---- Defining a callback (`function E:on_tick(mob) ... end`) registers its hook
---- for this kind, once.
+-- Defining a callback (`function E:on_tick(mob) ... end`) registers its hook
+-- for this kind, once.
 Entity.__newindex = function(self, key, value)
   rawset(self, key, value)
   local cb = CALLBACKS[key]
@@ -94,12 +94,14 @@ function Entity:_listen(name, hook, adapt)
   end, self.id)
 end
 
---- `{ {priority, goal}, ... }`: the goals every mob of this type gets.
+--- Adds goals that every mob of this type gets: `{ {priority, goal}, ... }`,
+--- a lower priority first.
 function Entity:goals(list: { { any } })
   for _, row in ipairs(list) do self.goal_list[#self.goal_list + 1] = row end
   return self
 end
 
+--- Adds goals to the mob's target selector: `{ {priority, goal}, ... }`.
 function Entity:target_goals(list: { { any } })
   for _, row in ipairs(list) do self.target_list[#self.target_list + 1] = row end
   return self
@@ -107,7 +109,7 @@ end
 
 local function short(id) return (id:gsub("^[^:]*:", "")) end
 
---- As a mob of this type sets its goals up (`mob_ai_register`).
+-- Called as a mob of this type sets its goals up (`mob_ai_register`).
 function Entity:_register(mob)
   if self.replace_goals then
     horizon.clear_goals()
@@ -140,7 +142,7 @@ function Entity:_register(mob)
   end
 end
 
---- Nothing to install any more: each class listens for its own kind.
+-- Nothing to install any more: each class listens for its own kind.
 function Entity.install(mod) end
 
 return Entity

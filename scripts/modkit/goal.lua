@@ -16,8 +16,8 @@ local Mob = require("@modkit/mob")
 local State = {}
 State.__index = State
 
---- Counts a tick on timer `name` and tells whether `ticks` passed since it
---- last fired (then resets), so `if self:every("step", 20) then ... end`.
+--- Counts a call on the timer `name` and checks whether `ticks` calls have
+--- passed since it last fired: `if self:every("step", 20) then ... end`.
 function State:every(name, ticks)
   local t = (self[name] or 0) + 1
   if t >= ticks then
@@ -28,8 +28,9 @@ function State:every(name, ticks)
   return false
 end
 
---- Whether timer `name` is ready; when it is, it is set to `ticks` and
---- counts down a tick per call: `if self:cooldown("bite", 20) then bite() end`.
+--- Checks whether the timer `name` is ready. When it is, it is set to
+--- `ticks` and counts down by one each call:
+--- `if self:cooldown("bite", 20) then bite() end`.
 function State:cooldown(name, ticks)
   local left = self[name] or 0
   if left <= 0 then
@@ -43,6 +44,7 @@ end
 local Goal = {}
 Goal.__index = Goal
 
+--- Creates a new goal class from its definition (`modkit.Goal`).
 function Goal.new(def)
   assert(type(def) == "table" and type(def.can_use) == "function", "modkit.Goal: can_use(self, mob) is required")
   return setmetatable({ def = def, registered = {} }, Goal)
@@ -55,7 +57,7 @@ local function wrap(fn)
   end
 end
 
---- Registers the goal with the game under `name` once, and answers it.
+--- Registers the goal with the game under `name`, once, and returns the name.
 function Goal:register(name)
   if not self.registered[name] then
     local d = self.def

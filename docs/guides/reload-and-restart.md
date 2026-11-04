@@ -1,28 +1,42 @@
-# Reload and restart
+# Reload and Restart
 
-What a change needs, from least to most.
+Each kind of change needs a different step before it shows in the game, from least to most:
 
-```
-/reload            scripts/init.lua and what it requires run again; recipes, loot tables and tags reload
-resource reload     the resource-reload key: textures, models, blockstates, the lang file
-restart the game   scripts/registry.lua: a new or changed item, block, entity type, effect or creative tab
-```
+| Step | What it reloads |
+|---|---|
+| `/reload` | `scripts/init.lua` and what it requires; recipes, loot tables and tags |
+| the resource-reload key | textures, models, blockstates and the lang file |
+| restarting the game | `scripts/registry.lua`: a new or changed item, block, entity type, effect or creative tab |
 
-**`/reload`** reads the mod's scripts again and runs `scripts/init.lua` afresh: handlers, goals, timers and
-`require`d modules are forgotten and declared again, settings are read again (`M:config`); the Lua state and its
-globals stay. Saved tables (`world_data`, `player:data()`, `mob.data`, `block.data`) are on the world, so they stay. A script error at reload is in the
-log and in `/lua` with its file and line; the mod keeps running with what loaded.
+## `/reload`
 
-**Assets** (the resource-reload key) are read again from `assets/`; a texture painted while the game runs shows
-at once.
+`/reload` reads the mod's scripts again and runs `scripts/init.lua` from the start. Handlers, goals, timers and
+`require`d modules are dropped and declared again, and the settings are read again (`M:config`). The Lua state and
+its globals stay.
 
-**The registry** script runs once, before the world loads, because what it declares gets ids the world holds:
-anything new in it, or a changed template, property or state, needs the game started again. A world keeps the
-blocks and mobs of a mod it was saved with.
+Saved tables, such as `horizon.world_data()`, `player:data()`, `mob.data` and `block.data`, belong to the world, so
+they stay too.
 
-**Settings** (`config/<mod>.json`) are read at load and at `/reload`; a command that changes one calls
+A script error during a reload appears in the log and in `/lua`, with its file and line. The mod keeps running with
+what it had before the reload.
+
+## Assets
+
+The resource-reload key reads `assets/` again. A texture that you paint while the game runs shows at once.
+
+## The registry script
+
+The registry script runs once, before the world loads, because what it declares gets ids that the world keeps.
+Anything new in it, or a changed template, property or state, needs the game restarted. A world keeps the blocks and
+mobs of a mod that it was saved with.
+
+## Settings
+
+The settings file, `config/<mod>.json`, is read at load and at `/reload`. A command that changes a setting calls
 `M:save_config()`.
 
-**Headless.** `cargo horizon-mod check <folder> --game <horizon-client> --dev-mod <modkit>` loads the scripts
-without a world and says which file and line fails, in a second, before any of the above
-([getting started](../getting-started.md#4-check-without-a-game)).
+## Checking without a game
+
+`cargo horizon-mod check <folder> --game <horizon-client> --dev-mod <modkit>` loads the scripts without a world, and
+names the file and line of anything that fails. It takes about a second, so run it before any of the steps above
+([getting started](../getting-started.md#4-check-it-without-a-game)).

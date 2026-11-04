@@ -1,5 +1,5 @@
 -- Goals on a vanilla kind, and a conversion (guide: docs/guides/mobs.md;
--- reference: docs/api.md, "Entities", "Goals"). M:entity("minecraft:zombie")
+-- reference: docs/api.md, "Entity classes", "Goals"). M:entity("minecraft:zombie")
 -- adds goals to every zombie beside the ones it has: with an example mob at
 -- its side for three seconds it succumbs and becomes one (mob:convert keeps
 -- its equipment and name); otherwise it stalks the nearest player from afar,

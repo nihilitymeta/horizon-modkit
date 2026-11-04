@@ -1,5 +1,5 @@
 -- Commands (guide: docs/guides/commands.md; reference: docs/api.md,
--- "Commands and effects"). `M:command(usage, level, fn)`: the words, then
+-- "The mod"). `M:command(usage, level, fn)`: the words, then
 -- <name:kind> required and [name:kind] optional arguments (word, text,
 -- integer, number, boolean, player, item, block_pos), the operator level
 -- (0 everyone, 2 operators), and fn(player, args) with the arguments by
