@@ -1,6 +1,6 @@
 # Ids a mod keeps reaching for
 
-Vanilla's names, starting with the ones the example mod, the parasite mod and the engine's own checks use, so
+Vanilla's names, starting with the ones the example mod and the engine's own checks use, so
 they are known to work on 26.3. The full lists are vanilla's registries; the engine's [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md)
 says what a template carries along.
 
@@ -8,7 +8,7 @@ says what a template carries along.
 
 | Template | Good for |
 |---|---|
-| `minecraft:feather`, `minecraft:stick`, `minecraft:bone` | a plain item with callbacks (the example feather, the scaffold's wand, the parasite's lure) |
+| `minecraft:feather`, `minecraft:stick`, `minecraft:bone` | a plain item with callbacks (the example feather, the scaffold's wand, the example lure) |
 | `minecraft:cookie`, `minecraft:apple`, `minecraft:mushroom_stew` | something eaten (`on_use_start`, `on_finished`; `crafting_remainder` for the bowl) |
 | `minecraft:iron_sword` | a weapon; damage and durability through `components` |
 | `minecraft:snowball` | a thrown item (an entity type of the mod's with `template = "minecraft:snowball"` flies as one) |
@@ -19,13 +19,13 @@ says what a template carries along.
 | Template | Good for |
 |---|---|
 | `minecraft:iron_block`, `minecraft:stone`, `minecraft:amethyst_block` | a plain block; `random_ticks = true` makes it tick |
-| `minecraft:sculk` | the parasite hive: a block with stages and a block entity |
+| `minecraft:sculk` | the example nest: a block with stages and a block entity |
 | `minecraft:chorus_plant` | a pipe or cable that joins its neighbours (`connects_to`) |
 | `minecraft:oak_sign`, `minecraft:oak_wall_sign` | a sign of the mod's own |
 
 ## Mob templates
 
-`minecraft:zombie` (the parasite), `minecraft:pig` (the example mob); any vanilla mob works, with its species'
+`minecraft:pig` (the example mob), `minecraft:zombie` (goals added to a vanilla kind); any vanilla mob works, with its species'
 movement, sounds and animation. `goals = "none"` leaves the behaviour to the scripts.
 
 ## Damage types

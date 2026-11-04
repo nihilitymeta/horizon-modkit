@@ -268,8 +268,8 @@ the callback, a number keeps its NBT type, a key set to nil is gone), and `block
 `assets/<id>/models/entity/<name>.json`, or `registry.asset("models/entity/<name>", {...})`: `texture_size` and
 `parts` by name, each with `offset`, `rotation` in degrees, `cubes` of `origin`, `size`, `uv`, `inflate`, `mirror`,
 and `children`), an `animation` set that moves the parts by their vanilla names (`zombie`, `skeleton`, `quadruped`,
-`iron_golem`, `spider`...), and `sounds` by `ambient`, `hurt`, `death` and `step`. The parasite mod's
-`scripts/registry.lua` has a worked model.
+`iron_golem`, `spider`...), and `sounds` by `ambient`, `hurt`, `death` and `step`. A worked model is in
+[models and animation](guides/models-and-animation.md).
 
 ### Spawning
 

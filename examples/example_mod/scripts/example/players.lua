@@ -4,12 +4,17 @@
 -- game_mode, health, held) with methods: give, take, effect, tell, title,
 -- action_bar, data... See it in game: join (a title, a feather the first
 -- time, a count of visits), say "ping" in the chat, break and place blocks,
--- die.
+-- die, try a bed with an example mob about, feed three example mobs and chat.
 local modkit = require("@modkit")
 local M = require("@example/mod")
 local cfg = require("@example/timers_and_data")
 
 local Players = M:players()
+
+-- Who fed three example mobs, by uuid (scripts/example/mob.lua fills it, and
+-- the join below): the chat callback has no host to read the saved data
+-- with, so it reads this.
+Players.keepers = {}
 
 -- Joined: a title with the greeting from the settings, a visit counted in
 -- the player's own saved table, a feather on the first visit. A give to a
@@ -19,6 +24,7 @@ function Players:on_join(player)
   modkit.title(player, cfg.greeting, "Example Mod on modkit " .. modkit.VERSION)
   local mine = player:data()
   if mine then
+    if (mine.fed or 0) >= 3 then Players.keepers[player.uuid] = true end
     mine.visits = (mine.visits or 0) + 1
     if mine.visits == 1 then
       local name = player.name
@@ -62,17 +68,32 @@ function Players:on_pickup(player, item, count)
 end
 
 -- A chat line, before anyone sees it: return a string to send instead, true
--- to drop it. Only uuid and name are known here.
+-- to drop it. Only uuid and name are known here, and no saved data: a
+-- keeper's suffix comes from the set above.
 function Players:on_chat(player, line)
   if line == "ping" then
     horizon.log(("EXAMPLE chat from %s"):format(player.name))
     return "pong"
   end
+  if Players.keepers[player.uuid] then
+    horizon.log(("EXAMPLE keeper chat from %s"):format(player.name))
+    return line .. " (keeper of example mobs)"
+  end
   return nil
 end
 
--- Entering a bed: return true to keep them out.
+-- Entering a bed: return true to keep them out. No sleep while example mobs
+-- roam. A cancel ends the dispatch: another mod's on_sleep is not asked.
 function Players:on_sleep(player, x, y, z)
+  local roaming = 0
+  for _, m in ipairs(horizon.mobs()) do
+    if m.kind == "example_mod:example_mob" then roaming = roaming + 1 end
+  end
+  if roaming > 0 then
+    player:action_bar(("%d example mob(s) roam: no sleep tonight"):format(roaming))
+    horizon.log(("EXAMPLE player %s may not sleep: %d example mob(s) roam"):format(player.name, roaming))
+    return true
+  end
   horizon.log(("EXAMPLE player sleeps at %d %d %d"):format(x, y, z))
   return false
 end

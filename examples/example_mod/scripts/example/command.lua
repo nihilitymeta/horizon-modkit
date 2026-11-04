@@ -6,11 +6,13 @@
 -- name. horizon.feedback(text) answers. Inside a player's own command only
 -- that player is reached; another player is reached next tick, from a timer.
 -- See it in game: /example, /example feather 3, /example lamp, /example where.
+-- The other files add theirs under the same first word (nest, lure, spawn,
+-- show, report, max, greeting): the tree merges them.
 local modkit = require("@modkit")
 local M = require("@example/mod")
 
 M:command("example", 0, function(player, args)
-  horizon.feedback("/example feather [count] | lamp | where | spawn [count] | show | report | greeting <text>")
+  horizon.feedback("/example feather [count] | lamp | nest | lure [count] | where | spawn [count] | show | report | max [limit] | greeting <text>")
 end)
 
 M:command("example feather [count:integer] [to:player]", 2, function(player, args)

@@ -6,15 +6,18 @@ these files; [docs/api.md](../../docs/api.md) is the reference.
 
 ```
 horizon-mod.toml              # the manifest: capabilities, depends = ["horizon_modkit >= 0.7"]
-scripts/registry.lua          # what it adds: an item, a snack, a block, a mob and its egg, an effect, a tab
+scripts/registry.lua          # what it adds: an item, a snack, a lure, a block, a nest, a mob and its egg, an effect, a tab
 scripts/init.lua              # what it does: requires one file per concept
 scripts/example/mod.lua       # the mod object the files share
 scripts/example/item.lua      # items and their callbacks
+scripts/example/lure.lua      # an item that summons on use and converts on a blow
 scripts/example/block.lua     # a block with a state, a block entity and ticks
-scripts/example/mob.lua       # a mob with goals and callbacks
-scripts/example/players.lua   # what players do
+scripts/example/nest.lua      # a staged block that grows, breeds and is spent; loot by stage
+scripts/example/mob.lua       # a mob with goals and callbacks; its feeders become keepers
+scripts/example/conversion.lua  # goals on a vanilla kind: zombies stalk, and become example mobs
+scripts/example/players.lua   # what players do: join, chat (a keeper's suffix), blocks, a bed refused
 scripts/example/command.lua   # commands
-scripts/example/timers_and_data.lua   # settings, timers, saved data
+scripts/example/timers_and_data.lua   # settings, timers, saved data, a cull by the settings
 scripts/example/spawning.lua  # making mobs
 scripts/example/effects.lua   # sounds, particles, titles, status effects
 ```

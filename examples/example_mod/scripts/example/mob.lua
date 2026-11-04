@@ -5,10 +5,11 @@
 -- does is here. `mob` is the mob's view (position, health, target...) with
 -- actions the game applies after the callback; `mob.data` its saved table.
 -- See it in game: /example spawn (or its egg); it wanders, comes to a player
--- within eight blocks, eats wheat from a hand, shrugs off fire, lands softly,
--- and says how it died.
+-- within eight blocks, eats wheat from a hand (three feedings make the feeder
+-- a keeper, by name), shrugs off fire, lands softly, and says how it died.
 local modkit = require("@modkit")
 local M = require("@example/mod")
+local Players = require("@example/players")
 
 local Mob = M:entity("example_mob")
 
@@ -35,8 +36,12 @@ Mob:goals {
 }
 
 -- A player right-clicked it, before the mob and the item act: wheat feeds it
--- (healed, the feeder thanked, a count kept on the mob through saves); the
--- click is taken. An empty hand reads the count.
+-- (healed, the feeder thanked, a count kept on the mob through saves) and
+-- counts for the feeder too, in their own saved table: at three feedings
+-- they are nicknamed a keeper (next tick, from a timer: a nickname is set
+-- where no player's own action is under way) and their chat lines carry it
+-- (scripts/example/players.lua). The click is taken. An empty hand reads
+-- the mob's count.
 function Mob:on_interact(mob, player, held)
   if held and held.item == "minecraft:wheat" then
     mob.data.fed = (mob.data.fed or 0) + 1
@@ -44,6 +49,19 @@ function Mob:on_interact(mob, player, held)
     modkit.particles("minecraft:heart", mob.position.x, mob.position.y + 1, mob.position.z, 5, 0.3, 0.02)
     player:action_bar(("fed %d time(s)"):format(mob.data.fed))
     horizon.log(("EXAMPLE mob fed by %s"):format(player.name))
+    local mine = player:data()
+    if mine then
+      mine.fed = (mine.fed or 0) + 1
+      if mine.fed >= 3 then Players.keepers[player.uuid] = true end
+      if mine.fed == 3 then
+        local name = player.name
+        horizon.after(1, function()
+          local p = horizon.player(name)
+          if p then modkit.player(p):nickname(name .. " the Keeper") end
+        end)
+        horizon.log(("EXAMPLE keeper: %s fed three example mobs"):format(player.name))
+      end
+    end
     return true
   end
   if held == nil then player:tell(("this one was fed %d time(s), has %.0f/%.0f hp"):format(mob.data.fed or 0, mob.health, mob.max_health)) end

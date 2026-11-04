@@ -1,9 +1,11 @@
 # Items
 
 An item is declared once, in `scripts/registry.lua`, as a vanilla template and what differs; its behaviour is
-an item class in a script, with a callback per thing a player does with it. Example:
-[scripts/example/item.lua](../../examples/example_mod/scripts/example/item.lua), its declaration in
-[scripts/registry.lua](../../examples/example_mod/scripts/registry.lua). Reference: [api.md, Items](../api.md#items-mitemname).
+an item class in a script, with a callback per thing a player does with it. Examples:
+[scripts/example/item.lua](../../examples/example_mod/scripts/example/item.lua) (a feather and a snack) and
+[scripts/example/lure.lua](../../examples/example_mod/scripts/example/lure.lua) (an item that summons and
+converts), declared in [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua). Reference:
+[api.md, Items](../api.md#items-mitemname).
 
 ```lua
 local Feather = M:item("example_item")
@@ -38,8 +40,24 @@ keep it light).
 player's inventory. **`player`** is the player acting, with `player:effect`, `player:tell`, `player:action_bar`,
 `player:give` and the rest ([players and events](players-and-events.md)).
 
-**Vanilla items too.** `M:item("minecraft:stick")` gives a stick callbacks; the parasite mod's lure is a bone by
-template with an `on_use_on` and an `on_hit`.
+**An item that acts on the world.** The lure is a bone by template whose `on_use_on` summons an example mob at the
+clicked face (`horizon.summon` answers the id, so the new mob gets an effect at once), spends one and takes the
+click, and whose `on_hit` turns a zombie into an example mob and takes the blow:
+
+```lua
+function Lure:on_use_on(item, player, block, face)
+  local x, y, z = block.x + face.x + 0.5, block.y + face.y, block.z + face.z + 0.5
+  local id = horizon.summon(player.dimension, "example_mod:example_mob", x, y, z)
+  if id then modkit.effect(id, "minecraft:slowness", 60, 2) end
+  modkit.sound("minecraft:entity.zombie.infect", x, y, z, 1.0, 0.6)
+  modkit.particles("minecraft:crimson_spore", x, y + 1, z, 40, 0.6, 0.02)
+  item:take(1)
+  horizon.log(("EXAMPLE lure used on %s by %s"):format(block.id, player.name))
+  return true
+end
+```
+
+**Vanilla items too.** `M:item("minecraft:stick")` gives a stick callbacks.
 
 **Declaring one.** `registry.item("example_item", { template = "minecraft:feather", max_stack_size = 16, rarity = "uncommon" })`,
 then its look (`items/<name>` and `models/item/<name>` under assets, written as tables with `registry.asset`) and
@@ -47,4 +65,5 @@ a name in the lang file. A sword gets its damage through `components` (the engin
 [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md)). Templates known to work:
 [reference/ids.md](../reference/ids.md#item-templates).
 
-See it in game: `/example feather`, right-click in the air, on a block, hit a mob with it.
+See it in game: `/example feather`, right-click in the air, on a block, hit a mob with it; `/example lure`,
+right-click the ground, hit a zombie.
