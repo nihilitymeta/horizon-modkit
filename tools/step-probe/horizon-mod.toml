@@ -1,0 +1,9 @@
+id = "step_probe"
+name = "Step Probe"
+version = "0.1.0"
+description = "One log line per step of the modding API; run by tools/steps-check.sh beside the example mod"
+authors = ["whos-carmen"]
+api = "0.2"
+side = "both"
+capabilities = ["registries", "scripts"]
+experimental = ["scripts"]

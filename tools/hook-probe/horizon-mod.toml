@@ -1,0 +1,9 @@
+id = "hook_probe"
+name = "Hook Probe"
+version = "0.1.0"
+description = "Logs every Lua hook of the engine once it fires; run by tools/hook-coverage.sh"
+authors = ["whos-carmen"]
+api = "0.2"
+side = "both"
+capabilities = ["registries", "scripts"]
+experimental = ["scripts"]

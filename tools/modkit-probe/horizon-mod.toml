@@ -1,0 +1,10 @@
+id = "modkit_probe"
+name = "Modkit Probe"
+version = "0.1.0"
+description = "Every modkit callback of the hooks goal, logging once when it runs (tools/hook-coverage.sh)."
+authors = ["whos-carmen"]
+api = "0.2"
+side = "both"
+capabilities = ["scripts"]
+experimental = ["scripts"]
+depends = ["horizon_modkit >= 0.7"]
