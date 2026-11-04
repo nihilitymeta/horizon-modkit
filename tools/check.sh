@@ -8,8 +8,8 @@
 #   HORIZON=/path/to/horizon tools/check.sh --self-test         # also: a mod with a misspelled hook must fail
 #
 # HORIZON is the fork checkout, built: target/fast/horizon-client and target/debug/cargo-horizon-mod
-# (`cargo build -p cargo-horizon-mod`). With no folders given, the parasite's tools/modkit-probe beside this
-# checkout is checked when it is there, after examples/example_mod.
+# (`cargo build -p cargo-horizon-mod`). With no folders given, examples/example_mod and the three probes the
+# in-game checks run (tools/hook-probe, tools/step-probe, tools/modkit-probe) are checked.
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 : "${HORIZON:?the fork checkout}"
@@ -21,8 +21,7 @@ for a in "$@"; do
   case "$a" in --self-test) self_test=true ;; *) mods+=("$a") ;; esac
 done
 if [ ${#mods[@]} = 0 ]; then
-  mods=("$HERE/examples/example_mod")
-  [ -d "$HERE/../horizon-parasite-mod/tools/modkit-probe" ] && mods+=("$HERE/../horizon-parasite-mod/tools/modkit-probe")
+  mods=("$HERE/examples/example_mod" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe")
 fi
 failed=0
 check() {
