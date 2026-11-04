@@ -1034,8 +1034,8 @@ Called when a player's chat line is about to go out, after the chat filter. Ther
 - *player*: the player's `uuid` and `name`
 - *line*: the line
 
-**Returns**: true to drop the line, so nobody sees it; a string to send instead, unsigned; or nil to send the line
-as it is.
+**Returns**: true to drop the line, so nobody sees it; a string to answer the sender with, as a line only they
+see; or nil to send the line as it is. The line itself can't change: a signed message would no longer verify.
 
 ### `P:on_change_dimension(player, from, to)`
 

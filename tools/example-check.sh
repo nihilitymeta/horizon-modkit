@@ -4,7 +4,7 @@
 # on a mob; the lamp lit, dimmed by its tick, placed and broken; a mob spawned, fed, hit and killed; the chat,
 # the commands, the effects, the timer, the settings file, a death; the nest grown, bred and spent, kept from a
 # bare hand and hoed; the lure used and a zombie turned with it; a zombie converted beside an example mob; a
-# keeper named after three feedings and suffixed in the chat; the bed refused; the cull by the settings).
+# keeper named after three feedings and answered in the chat; the bed refused; the cull by the settings).
 #
 #   HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/example-check.sh
 #

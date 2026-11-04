@@ -53,7 +53,7 @@ end
 | `on_break_block(player, block)` | a player breaks a block. Return true to keep it |
 | `on_place_block(player, block, item)` | a player places a block |
 | `on_pickup(player, item, count)` | a player is about to pick up items. Return true to leave them |
-| `on_chat(player, line)` | a chat line. Return a string to send instead, or true to drop it |
+| `on_chat(player, line)` | a chat line. Return a string to answer the sender, or true to drop it |
 | `on_command(player, line)` | a command, before it runs. Return true to stop it; `player:reply` answers |
 | `on_sleep(player, x, y, z)` | a player is about to enter a bed. Return true to keep them out |
 | `on_hurt`, `on_fall`, `on_knockback` | a player is about to take damage, land, or be knocked back |
@@ -103,7 +103,7 @@ can read:
     end
 ```
 
-The chat callback answers `ping`, and adds a suffix to a keeper's lines. The bed callback keeps players out of bed
+The chat callback answers `ping`, and tells a keeper that they keep example mobs. The bed callback keeps players out of bed
 while example mobs roam. A cancel ends the dispatch, so another mod's `on_sleep` is not called:
 
 ```lua
@@ -114,7 +114,7 @@ function Players:on_chat(player, line)
   end
   if Players.keepers[player.uuid] then
     horizon.log(("EXAMPLE keeper chat from %s"):format(player.name))
-    return line .. " (keeper of example mobs)"
+    return "You keep example mobs."
   end
   return nil
 end

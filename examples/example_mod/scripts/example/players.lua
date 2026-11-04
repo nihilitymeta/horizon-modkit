@@ -67,9 +67,9 @@ function Players:on_pickup(player, item, count)
   return false
 end
 
--- A chat line, before anyone sees it: return a string to send instead, true
--- to drop it. Only uuid and name are known here, and no saved data: a
--- keeper's suffix comes from the set above.
+-- A chat line, before anyone sees it: return a string to answer the sender,
+-- true to drop it. Only uuid and name are known here, and no saved data: a
+-- keeper is known from the set above.
 function Players:on_chat(player, line)
   if line == "ping" then
     horizon.log(("EXAMPLE chat from %s"):format(player.name))
@@ -77,7 +77,7 @@ function Players:on_chat(player, line)
   end
   if Players.keepers[player.uuid] then
     horizon.log(("EXAMPLE keeper chat from %s"):format(player.name))
-    return line .. " (keeper of example mobs)"
+    return "You keep example mobs."
   end
   return nil
 end
