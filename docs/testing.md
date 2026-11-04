@@ -62,8 +62,13 @@ names the file and line of each problem, and exits with code 1:
 - a hook that `horizon.on` does not know
 - a command that fails when it is declared
 
+Add `--resources <26.3 folder>`, the prepared vanilla folder, and it also layers your mod's data on it as the game
+does at start. A file the game would refuse fails the check here. In a game, such a file leaves every content mod out
+of the world: an `add_spawns` spawner with `min_count` instead of NeoForge's `minCount`, for example.
+
 `tools/check.sh` runs this check on the modkit, the example mod and the three probes under `tools/`. With
-`--self-test`, it shows a misspelled hook being refused with its line. When luau-lsp is installed, it also analyses
+`--self-test`, it shows a misspelled hook being refused with its line. Set `RESOURCES` to the 26.3 folder and it
+passes `--resources` to every check, and the self-test also shows a misnamed spawner field being refused. When luau-lsp is installed, it also analyses
 each one against `types/horizon.d.lua`. The in-game checks below run both before they start the game.
 
 ## Driving the game from a script
