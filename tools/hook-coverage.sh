@@ -14,7 +14,10 @@ HERE=$(cd "$(dirname "$0")/.." && pwd)
 : "${HORIZON:?the fork checkout}" "${RESOURCES:?the prepared 26.3 folder}" "${GAME_DIR:?the game dir}"
 MODKIT=$HERE
 MOD="$HERE/examples/example_mod"
-WORLD=${WORLD:-New World}
+# The check's own world, made afresh each run unless WORLD names another: a reused one opens with the player
+# where the last run left them (the platform in the sky) and keeps every run's mobs and items.
+WORLD=${WORLD:-modkit-check}
+[ "$WORLD" = modkit-check ] && rm -rf "$GAME_DIR/saves/modkit-check"
 SOCK=${SOCK:-/tmp/horizon-hook-coverage.sock}
 CTL="$HORIZON/target/fast/horizon-ctl --socket $SOCK"
 # The game writes logs/ under HORIZON_HOME when it is set: keep that the game dir, so the log is here.
@@ -59,8 +62,9 @@ for i in $(seq 1 20); do
   $CTL close >/dev/null 2>&1; $CTL key esc tap >/dev/null 2>&1; sleep 1
 done
 $CTL command "gamemode creative" >/dev/null
-$CTL command "gamerule do_mob_spawning false" >/dev/null
-$CTL command "gamerule do_daylight_cycle false" >/dev/null
+# 26.3 names: spawn_mobs is the old doMobSpawning, advance_time the old doDaylightCycle.
+$CTL command "gamerule spawn_mobs false" >/dev/null
+$CTL command "gamerule advance_time false" >/dev/null
 $CTL command "time set 18000" >/dev/null
 # Random ticks a hundred times the usual, so the nest ticks within seconds; put back at the end.
 $CTL command "gamerule random_tick_speed 300" >/dev/null
@@ -224,8 +228,6 @@ $CTL click-button Respawn | j 'print("respawn:", d.get("clicked", d.get("error")
 for i in 1 2 3 4 5 6; do sleep 1; $CTL state | grep -q '"screen":"dead"' || break; done
 $CTL command "gamemode creative" >/dev/null
 $CTL command "gamerule random_tick_speed 3" >/dev/null
-$CTL command "gamerule do_mob_spawning true" >/dev/null
-$CTL command "gamerule do_daylight_cycle true" >/dev/null
 sleep 1
 $CTL quit >/dev/null
 sleep 3

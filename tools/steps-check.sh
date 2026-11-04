@@ -9,15 +9,17 @@
 #
 #   HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/steps-check.sh
 #
-# The natural-spawn step at the end is a warning, not a failure: monster and
-# creature spawning in a fresh world produced nothing on this build, zombies
-# included (whos-carmen/horizon-parasite-mod#5 has the details).
+# The spawn step counts the example mobs a fresh world's chunks came with (a
+# creature spawns mostly at generation) and listens for one at midnight.
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 : "${HORIZON:?the fork checkout}" "${RESOURCES:?the prepared 26.3 folder}" "${GAME_DIR:?the game dir}"
 MODKIT=$HERE
 MOD="$HERE/examples/example_mod"
-WORLD=${WORLD:-New World}
+# The check's own world, made afresh each run unless WORLD names another: a reused one opens with the player
+# where the last run left them (the platform in the sky) and keeps every run's mobs and items.
+WORLD=${WORLD:-modkit-check}
+[ "$WORLD" = modkit-check ] && rm -rf "$GAME_DIR/saves/modkit-check"
 SOCK=${SOCK:-/tmp/horizon-steps-check.sock}
 SHOT=${SHOT:-/tmp/horizon-steps-check.png}
 CTL="$HORIZON/target/fast/horizon-ctl --socket $SOCK"
@@ -58,8 +60,12 @@ for i in $(seq 1 20); do
   echo "$S" | grep -q '"player"' && break
   $CTL close >/dev/null 2>&1; $CTL key esc tap >/dev/null 2>&1; sleep 1
 done
+# The example mobs the fresh world's chunks came with, counted before the setup kills everything (step 6 reads it).
+GEN=$($CTL entities 128 | j 'print(sum(1 for e in d.get("entities", []) if e.get("type") == "example_mod:example_mob"))')
 $CTL command "gamemode creative" >/dev/null
-$CTL command "gamerule do_mob_spawning false" >/dev/null
+# 26.3 names: spawn_mobs is the old doMobSpawning, advance_time the old doDaylightCycle.
+$CTL command "gamerule spawn_mobs false" >/dev/null
+$CTL command "gamerule advance_time false" >/dev/null
 $CTL command "time set 18000" >/dev/null
 $CTL command "kill @e[type=!player]" >/dev/null
 sleep 1
@@ -264,19 +270,22 @@ for i in 1 2 3 4 5 6; do sleep 1; $CTL state | grep -q '"screen":"dead"' && brea
 $CTL click-button Respawn | j 'print("respawn:", d.get("clicked", d.get("error")))'
 for i in 1 2 3 4 5 6; do sleep 1; $CTL state | grep -q '"screen":"dead"' || break; done
 $CTL command "gamemode creative" >/dev/null
-echo "--- step 6: natural spawning (the biome modifier), at midnight, up to 90 s (a warning when none comes)"
-$CTL command "tp @s $GX $GY $GZ" >/dev/null
-# Monsters need a difficulty above peaceful, which a fresh world opened by horizon-ctl may not have.
+echo "--- step 6: natural spawning (the biome modifier): the mobs the fresh world's chunks came with, then midnight"
+$CTL command "tp @s $GX $GY $GZ" >/dev/null; sleep 2
+echo "example mobs the world generated near the spawn: $GEN"
 $CTL command "difficulty normal" >/dev/null
-$CTL command "gamerule do_mob_spawning true" >/dev/null
+$CTL command "gamerule spawn_mobs true" >/dev/null
+$CTL command "gamerule spawn_monsters true" >/dev/null
 $CTL command "time set midnight" >/dev/null
-# Up to 90 s, checked every 5: a 40 s wait saw no spawn of any kind at times.
-for i in $(seq 1 18); do sleep 5; grep -q 'STEP6 spawned example_mod:example_mob natural=true' "$LOG" && break; done
-echo "natural example mob spawns: $(grep -c 'STEP6 spawned example_mod:example_mob natural=true' "$LOG")"
-# Not a failure: natural spawning produced nothing at all in a fresh world on this build, zombies included; an
-# open engine question (whos-carmen/horizon-parasite-mod#5's comment has the details).
-grep -q 'STEP6 spawned example_mod:example_mob natural=true' "$LOG" || echo "WARNING: no natural example mob spawn in 90 s (natural spawning is an open engine question; the spawn egg and the lure above showed the kind spawns)"
-$CTL command "gamerule do_daylight_cycle true" >/dev/null
+for i in $(seq 1 12); do sleep 5; grep -q 'STEP6 spawned example_mod:example_mob natural=true' "$LOG" && break; done
+echo "natural example mob spawns logged: $(grep -c 'STEP6 spawned example_mod:example_mob natural=true' "$LOG")"
+# A creature spawns mostly as its chunk is generated (the engine tells no mob_spawned for those), rarely after, so
+# the count is the proof and the log line a bonus.
+if [ "${GEN:-0}" -gt 0 ] 2>/dev/null || grep -q 'STEP6 spawned example_mod:example_mob natural=true' "$LOG"; then
+  echo "STEP6 natural spawning: the biome modifier adds the example mob to the overworld"
+else
+  echo "STEP6: no example mob from the biome modifier (none generated near the spawn, none spawned at midnight)"; $CTL quit >/dev/null; exit 1
+fi
 $CTL quit >/dev/null; sleep 2
 echo "--- log lines per step (screenshot of the model at $SHOT)"
 grep -n "STEP[0-9]\|lua:.*error" "$LOG" | cut -c1-200

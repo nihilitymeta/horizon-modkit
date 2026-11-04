@@ -38,9 +38,10 @@ for i in $(seq 1 20); do
   $CTL close >/dev/null 2>&1; $CTL key esc tap >/dev/null 2>&1; sleep 1
 done
 $CTL command "gamemode creative" >/dev/null
-$CTL command "gamerule do_mob_spawning false" >/dev/null
+# 26.3 names: spawn_mobs is the old doMobSpawning, advance_time the old doDaylightCycle.
+$CTL command "gamerule spawn_mobs false" >/dev/null
+$CTL command "gamerule advance_time false" >/dev/null
 # Night, and kept there: a zombie stands in it, and a bed takes a player only at night.
-$CTL command "gamerule do_daylight_cycle false" >/dev/null
 $CTL command "time set 18000" >/dev/null
 $CTL command "kill @e[type=!player]" >/dev/null; sleep 0.5
 $CTL command "clear" >/dev/null; sleep 1
