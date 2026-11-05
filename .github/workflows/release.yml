@@ -2,7 +2,7 @@ name: release
 # Publishes the modkit as horizon_modkit.hmod on a GitHub release, which Event Horizon's launcher installs into its
 # Event Horizon instances (the Mods page's modkit card).
 # - A version of your choosing: push a tag v<version>, which must match horizon-mod.toml's version.
-#     git tag v0.7.1 && git push origin v0.7.1
+#     git tag v0.8.0 && git push origin v0.8.0
 # - A nightly, nightly-<date>: every day at 09:00 UTC (4am Eastern in winter, 5am in summer), from main, when it
 #   changed since the last release. The repository variable NIGHTLY_PAUSED=1 skips nightlies until it is removed:
 #     gh variable set NIGHTLY_PAUSED -R whos-carmen/horizon-modkit --body 1      # gh variable delete NIGHTLY_PAUSED to resume
