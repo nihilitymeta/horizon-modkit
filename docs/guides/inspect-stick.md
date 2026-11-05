@@ -35,7 +35,8 @@ the Goals window's **log** button writes the mob's AI to a file.
 - Event Horizon, with the modkit installed. The game doesn't need `--dev-tools`.
 - On a LAN world or a server, each player's windows open on their own screen. The server sends them once a second;
   a window's interval choice changes that, down to a quarter of a second.
-- Press F8 to free the pointer and click the windows' buttons, and F8 again to play.
+- Press F8 to free the pointer and click the windows' buttons, and F8 again to play. To use another key, rebind
+  **Free Mouse for Dev Windows** in Options → Controls → Key Binds.
 
 The engine's [dev-tools.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/dev-tools.md#the-inspect-stick)
 describes the windows in full.
