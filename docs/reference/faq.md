@@ -13,7 +13,7 @@ shows a mob's goals.
 Each kind of file reloads in its own way:
 
 - `scripts/init.lua` and what it requires reload with `/reload`.
-- `scripts/registry.lua` needs the game restarted.
+- `scripts/registry.lua` and its modules in `scripts/registry/` need the game restarted.
 - Assets reload with the resource-reload key.
 
 [Reload and restart](../guides/reload-and-restart.md) has the details.

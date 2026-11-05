@@ -2,6 +2,7 @@
   "languageMode": "nonstrict",
   "aliases": {
     "modkit": "../../scripts/modkit",
-    "example": "scripts/example"
+    "example": "scripts/example",
+    "registry": "scripts/registry"
   }
 }

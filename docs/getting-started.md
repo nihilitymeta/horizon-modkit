@@ -56,7 +56,7 @@ end
 
 Change the message, save the file, and type `/reload` in the game. The scripts run again with your change.
 
-A new item, block or entity type in `scripts/registry.lua` needs the game restarted. The
+A new item, block or entity type in `scripts/registry.lua`, or a module it requires, needs the game restarted. The
 [reload and restart](guides/reload-and-restart.md) guide lists what each kind of change needs.
 
 ## 4. Check it without a game

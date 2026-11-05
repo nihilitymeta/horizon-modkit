@@ -78,7 +78,7 @@ horizon-client --dev-tools --dev-mod /path/to/horizon-modkit --dev-mod /path/to/
 ```
 
 You can also install both as `.hmod` files. `/reload` runs the scripts again. `scripts/registry.lua`, which declares
-what the mod adds, runs once, when the game starts.
+what the mod adds, runs once, when the game starts, with the modules it requires from `scripts/registry/`.
 
 ## Tools
 

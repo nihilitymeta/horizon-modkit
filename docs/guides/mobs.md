@@ -1,15 +1,15 @@
 # Mobs and Goals
 
-A mob has two parts. You declare its entity type in `scripts/registry.lua`: a vanilla mob as the template, the
-attributes that differ, and `goals = "none"`, so that your scripts give it all its behaviour. Then an entity class in
-a script gives it goals and callbacks.
+A mob has two parts. You declare its entity type in `scripts/registry.lua` or a module it requires: a vanilla mob as
+the template, the attributes that differ, and `goals = "none"`, so that your scripts give it all its behaviour. Then
+an entity class in a script gives it goals and callbacks.
 
 The examples on this page come from the example mod:
 
 - [scripts/example/mob.lua](../../examples/example_mod/scripts/example/mob.lua): a mob of the mod's own
 - [scripts/example/conversion.lua](../../examples/example_mod/scripts/example/conversion.lua): goals added to a
   vanilla mob
-- [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua): the mob's declaration
+- [scripts/registry/mobs.lua](../../examples/example_mod/scripts/registry/mobs.lua): the mob's declaration
 
 The reference is [Entity classes](../api.md#entity-classes), [Goals](../api.md#goals) and
 [The mob](../api.md#the-mob).

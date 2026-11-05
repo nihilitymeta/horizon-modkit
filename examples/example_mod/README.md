@@ -8,7 +8,12 @@ they make.
 | File | What it shows |
 |---|---|
 | `horizon-mod.toml` | the manifest: capabilities, and `depends = ["horizon_modkit >= 0.7"]` |
-| `scripts/registry.lua` | what the mod adds: an item, a snack, a lure, a block, a nest, a mob and its egg, an effect and a creative tab |
+| `scripts/registry.lua` | what the mod adds: it requires one module for each kind, in order |
+| `scripts/registry/items.lua` | an item, a snack and a lure, with their names (`registry.lang`) |
+| `scripts/registry/blocks.lua` | a block and a nest |
+| `scripts/registry/mobs.lua` | a mob, its spawn egg and its natural spawns |
+| `scripts/registry/effects.lua` | a mob effect |
+| `scripts/registry/tabs.lua` | the creative tab, last, so it lists what the other modules declared |
 | `scripts/init.lua` | what the mod does: it requires one file for each concept |
 | `scripts/example/mod.lua` | the mod object that the other files share |
 | `scripts/example/item.lua` | items and their callbacks |

@@ -106,6 +106,21 @@ there: the script is plain Luau with the engine's `registry` table. The engine's
 [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/lua-bindings.md) describes that
 table. JSON files under `data/` work as well, and textures stay under `assets/`.
 
+A mod that adds a lot can split the script into modules under `scripts/registry/`. `scripts/registry.lua` requires
+them in order, with `require("@registry/items")` for `scripts/registry/items.lua`. Each module runs once, with the
+same `registry` table. Add `"registry": "scripts/registry"` to `.luaurc` so that luau-lsp finds them. The modules
+can't be required from `scripts/init.lua`.
+
+`registry.lang(locale, entries)` names what a module adds. The entries of every call for a locale go into one
+`assets/<id>/lang/<locale>.json`, so each module can name its own things:
+
+```lua
+registry.lang("en_us", { ["item.my_mod.wand"] = "Wand" })
+```
+
+A key given twice is an error that names both calls. A locale written with `registry.lang` can't also be a lang
+file of the mod or a `registry.asset("lang/<locale>")`.
+
 This script declares a mob, its loot, and a block with two stages that a hoe mines:
 
 ```lua

@@ -64,8 +64,8 @@ must be built in Event Horizon (`target/fast/horizon-client`, `horizon-ctl`, and
 ## Facts that cost time before
 
 - `horizon.log` at load is lost, because the log isn't open yet. Log from a hook or a timer.
-- `/reload` runs `scripts/init.lua` again but keeps the Lua state's globals. `scripts/registry.lua` changes need a
-  restart.
+- `/reload` runs `scripts/init.lua` again but keeps the Lua state's globals. `scripts/registry.lua` and
+  `scripts/registry/` changes need a restart.
 - `right_click_block` (a block's `on_use`) runs once per hand, so a click handler must do nothing the second time.
 - A module under `scripts/` needs a `.luaurc` alias named after its folder, and must `return` a value.
 - 26.3's game rules have new names: `advance_time`, `spawn_mobs`. The old ones are refused.

@@ -1,14 +1,14 @@
 # Items
 
-You declare an item once, in `scripts/registry.lua`, as a vanilla template and what differs from it. Its behaviour
-lives in an item class in a script, with one callback for each thing a player does with it.
+You declare an item once, in `scripts/registry.lua` or a module it requires, as a vanilla template and what differs
+from it. Its behaviour lives in an item class in a script, with one callback for each thing a player does with it.
 
 The examples on this page come from the example mod:
 
 - [scripts/example/item.lua](../../examples/example_mod/scripts/example/item.lua): a feather and a snack
 - [scripts/example/lure.lua](../../examples/example_mod/scripts/example/lure.lua): an item that summons and converts
   mobs
-- [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua): the declarations
+- [scripts/registry/items.lua](../../examples/example_mod/scripts/registry/items.lua): the declarations
 
 The reference is [Item classes](../api.md#item-classes).
 
@@ -87,9 +87,9 @@ The lure's `on_hit` turns a zombie into an example mob, and cancels the blow.
 registry.item("example_item", { template = "minecraft:feather", max_stack_size = 16, rarity = "uncommon" })
 ```
 
-Then give it a look: `items/<name>` and `models/item/<name>` under `assets/`, written as tables with
-`registry.asset`, and a name in the lang file. A sword gets its damage through `components`, as the engine's
-[mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md) describes. The
+Then give it a look: `items/<name>` and `models/item/<name>` under `assets/`, written as tables with `registry.asset`,
+and a name with `registry.lang("en_us", { ["item.<id>.<name>"] = "..." })`. A sword gets its damage through
+`components`, as the engine's [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md) describes. The
 [ids reference](../reference/ids.md#item-templates) lists templates that are known to work.
 
 ## See it in the game

@@ -1,14 +1,14 @@
 # Blocks
 
-A block has two parts. You declare it in `scripts/registry.lua`, and you give it behaviour with a block class in a
-script.
+A block has two parts. You declare it in `scripts/registry.lua` or a module it requires, and you give it behaviour
+with a block class in a script.
 
 The examples on this page come from the example mod:
 
 - [scripts/example/block.lua](../../examples/example_mod/scripts/example/block.lua): a lamp with a boolean state
 - [scripts/example/nest.lua](../../examples/example_mod/scripts/example/nest.lua): a block with stages that breeds
   mobs
-- [scripts/registry.lua](../../examples/example_mod/scripts/registry.lua): the declarations of both
+- [scripts/registry/blocks.lua](../../examples/example_mod/scripts/registry/blocks.lua): the declarations of both
 
 The reference is [Block classes](../api.md#block-classes).
 
@@ -138,7 +138,7 @@ A block's declaration names:
 
 Its look and loot are written as tables too: `blockstates/<name>` (a model for each state), `models/block/<name>`,
 `items/<name>`, a loot table at `loot_table/blocks/<name>`, and a `mineable` tag. The lamp and the nest in
-[scripts/registry.lua](../../examples/example_mod/scripts/registry.lua) are two complete declarations.
+[scripts/registry/blocks.lua](../../examples/example_mod/scripts/registry/blocks.lua) are two complete declarations.
 
 ## See it in the game
 

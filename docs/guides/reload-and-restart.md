@@ -6,7 +6,7 @@ Each kind of change needs a different step before it shows in the game, from lea
 |---|---|
 | `/reload` | `scripts/init.lua` and what it requires; recipes, loot tables and tags |
 | the resource-reload key | textures, models, blockstates and the lang file |
-| restarting the game | `scripts/registry.lua`: a new or changed item, block, entity type, effect or creative tab |
+| restarting the game | `scripts/registry.lua` and `scripts/registry/`: a new or changed item, block, entity type, effect or creative tab |
 
 ## `/reload`
 
@@ -26,9 +26,9 @@ The resource-reload key reads `assets/` again. A texture that you paint while th
 
 ## The registry script
 
-The registry script runs once, before the world loads, because what it declares gets ids that the world keeps.
-Anything new in it, or a changed template, property or state, needs the game restarted. A world keeps the blocks and
-mobs of a mod that it was saved with.
+The registry script and its modules run once, before the world loads, because what they declare gets ids that the
+world keeps. Anything new in them, or a changed template, property or state, needs the game restarted. A world keeps
+the blocks and mobs of a mod that it was saved with.
 
 ## Settings
 
