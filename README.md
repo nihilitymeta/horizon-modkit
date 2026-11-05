@@ -32,6 +32,7 @@ the reference.
 | [Spawning](docs/guides/spawning.md) | spawn eggs, natural spawning and summoning |
 | [Models and animation](docs/guides/models-and-animation.md) | a mob's look and sounds, item and block models |
 | [Reload and restart](docs/guides/reload-and-restart.md) | what each kind of change needs |
+| [The inspect stick](docs/guides/inspect-stick.md) | a stick that shows an entity's or a block's data while the game runs |
 
 ## Reference
 
@@ -90,6 +91,7 @@ built checkout of the engine.
 | `tools/check.sh` | loads the modkit, the example mod, the probes and a mod you name, without a game, and runs luau-lsp over them |
 | `tools/scaffold-check.sh` | creates a mod with the template, then builds, checks and plays it |
 | `tools/example-check.sh` | plays the example mod through every concept |
+| `tools/stick-check.sh` | uses the inspect stick on a mob, a villager, a chest, a button and a mod block |
 | `tools/hook-coverage.sh` | drives every hook the engine lists and every modkit callback |
 | `tools/steps-check.sh` | shows one result for each part of the Lua API |
 | `tools/docs-check.sh` | checks the links in the docs, and that each guide's code is in the example file it names |

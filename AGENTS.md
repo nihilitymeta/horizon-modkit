@@ -51,6 +51,7 @@ must be built in Event Horizon (`target/fast/horizon-client`, `horizon-ctl`, and
 |---|---|
 | `tools/check.sh --self-test` | every mod here loads, `luau-lsp analyze` is clean, a broken mod is refused |
 | `tools/example-check.sh` | every concept in the example mod works in a running game |
+| `tools/stick-check.sh` | the inspect stick works in a game without `--dev-tools`, and is a plain stick in survival |
 | `tools/hook-coverage.sh` | every modkit callback is reached from the game |
 | `tools/docs-check.sh` | links resolve, and each Lua block in the docs is copied exactly from a file that runs |
 | `tools/scaffold-check.sh` | a new mod from `cargo horizon-mod new --template lua` builds and runs |

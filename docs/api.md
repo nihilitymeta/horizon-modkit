@@ -185,6 +185,13 @@ registry.data("neoforge/biome_modifier/crawlers", {
 The mob spawns in the category of its template, such as `monster` or `creature`. Add `category` to a spawner entry
 to choose another. Both need the game restarted.
 
+## The inspect stick
+
+The modkit declares one item of its own, `horizon_modkit:inspect_stick`, in its `scripts/registry.lua`, and handles
+its clicks in its `scripts/init.lua`. A mod writes nothing for it. The stick calls the engine's
+`horizon.dev.inspect(who, what)` from the `entity_interact` and `right_click_block` hooks, and cancels the click when
+the engine answers true. The [inspect stick guide](guides/inspect-stick.md) says how to use it.
+
 ## The modkit table
 
 ### `modkit.mod(id)`
