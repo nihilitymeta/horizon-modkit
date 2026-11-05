@@ -33,7 +33,8 @@ the Goals window's **log** button writes the mob's AI to a file.
 ## What you need
 
 - Event Horizon, with the modkit installed. The game doesn't need `--dev-tools`.
-- The windows open on the host's screen, so only the world's owner can use the stick for now.
+- On a LAN world or a server, each player's windows open on their own screen. The server sends them once a second;
+  a window's interval choice changes that, down to a quarter of a second.
 - Press F8 to free the pointer and click the windows' buttons, and F8 again to play.
 
 The engine's [dev-tools.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/dev-tools.md#the-inspect-stick)
