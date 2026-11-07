@@ -255,10 +255,20 @@ evidence = {
 # single-player owner, a guest of their own hub, is heard too.
 dedicated_only = set()
 listed = []
+# The reference has two tables: the hooks (Hook | API | Taken | Lua | What) and the helpers a mod may call
+# (Helper | API | Lua | What). Only a hook fires, so only its table is read; a cell's `\|` is an escaped pipe,
+# not a column break (`send_particles_to`'s description has one).
+table = None
 for line in open(sys.argv[2]):
-    if line.startswith("| `"):
-        c = [x.strip() for x in line.strip().strip("|").split("|")]
-        if len(c) == 5 and c[3]:
+    if line.startswith("| Hook |"):
+        table = "hooks"
+        continue
+    if line.startswith("| Helper |"):
+        table = "helpers"
+        continue
+    if line.startswith("| `") and table == "hooks":
+        c = [x.strip().replace("\\|", "|") for x in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
+        if len(c) >= 5 and c[3]:
             listed.append(c[0].strip("`"))
 missing = []
 for hook in listed:
