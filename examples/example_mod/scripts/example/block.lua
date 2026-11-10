@@ -15,13 +15,14 @@ local Lamp = M:block("example_block")
 -- kept with the chunk, and a tick every server tick when `ticks`.
 Lamp:block_entity { ticks = true, data = { lit_ticks = 0 } }
 
--- A right click lights it; the click is eaten, so the held item does nothing.
--- The game tries the main hand and then the off hand, and this runs for
--- each, so it does one thing that is the same done twice (a toggle would
+-- A right click lights it: the click names no `set_block_property`, so the
+-- whole block is replaced lit, and the click is eaten, so the held item does
+-- nothing. The game tries the main hand and then the off hand, and this runs
+-- for each, so it does one thing that is the same done twice (a toggle would
 -- flip back).
 function Lamp:on_use(block, player, held)
   if block.lit ~= "true" then
-    block:set("lit", "true")
+    block:replace(block.id, { lit = "true" })
     horizon.log(("EXAMPLE block lit by %s"):format(player.name))
   end
   block:cancel()
@@ -49,8 +50,8 @@ function Lamp:on_random_tick(block)
 end
 
 -- The scheduled tick: a dark lamp lights itself. block:schedule_tick and
--- block:handled() work in these two ticks only; block:set works here, in
--- on_use and in on_block_entity_tick.
+-- block:handled() work in these two ticks only; block:set works here and in
+-- on_block_entity_tick, block:replace wherever a host is in place.
 function Lamp:on_tick(block)
   if block.lit ~= "true" then
     block:set("lit", "true")

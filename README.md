@@ -37,6 +37,7 @@ the reference.
 ## Reference
 
 - [API reference](docs/api.md): every class, function and callback of the modkit
+- [Migrating to the native hooks](docs/migrating-to-native-hooks.md): what the hook switch changed for your mod
 - [Ids](docs/reference/ids.md): vanilla ids that mods often need
 - [FAQ](docs/reference/faq.md): common problems and their fixes
 - [Testing](docs/testing.md): what to look for in the game, and the scripts that check a mod
@@ -92,7 +93,8 @@ built checkout of the engine.
 | `tools/scaffold-check.sh` | creates a mod with the template, then builds, checks and plays it |
 | `tools/example-check.sh` | plays the example mod through every concept |
 | `tools/stick-check.sh` | uses the inspect stick on a mob, a villager, a chest, a button and a mod block |
-| `tools/hook-coverage.sh` | drives every hook the engine lists and every modkit callback |
+| `tools/hook-coverage.sh` | drives the driven hooks and every modkit callback |
+| `tools/hud-check.sh` | checks the draw hooks with `tools/hud-probe` |
 | `tools/steps-check.sh` | shows one result for each part of the Lua API |
 | `tools/docs-check.sh` | checks the links in the docs, and that each guide's code is in the example file it names |
 

@@ -4,7 +4,7 @@ This guide covers three things that keep a mod's state:
 
 - settings, in a file that players can edit
 - timers, which run code later or at intervals
-- saved tables, which are kept with the world, a player or a mob
+- saved tables, which are kept with the world, a player or a block with a block entity
 
 The examples come from
 [scripts/example/timers_and_data.lua](../../examples/example_mod/scripts/example/timers_and_data.lua). The reference
@@ -82,11 +82,12 @@ A timer is the way out of a callback that can't reach the world, or that reaches
 |---|---|
 | `horizon.world_data()` | the world |
 | `player:data()` | a player |
-| `mob.data` | a mob |
-| `block.data` | a block with a block entity |
+| `block.data` | a block with a block entity, in the ticks |
 
 Each table is empty at first. It is written back after the callback, and kept through saves under the mod's own id,
-apart from any other mod's data. It can hold numbers, strings, booleans and nested tables.
+apart from any other mod's data. It can hold numbers, strings, booleans and nested tables. Keep per-mob state in
+the world's table, keyed by the mob's id: the events carry no saved table on a mob, and a click names no block
+data either.
 
 ## See it in the game
 

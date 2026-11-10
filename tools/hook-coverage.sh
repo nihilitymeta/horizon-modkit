@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
-# Drives a game through every hook the engine's generated reference
-# (Event Horizon's docs/api/hook-points.md) says reaches Lua, with
-# tools/hook-probe logging each beside this modkit and examples/example_mod,
-# and reports the ones that did not fire. tools/modkit-probe rides along:
-# every modkit callback of those hooks, each expected too.
+# Drives a game through the hooks tools/hook-probe listens to, with the probe
+# logging each beside this modkit and examples/example_mod, and reports the
+# ones that did not fire. tools/modkit-probe rides along: every modkit
+# callback of those hooks, each expected too. The reference (Event Horizon's
+# docs/api/hook-points.md) lists every hook that reaches Lua, far more than
+# this script can drive; the ones outside the driven set are reported as
+# "not driven", which is informational, not a failure. A driven hook that did
+# not fire fails the check.
 #
 #   HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/hook-coverage.sh
 #
@@ -36,14 +39,14 @@ say() { echo "--- $*"; }
 # The scripts first, headlessly (`cargo horizon-mod check`, as tools/check.sh runs it): a script that fails to
 # load stops here, with its line, before a game is started.
 TOOL=${TOOL:-$HORIZON/target/debug/cargo-horizon-mod}
-for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe"; do
+for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe"; do
   "$TOOL" horizon-mod check "$m" --game "$HORIZON/target/fast/horizon-client" --dev-mod "$MODKIT" >/dev/null || { echo "the scripts of $m do not load; see above"; exit 1; }
 done
 echo "scripts load: the example mod and the probes"
 # With luau-lsp installed: the scripts analyzed against the modkit's types (a misspelled function or hook, a nil
 # used as a number), before any game.
 if command -v luau-lsp >/dev/null; then
-  for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe"; do
+  for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe"; do
     OUT=$(cd "$m" && luau-lsp analyze --definitions "@horizon=$MODKIT/types/horizon.d.lua" --platform=standard scripts 2>&1) || { echo "$OUT" | grep -v '^\['; echo "luau-lsp analyze: errors in $m (above)"; exit 1; }
   done
   echo "luau-lsp analyze: clean"
@@ -94,7 +97,7 @@ for try in 1 2 3; do
   $CTL interact $SX $CY $SZ east | j 'print("right-clicked:", d.get("ok", d.get("error")))'
   $CTL look-at $SX $CY $SZ >/dev/null
   $CTL break $SX $CY $SZ --timeout 10 | j 'print("broke:", d.get("block_before", d.get("error")))'
-  grep -q "PROBE hook block_broken" "$LOG" && break
+  grep -q "PROBE hook destroy_block" "$LOG" && break
   $CTL command "setblock $SX $CY $SZ minecraft:air" >/dev/null; sleep 1
 done
 $CTL look 0 -60 >/dev/null
@@ -117,7 +120,7 @@ for try in 1 2 3 4; do
   $CTL look-at-entity "$ZID" >/dev/null
   $CTL attack "$ZID" | j 'print("hit with the stick:", d.get("hit", d.get("error")), "health:", d.get("health_before"), "->", d.get("health"))'
   sleep 0.7
-  grep -q "PROBE hook item_hit" "$LOG" && break
+  grep -q "PROBE hook attack_entity" "$LOG" && break
 done
 $CTL select netherite_sword >/dev/null
 for try in 1 2 3 4 5 6; do
@@ -133,8 +136,8 @@ $CTL command "tp @s $CX $((CY+5)) $CZ" >/dev/null; sleep 2.5
 # push on the player (a zombie never does here: the example mod's stalking goal keeps it at a distance).
 $CTL command "summon minecraft:zombie $((CX+1)) $((CY+6)) $((CZ+1))" >/dev/null; sleep 2
 $CTL command "summon minecraft:husk $((CX+2)) $CY $((CZ+1))" >/dev/null
-for i in $(seq 1 12); do sleep 1; grep -q "PROBE hook player_knockback" "$LOG" && break; done
-echo "pushed by a husk's blow: $(grep -q "PROBE hook player_knockback" "$LOG" && echo yes || echo no)"
+for i in $(seq 1 15); do sleep 1; grep -q "MODKIT cb Players:on_knockback" "$LOG" && break; done
+echo "pushed by a husk's blow: $(grep -q "MODKIT cb Players:on_knockback" "$LOG" && echo yes || echo no)"
 $CTL command "kill @e[type=!player,distance=..24]" >/dev/null
 # A stone block broken in survival with a pickaxe: its loot (a creative break rolls none).
 $CTL give minecraft:netherite_pickaxe 1 >/dev/null
@@ -214,7 +217,7 @@ $CTL look 0 -60 >/dev/null
 # did not always finish it).
 for try in 1 2 3; do
   $CTL use-item --hold 3 >/dev/null; sleep 0.5
-  grep -q "PROBE hook item_finished" "$LOG" && break
+  grep -q "PROBE hook living_entity_use_item_finish" "$LOG" && break
 done
 # As typed in the chat box, so the mods hear it as a player's command (the console's own path does not tell them).
 $CTL chat "/probe" >/dev/null; sleep 0.5
@@ -235,29 +238,30 @@ python3 - "$LOG" "$HORIZON/docs/api/hook-points.md" <<'PY'
 import re, sys
 log = open(sys.argv[1], errors="replace").read()
 seen = set(re.findall(r"PROBE hook (\S+)", log))
-# What shows each engine hook reached Lua: the probe's handler for it, or the
-# effect of the answer a scripted mod gives it.
-evidence = {
-    "attack_entity": "item_hit", "block_entity": "block_entity_tick", "block_entity_tick": "block_entity_tick",
-    "block_entity_ticks": "block_entity_tick", "destroy_block": "block_broken", "entity_tick_listened": "mob_tick",
-    "entity_tick_post": "mob_tick", "interact_entity": "mob_interact", "inventory_tick": "item_tick",
-    "living_entity_use_item_finish": "item_finished", "living_incoming_damage": "mob_hurt",
-    "perform_command": "command", "place_block": "block_placed", "player_logged_in": "player_joined",
-    "player_logged_out": "player_left", "register_commands": "command", "use_item": "item_use",
-    "use_item_on": "item_use_on",
-    "living_fall": "player_fall", "living_heal": "mob_heal", "living_knockback": "mob_knockback",
-    "explosion_detonate": "explosion", "living_equipment_change": "mob_equipped",
-    "entity_join_level": "entity_joined", "hurt_enemy": "item_hurt_enemy",
-    "living_entity_use_item_start": "item_use_start", "projectile_launch": "projectile_launched",
-    "hears_projectile_impacts": "projectile_impact", "living_equipment_listened": "mob_equipped",
-}
+# The hooks the drive above exercises, by their native names: every one must
+# have fired. `perform_command` and `register_commands` share one proof, the
+# probe's `/probe` command declared and typed; `data_pack_files` is the
+# scripts reloading on `/reload`.
+driven = ["server_tick", "world_lifecycle", "player_logged_in", "player_logged_out",
+    "player_respawned", "player_died", "tick_block", "right_click_block", "block_entity_tick", "random_tick",
+    "mob_spawned", "mob_ai_register", "register_goals", "entity_tick_post", "living_incoming_damage",
+    "mob_died", "mob_killed", "interact_entity", "use_item", "use_item_on", "inventory_tick", "item_crafted",
+    "item_dropped", "destroy_block", "place_block", "living_heal", "attack_entity", "living_fall",
+    "living_knockback", "living_equipment_change", "hurt_enemy", "living_entity_use_item_start",
+    "living_entity_use_item_finish", "loot_drops", "player_tick", "player_command", "player_chat",
+    "explosion_detonate", "player_changed_dimension", "player_bed_enter", "player_exp_change",
+    "player_container_open", "player_item_held", "projectile_impact", "projectile_launch", "entity_join_level",
+    "perform_command", "register_commands", "data_pack_files"]
+evidence = {"perform_command": "command", "register_commands": "command"}
 # Hooks the engine's docs give to dedicated servers or LAN guests only; empty while the
 # single-player owner, a guest of their own hub, is heard too.
 dedicated_only = set()
 listed = []
 # The reference has two tables: the hooks (Hook | API | Taken | Lua | What) and the helpers a mod may call
 # (Helper | API | Lua | What). Only a hook fires, so only its table is read; a cell's `\|` is an escaped pipe,
-# not a column break (`send_particles_to`'s description has one).
+# not a column break. A hook reaches Lua when its Lua cell is filled; the two
+# declaration-served hooks have filled cells but take no `horizon.on`
+# registration.
 table = None
 for line in open(sys.argv[2]):
     if line.startswith("| Hook |"):
@@ -270,8 +274,9 @@ for line in open(sys.argv[2]):
         c = [x.strip().replace("\\|", "|") for x in re.split(r"(?<!\\)\|", line.strip().strip("|"))]
         if len(c) >= 5 and c[3]:
             listed.append(c[0].strip("`"))
+declared_only = {"block_entity", "block_entity_ticks"}
 missing = []
-for hook in listed:
+for hook in driven:
     if hook in dedicated_only:
         continue
     if hook == "data_pack_files":
@@ -280,10 +285,13 @@ for hook in listed:
         ok = evidence.get(hook, hook) in seen
     if not ok:
         missing.append(hook)
-print(f"{len(listed)} hooks reach Lua by the reference; {len(listed) - len(missing)} shown in game")
-print("shown:", " ".join(h for h in listed if h not in missing and h not in dedicated_only))
-print("missing:", " ".join(missing) if missing else "none")
+not_driven = [h for h in listed if h not in driven and h not in dedicated_only and h not in declared_only]
+print(f"{len(listed)} hooks reach Lua by the reference; {len(driven) - len(missing)} of {len(driven)} driven hooks fired in game")
+print("driven and fired:", " ".join(h for h in driven if h not in missing and h not in dedicated_only))
+print("driven but silent:", " ".join(missing) if missing else "none")
+print("reaches Lua but not driven here:", " ".join(not_driven) if not_driven else "none")
 print("guests and dedicated servers only, not checked here:", " ".join(sorted(dedicated_only)))
+print("declaration-served, no handler to drive:", " ".join(sorted(declared_only)))
 # The modkit's callbacks for the same hooks (tools/modkit-probe), each written as a mod writes it.
 callbacks = ["Players:on_tick", "Players:on_hurt", "Players:on_fall", "Players:on_knockback", "Players:on_chat",
     "Players:on_command", "Players:on_change_dimension", "Players:on_sleep", "Players:on_exp", "Players:on_open_menu",

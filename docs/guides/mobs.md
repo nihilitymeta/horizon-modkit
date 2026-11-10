@@ -70,13 +70,14 @@ Callbacks run when something happens to the mob:
 | `on_spawned(ev)` | the mob spawns |
 | `on_tick(mob)` | every tick |
 | `on_interact(mob, player, held)` | a player right-clicks it. Return true to take the click |
-| `on_hurt(mob, hit)` | it is about to take damage. `hit:cancel()` and `hit:set_amount(n)` change the hit |
-| `on_fall`, `on_knockback` | it is about to land, or to be knocked back |
+| `on_hurt(mob, hit)` | it is about to take damage. `hit:cancel()` refuses it, `hit.amount = n` changes it |
+| `on_fall`, `on_knockback` | it is about to land, or to be knocked back. Assign the fields to change them |
 | `on_equip` | its equipment changes |
-| `on_death(mob, cause)` | it dies |
+| `on_death(mob, cause)` | it dies. `cause.player` is the killer's uuid, or nil |
 | `on_drops(mob, drops, source)` | its loot is about to drop. Change `drops` in place |
 
-In a callback, `mob.data` is the mod's own saved table on that mob. It is kept through saves.
+The events carry no saved table on the mob. Keep per-mob state in the world's saved table (`horizon.world_data()`),
+keyed by the mob's id, as the feeding count in mob.lua does.
 
 ## Vanilla mobs
 

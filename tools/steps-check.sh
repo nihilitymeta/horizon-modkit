@@ -36,14 +36,14 @@ rm -f "$GAME_DIR/config/step_probe.json"
 # The scripts first, headlessly (`cargo horizon-mod check`, the modkit's tools/check.sh): a script that fails to
 # load stops here, with its line, before a game is started.
 TOOL=${TOOL:-$HORIZON/target/debug/cargo-horizon-mod}
-for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe"; do
+for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe"; do
   "$TOOL" horizon-mod check "$m" --game "$HORIZON/target/fast/horizon-client" --dev-mod "$MODKIT" >/dev/null || { echo "the scripts of $m do not load; see above"; exit 1; }
 done
 echo "scripts load: the example mod and the probes"
 # With luau-lsp installed: the scripts analyzed against the modkit's types (a misspelled function or hook, a nil
 # used as a number), before any game.
 if command -v luau-lsp >/dev/null; then
-  for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe"; do
+  for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe"; do
     OUT=$(cd "$m" && luau-lsp analyze --definitions "@horizon=$MODKIT/types/horizon.d.lua" --platform=standard scripts 2>&1) || { echo "$OUT" | grep -v '^\['; echo "luau-lsp analyze: errors in $m (above)"; exit 1; }
   done
   echo "luau-lsp analyze: clean"

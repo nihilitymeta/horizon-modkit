@@ -1,7 +1,8 @@
 -- A player as a callback sees it: the engine's table (`uuid`, `name`,
--- `dimension`, `position`, `game_mode`, `health`, `held` for the acting
--- player) with methods that ask the game to act on them, applied after the
--- call, and reads answered at once. Any callback with a host.
+-- `dimension`, `position`, `game_mode`, `health`, `held` on a command's player
+-- table only) with methods that ask the game to act on them, applied after
+-- the call, and reads answered at once. Any callback with a host. Only
+-- `command` handlers name the hand: elsewhere the engine hands out no `held`.
 --
 --   function Players:on_join(player)
 --     player:give("minecraft:bread", 3)
@@ -9,14 +10,22 @@
 --     player:title("Welcome", player.name)
 --     if player:count("minecraft:diamond") > 0 then ... end
 --   end
+local Held = require("@modkit/held")
+
 local Player = {}
 Player.__index = Player
 
 --- Adds the player methods to the engine's player table, and returns it.
---- A table that already has them is returned as it is.
+--- A table that already has them is returned as it is. A table without the
+--- hand names it from the selected-slot tracking (`held` is `{item, count,
+--- plain}`, or absent): a command's player table keeps the engine's own.
 function Player.wrap(t: Player)
   local raw: any = t
   if raw == nil or getmetatable(raw) == Player then return raw end
+  if raw.held == nil then
+    Held.track()
+    raw.held = Held.of()
+  end
   return setmetatable(raw, Player)
 end
 

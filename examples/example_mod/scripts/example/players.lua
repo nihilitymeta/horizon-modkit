@@ -42,9 +42,11 @@ function Players:on_leave(player)
 end
 
 -- Died (`cause` is the death message's key, such as death.attack.lava) and
--- came back.
-function Players:on_death(player, cause)
-  horizon.broadcast(("%s died: %s"):format(player.name, cause or "unknown"))
+-- came back. The event names the dead player by uuid only.
+function Players:on_death(uuid, cause)
+  local p = horizon.player(uuid)
+  local name = p and p.name or uuid
+  horizon.broadcast(("%s died: %s"):format(name, cause or "unknown"))
   horizon.log(("EXAMPLE player died: %s"):format(cause or "unknown"))
 end
 function Players:on_respawn(player)

@@ -1,0 +1,9 @@
+id = "hud_probe"
+name = "HUD Probe"
+version = "0.1.0"
+description = "Draws a rect and a line of text on the hud and gui_layer_post hooks; run by tools/hud-check.sh"
+authors = ["whos-carmen"]
+api = "0.2"
+side = "both"
+capabilities = ["scripts"]
+experimental = ["scripts"]

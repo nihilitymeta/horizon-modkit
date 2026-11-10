@@ -6,7 +6,8 @@ local function show(v)
   table.sort(parts)
   return "{" .. table.concat(parts, " ") .. "}"
 end
-horizon.on("player_joined", function(player)
+horizon.on("player_logged_in", function(event)
+  local player = event.player
   local t = horizon.time()
   local b = horizon.block(math.floor(player.position.x), math.floor(player.position.y) - 1, math.floor(player.position.z))
   local hit = horizon.raycast(player.uuid, 8)
@@ -19,13 +20,13 @@ horizon.on("player_joined", function(player)
   horizon.log(("STEP4 data: world.launches=%d player.joins=%d"):format(w.launches, p.joins))
 end)
 horizon.after(20, function() horizon.log("STEP4 timer: after 20 ticks") end)
-horizon.on("mob_hurt", function(mob, damage_type, causing, direct, amount)
-  horizon.log(("STEP3 hurt: example mob %d takes %.1f of %s"):format(mob.id, amount, damage_type))
+horizon.on("living_incoming_damage", function(event)
+  horizon.log(("STEP3 hurt: example mob %d takes %.1f of %s"):format(event.entity, event.amount, event.damage_type))
 end, "example_mod:example_mob")
-horizon.on("player_died", function(player, cause) horizon.log(("STEP3 died: %s (%s)"):format(player.name, tostring(cause))) end)
-horizon.on("player_respawned", function(player) horizon.log(("STEP3 respawned: %s at %.0f %.0f %.0f"):format(player.name, player.position.x, player.position.y, player.position.z)) end)
-horizon.on("mob_spawned", function(dimension, kind, x, y, z, natural)
-  horizon.log(("STEP6 spawned %s natural=%s"):format(kind, tostring(natural)))
+horizon.on("player_died", function(event) horizon.log(("STEP3 died: %s (%s)"):format(event.player, tostring(event.cause))) end)
+horizon.on("player_respawned", function(event) horizon.log(("STEP3 respawned: %s at %.0f %.0f %.0f"):format(event.player.name, event.player.position.x, event.player.position.y, event.player.position.z)) end)
+horizon.on("mob_spawned", function(event)
+  horizon.log(("STEP6 spawned %s natural=%s"):format(event.kind, tostring(event.natural)))
 end, "example_mod:example_mob")
 horizon.command("stepfx", 0, function(player, args)
   local x, y, z = player.position.x, player.position.y, player.position.z
@@ -48,7 +49,7 @@ cfg.runs = (cfg.runs or 0) + 1
 cfg.limit = cfg.limit or 16
 horizon.save_config(cfg)
 -- Logged at the join: at load the game's log is not open yet.
-horizon.on("player_joined", function(player) horizon.log(("STEP9 config: runs=%d limit=%d"):format(cfg.runs, cfg.limit)) end)
+horizon.on("player_logged_in", function(event) horizon.log(("STEP9 config: runs=%d limit=%d"):format(cfg.runs, cfg.limit)) end)
 
 horizon.command("probehelpers", 0, function(player, args)
   local x, y, z = math.floor(player.position.x), math.floor(player.position.y), math.floor(player.position.z)
@@ -73,9 +74,9 @@ horizon.command("probehelpers", 0, function(player, args)
   horizon.feedback("STEP9 helpers queued for " .. player.name)
   -- The glowstone set above, broken by the player in survival: its loot,
   -- with the block named from its state (the state_name helper).
-  horizon.on("loot_drops", function(source, drops)
+  horizon.on("loot_drops", function(event)
     horizon.log(("STEP9 loot: %s state=%s table=%s drops=%d by %s"):format(
-      source.block.id, source.block.state, source.table, #drops, source.player and source.player.name or "nobody"))
+      event.block.id, event.block.state, event.table, #event.drops, event.player and event.player.name or "nobody"))
   end, "minecraft:glowstone")
   -- The named-player helpers and the console's commands reach nobody inside
   -- a player's own command: next tick they do.

@@ -122,9 +122,9 @@ end
 function Mod:save_config(c: Data?) horizon.save_config(c or self._config) end
 
 --- Registers a handler for an engine hook, as `horizon.on` does, for what
---- the classes do not cover: `M:on("explosion", fn)`,
---- `M:on("entity_joined", fn, "minecraft:arrow")`,
---- `M:on("projectile_impact", fn, "minecraft:snowball")`, `M:on("mob_heal", fn)`.
+--- the classes do not cover: `M:on("explosion_detonate", fn)`,
+--- `M:on("entity_join_level", fn, "minecraft:arrow")`,
+--- `M:on("projectile_impact", fn, "minecraft:snowball")`, `M:on("living_heal", fn)`.
 function Mod:on(hook: string, fn: (...any) -> (), kind: string?)
   (horizon.on :: any)(hook, fn, kind)
 end

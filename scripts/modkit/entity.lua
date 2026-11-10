@@ -6,67 +6,87 @@
 --   Crawler:target_goals { ... }
 --   Crawler.replace_goals = true               -- drop the vanilla goals first (a mod type with "goals": "template")
 --   function Crawler:on_spawned(ev) end        -- ev: dimension, kind, x, y, z, natural
---   function Crawler:on_tick(mob) end          -- every server tick: mob.data, host actions
+--   function Crawler:on_tick(mob) end          -- every server tick: mob is id and kind only, host actions
 --   function Crawler:on_ai_tick(mob, state) end -- every AI tick, as a goal of its own: steering actions
---   function Crawler:on_hurt(mob, hit) end     -- about to take damage: hit:set_amount(n), hit:cancel()
---   function Crawler:on_death(mob, cause) end  -- it died, by any cause: cause.damage_type, .causing, .player (or nil)
+--   function Crawler:on_hurt(mob, hit) end     -- about to take damage: hit.amount = n, hit:cancel()
+--   function Crawler:on_death(mob, cause) end  -- it died, by any cause: cause.damage_type, .causing, .player (a uuid, or nil)
 --   function Crawler:on_interact(mob, player, held) end -- right-clicked; return true to take the click
---   function Crawler:on_fall(mob, fall) end     -- about to land: fall.distance, fall:set_distance(n), fall:set_multiplier(n), fall:cancel()
---   function Crawler:on_knockback(mob, hit) end -- about to be pushed: hit.strength, hit:set_strength(n), hit:cancel()
+--   function Crawler:on_fall(mob, fall) end     -- about to land: fall.distance = n, fall:cancel()
+--   function Crawler:on_knockback(mob, hit) end -- about to be pushed: hit.strength = n, hit:cancel()
 --   function Crawler:on_equip(mob, slot, from, to) end  -- an equipment slot changed (item tables or nil)
 --   function Crawler:on_drops(mob, drops, source) end   -- its loot is about to drop: change `drops` ({id, count} entries) in place
 --
 -- A callback is wired to the game's hook for the class's kind the moment it
 -- is defined, so a kind without one costs nothing each tick.
+--
+-- The native events carry no per-mob saved table and no mob view: `mob` is
+-- the mob's id and kind, except in `on_spawned` and the goal callbacks. The
+-- acting player of `on_interact` is the first player of `horizon.players()`,
+-- and `held` is their selected stack. Read the mob with `horizon.mob(id)`
+-- when the callback's host allows it.
 local Goal = require("@modkit/goal")
 local Mob = require("@modkit/mob")
 local Player = require("@modkit/player")
 
 local Entity = {}
 
--- Which hook each callback listens to, and how the hook's arguments become
--- the callback's.
+-- The event's mob as the callbacks see it: the live view when the hook's
+-- host holds it, else only id and kind. The mid-event hooks have no host,
+-- and a dead or gone mob has no view.
+local function view(event)
+  return horizon.mob(event.entity) or { id = event.entity, kind = event.kind }
+end
+
+-- Which hook each callback listens to, and how the hook's one event table
+-- becomes the callback's arguments.
 local CALLBACKS = {
-  on_spawned = { "mob_spawned", function(e, dimension, kind, x, y, z, natural)
-    e:on_spawned({ dimension = dimension, kind = kind, x = x, y = y, z = z, natural = natural })
+  on_spawned = { "mob_spawned", function(e, event)
+    e:on_spawned({ dimension = event.dimension, kind = event.kind, x = event.pos.x, y = event.pos.y, z = event.pos.z, natural = event.natural })
   end },
-  on_tick = { "mob_tick", function(e, dimension, mob, data)
-    e:on_tick(Mob.host(mob, dimension, data))
+  on_tick = { "entity_tick_post", function(e, event)
+    e:on_tick(Mob.host(view(event), event.dimension, nil))
   end },
-  on_hurt = { "mob_hurt", function(e, mob, damage_type, causing, direct, amount)
+  on_hurt = { "living_incoming_damage", function(e, event)
     local hit = {
-      damage_type = damage_type, causing = causing, direct = direct, amount = amount,
-      set_amount = function(self, n) self.amount = n; horizon.set_amount(n) end,
+      damage_type = event.damage_type, causing = event.causing, direct = event.direct, amount = event.amount,
+      set_amount = function(self, n) self.amount = n; event.amount = n end,
       cancel = function(self) self.canceled = true; horizon.cancel() end,
     }
-    e:on_hurt(Mob.host(mob, nil, nil), hit)
+    e:on_hurt(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), hit)
   end },
-  on_death = { "mob_died", function(e, dimension, mob, cause, data)
-    e:on_death(Mob.host(mob, dimension, data), cause)
+  on_death = { "mob_died", function(e, event)
+    e:on_death(Mob.host({ id = event.entity, kind = event.kind }, event.dimension, nil), {
+      damage_type = event.damage_type, causing = event.causing, player = event.player,
+    })
   end },
-  on_interact = { "mob_interact", function(e, dimension, mob, player, held, data)
-    if e:on_interact(Mob.host(mob, dimension, data), Player.wrap(player), held) == true then horizon.cancel() end
+  on_interact = { "interact_entity", function(e, event)
+    local stack = event.stack
+    local held = stack ~= nil and { item = stack.id, count = stack.count, plain = stack.plain } or nil
+    if e:on_interact(Mob.host(view(event), horizon.time().dimension, nil), Player.wrap(horizon.players()[1]), held) == true then horizon.cancel() end
   end },
-  on_fall = { "mob_fall", function(e, mob, distance, multiplier)
-    e:on_fall(Mob.host(mob, nil, nil), {
-      distance = distance, multiplier = multiplier,
-      set_distance = function(self, n) self.distance = n; horizon.set_distance(n) end,
-      set_multiplier = function(self, n) self.multiplier = n; horizon.set_multiplier(n) end,
+  on_fall = { "living_fall", function(e, event)
+    e:on_fall(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), {
+      distance = event.distance, multiplier = event.multiplier,
+      set_distance = function(self, n) self.distance = n; event.distance = n end,
+      set_multiplier = function(self, n) self.multiplier = n; event.multiplier = n end,
       cancel = function(self) self.canceled = true; horizon.cancel() end,
     })
   end },
-  on_knockback = { "mob_knockback", function(e, mob, damage_type, causing, direct, strength, x, z)
-    e:on_knockback(Mob.host(mob, nil, nil), {
-      damage_type = damage_type, causing = causing, direct = direct, strength = strength, x = x, z = z,
-      set_strength = function(self, n) self.strength = n; horizon.set_strength(n) end,
+  on_knockback = { "living_knockback", function(e, event)
+    local hit = {
+      damage_type = event.damage_type, causing = event.causing, direct = event.direct,
+      strength = event.strength, x = event.x, z = event.z,
+      set_strength = function(self, n) self.strength = n; event.strength = n end,
       cancel = function(self) self.canceled = true; horizon.cancel() end,
-    })
+    }
+    e:on_knockback(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), hit)
+    event.x, event.z = hit.x, hit.z
   end },
-  on_equip = { "mob_equipped", function(e, mob, slot, from, to)
-    e:on_equip(Mob.host(mob, horizon.time().dimension, nil), slot, from, to)
+  on_equip = { "living_equipment_change", function(e, event)
+    e:on_equip(Mob.host({ id = event.entity, kind = event.kind }, horizon.time().dimension, nil), event.slot, event.from, event.to)
   end },
-  on_drops = { "loot_drops", function(e, source, drops)
-    e:on_drops(Mob.host(source.mob, source.dimension, nil), drops, source)
+  on_drops = { "loot_drops", function(e, event)
+    e:on_drops(Mob.host(event.entity, event.dimension, nil), event.drops, event)
   end },
 }
 
@@ -81,7 +101,7 @@ end
 
 function Entity.new(mod, id)
   local e = setmetatable({ mod = mod, id = id, goal_list = {}, target_list = {}, replace_goals = false, _hooked = {} }, Entity)
-  horizon.on("mob_ai_register", function(mob) e:_register(mob) end, id)
+  horizon.on("mob_ai_register", function(event) e:_register(event.mob) end, id)
   return e
 end
 

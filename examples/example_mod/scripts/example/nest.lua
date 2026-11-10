@@ -33,23 +33,31 @@ end
 
 -- Bone meal moves it a stage at once; a mature one stays mature. The click
 -- is eaten, so the bone meal is kept. This runs once per hand (the main
--- hand, then the off hand a tick or two later, `held` the main hand's both
--- times), and the stage set by the first run is in place for the second:
--- the tick of the last meal, kept in block.data, tells the off hand's run
--- apart (a player's next click is four ticks away at the least).
+-- hand, then the off hand a tick or two later, `held` the selected stack
+-- both times), and the stage set by the first run is in place for the
+-- second: the tick of the last meal, kept in the world's saved table under
+-- the block's position (a click names no block data), tells the off hand's
+-- run apart (a player's next click is four ticks away at the least).
 function Nest:on_use(block, player, held)
   if held and held.item == "minecraft:bone_meal" then
-    local data, now = block.data, horizon.ticks()
-    local same_click = data ~= nil and data.meal_tick ~= nil and now - data.meal_tick < 4
+    local w = horizon.world_data()
+    w.meal = w.meal or {}
+    local key = block.x .. " " .. block.y .. " " .. block.z
+    local now = horizon.ticks()
+    local same_click = w.meal[key] ~= nil and now - w.meal[key] < 4
     local next_stage = NEXT_STAGE[block.stage]
     if next_stage and not same_click then
-      block:set("stage", next_stage)
-      if data then data.meal_tick = now end
+      block:replace(block.id, { stage = next_stage })
+      w.meal[key] = now
       horizon.log(("EXAMPLE nest bone mealed to %s by %s"):format(next_stage, player.name))
     end
     block:cancel()
-  elseif block.data then
-    player:action_bar(("a %s nest: charge %d, bred %d"):format(block.stage, block.data.charge, block.data.bred))
+  else
+    local w = horizon.world_data()
+    local seen = (w.nests or {})[block.x .. " " .. block.y .. " " .. block.z]
+    if seen then
+      player:action_bar(("a %s nest: charge %d, bred %d"):format(block.stage, seen.charge, seen.bred))
+    end
   end
 end
 
@@ -62,10 +70,18 @@ function Nest:on_block_entity_tick(block)
   local data = block.data
   if not data or block.stage ~= "mature" then return end
   data.charge = data.charge + 1
-  if data.charge < BREED_TICKS or block:above() ~= "minecraft:air" then return end
+  -- A mirror for the click, which names no block data.
+  local w = horizon.world_data()
+  w.nests = w.nests or {}
+  local key = block.x .. " " .. block.y .. " " .. block.z
+  if data.charge < BREED_TICKS or block:above() ~= "minecraft:air" then
+    w.nests[key] = { charge = data.charge, bred = data.bred }
+    return
+  end
   block:summon("example_mod:example_mob", 0, 1, 1)
   data.charge = 0
   data.bred = data.bred + 1
+  w.nests[key] = { charge = data.charge, bred = data.bred }
   horizon.log(("EXAMPLE nest bred an example mob (%d so far)"):format(data.bred))
   if data.bred >= cfg.nest_breeds then
     local l = block:light()

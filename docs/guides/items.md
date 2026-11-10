@@ -55,7 +55,8 @@ end
 
 `item` is the stack in hand: `{id, count, damage, plain}`, with `item:take(n)` and `item:give(n)` on the player's
 inventory. `player` is the acting player, with `player:effect`, `player:tell`, `player:action_bar`, `player:give` and
-the rest ([players and events](players-and-events.md)).
+the rest ([players and events](players-and-events.md)). Each hook wakes one handler for every item, which keeps the
+stacks with its own id; `on_hit` reads the hand from the selected slot.
 
 ## An item that acts on the world
 

@@ -5,9 +5,11 @@
 -- In a goal (`can_use`, `tick`...) the mob is wrapped with the goal's `out`
 -- table: steering, fighting and life actions on this mob. In a lifecycle
 -- callback (`on_tick`, `on_death`, `on_interact`) it is wrapped with the
--- hook's dimension and `mob.data`, the mod's saved table on the mob; the
--- actions there go by the mob's id (`set_health`, `push`, `teleport`,
--- `kill`, `remove`, `summon`, `broadcast`). `on_hurt` has neither.
+-- hook's dimension; the actions there go by the mob's id (`set_health`,
+-- `push`, `teleport`, `kill`, `remove`, `summon`, `broadcast`). The events
+-- carry no per-mob saved table and no view, so `dimension` may be nil and the
+-- view's fields (position, health...) read nil outside a goal. `on_hurt`,
+-- `on_fall` and `on_knockback` have neither.
 local Mob = {}
 Mob.__index = function(self, key)
   local method = Mob[key]
@@ -21,8 +23,8 @@ function Mob.wrap(view, out)
 end
 
 --- Creates a mob from the view (or `{id, kind}`) of a lifecycle hook, with
---- the dimension the mob is in and `data`, its saved table (nil when the
---- hook has none).
+--- the dimension the mob is in and `data`, its saved table (nil: the native
+--- hooks carry none).
 function Mob.host(view, dimension, data)
   return setmetatable({ _view = view, dimension = dimension, data = data }, Mob)
 end

@@ -49,7 +49,7 @@ end
 | Callback | When it runs |
 |---|---|
 | `on_join`, `on_leave`, `on_respawn` | a player joins, leaves, or respawns |
-| `on_death(player, cause)` | a player dies; `cause` is the death message's key |
+| `on_death(uuid, cause)` | a player dies; `cause` is the death message's key. The dead player is named by uuid only |
 | `on_break_block(player, block)` | a player breaks a block. Return true to keep it |
 | `on_place_block(player, block, item)` | a player places a block |
 | `on_pickup(player, item, count)` | a player is about to pick up items. Return true to leave them |
@@ -66,7 +66,8 @@ end
 
 In these callbacks, and in every other callback that names a player, `player` is a table with:
 
-- the fields `uuid`, `name`, `position`, `dimension`, `game_mode`, `health` and `held`
+- the fields `uuid`, `name`, `position`, `dimension`, `game_mode`, `health` and `held` (the selected slot, tracked
+  from `player_item_held`; a command's table carries the engine's own)
 - the methods `give`, `take`, `inventory`, `count`, `effect`, `experience`, `levels`, `nickname`, `tell`,
   `action_bar`, `title`, `data` (the mod's saved table on the player), `raycast` and `block_below`
 

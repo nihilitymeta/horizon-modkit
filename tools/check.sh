@@ -12,7 +12,7 @@
 # fails the check. The self-test then also checks that a misnamed add_spawns field is refused.
 #
 # HORIZON is the fork checkout, built: target/fast/horizon-client and target/debug/cargo-horizon-mod
-# (`cargo build -p cargo-horizon-mod`). With no folders given, examples/example_mod and the three probes the
+# (`cargo build -p cargo-horizon-mod`). With no folders given, examples/example_mod and the probes the
 # in-game checks run (tools/hook-probe, tools/step-probe, tools/modkit-probe) are checked.
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
@@ -25,7 +25,7 @@ for a in "$@"; do
   case "$a" in --self-test) self_test=true ;; *) mods+=("$a") ;; esac
 done
 if [ ${#mods[@]} = 0 ]; then
-  mods=("$HERE/examples/example_mod" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe")
+  mods=("$HERE/examples/example_mod" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe")
 fi
 failed=0
 res=()

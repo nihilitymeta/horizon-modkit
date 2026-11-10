@@ -37,15 +37,18 @@ of an event, such as a hit, when the game cannot act on the world. This decides 
 callback.
 
 - **With the whole world**: a timer, `E:on_tick`, `E:on_death` and `B:on_block_entity_tick`. The world reads, the
-  actions and every player work.
+  actions and every player work. Saved tables are the world's and the players': there is none per mob or per
+  block click.
 - **In a player's own action**: the item callbacks, `B:on_use`, `E:on_interact`, `P:on_join` and a command. The
-  reads and actions work, but only the acting player is reached. A command queues summons and block changes for the
-  next tick.
+  reads and actions work. The native events name no acting player, so the modkit reads the first player of
+  `horizon.players()`; with one player on that is the one who acted. A command queues summons and block changes
+  for the next tick.
 - **In a random or scheduled tick**: `B:on_random_tick` and `B:on_tick` read blocks only, and act through
   `block:set`, `block:schedule_tick`, `block:handled` and `block:summon`.
 - **In a goal**: the goal reads its `mob` view and acts through the mob's goal methods only.
 - **In the middle of an event**: `E:on_hurt`, `E:on_fall`, `E:on_knockback`, `P:on_hurt`, `P:on_fall`,
-  `P:on_knockback` and `P:on_chat` have no host. Only the callback's own methods, such as `hit:cancel()`, work.
+  `P:on_knockback` and `P:on_chat` have no host. Only the callback's own methods, such as `hit:cancel()`, and
+  assignments to the event's fields, such as `hit.amount = n`, work.
 
 When a callback cannot do something, queue it for the next tick with a timer:
 
@@ -189,7 +192,7 @@ to choose another. Both need the game restarted.
 
 The modkit declares one item of its own, `horizon_modkit:inspect_stick`, in its `scripts/registry.lua`, and handles
 its clicks in its `scripts/init.lua`. A mod writes nothing for it. The stick calls the engine's
-`horizon.dev.inspect(who, what)` from the `entity_interact` and `right_click_block` hooks, and cancels the click when
+`horizon.dev.inspect(who, what)` from the `interact_entity` and `right_click_block` hooks, and cancels the click when
 the engine answers true. The [inspect stick guide](guides/inspect-stick.md) says how to use it.
 
 ## The modkit table
@@ -463,19 +466,27 @@ Saves the settings table back to the mod's settings file, such as after a comman
 
 ### `M:on(hook, fn, kind)`
 
-Registers a handler for an engine hook, as `horizon.on` does. Use it for the hooks that no class covers:
+Registers a handler for an engine hook, as `horizon.on` does. Use it for the hooks that no class covers. Every
+handler takes one event table:
 
-- `explosion`, with `(dimension, center, blocks)`: remove entries from `blocks` to spare those blocks
-- `entity_joined`, with a kind such as `minecraft:arrow`: any entity joining the level; `horizon.cancel()` keeps it
-  out
-- `projectile_impact` and `projectile_launched`, with a kind such as `minecraft:snowball`
-- `mob_heal`: every living entity that is about to heal, by id only
+- `explosion_detonate`, with `event.dimension`, `event.center` and `event.blocks`: remove entries from `blocks` to
+  spare those blocks
+- `entity_join_level`, with a kind such as `minecraft:arrow`: any entity joining the level, with `event.dimension`,
+  `event.entity`, `event.kind`, `event.pos` and `event.loaded_from_disk`; `horizon.cancel()` keeps it out
+- `projectile_impact`, with a kind such as `minecraft:snowball`: `event.projectile`, `event.kind`, `event.owner`,
+  and the entity half (`event.entity`, `event.entity_kind`) or the block half (`event.block`, `event.face`) of
+  the hit, with `event.at`
+- `projectile_launch`, with a kind such as `minecraft:snowball`: `event.player` (the shooter's table, or nil),
+  `event.entity` and `event.kind`
+- `living_heal`, with `event.entity` and `event.amount`: every living entity that is about to heal; every handler
+  hears every entity
 
 The parameters:
 
 - *hook*: the hook's name; the game refuses an unknown name when the script loads
-- *fn*: the handler, with the hook's arguments
-- *kind*: a mob, block or item id that limits the handler to that kind
+- *fn*: the handler, with the hook's one event table
+- *kind*: a mob, entity, block or projectile id that limits the handler to that kind, on the hooks whose
+  signature takes one
 
 ### `M:qualify(name)`
 
@@ -529,7 +540,7 @@ Called when a mob of this type spawns, by any means.
 
 Called every server tick for every mob of this type. Keep it light. This is NeoForge's `tick`.
 
-- *mob*: the mob, with `mob.data` and the actions by id
+- *mob*: the mob's live view, read with `horizon.mob`, with the actions by id; there is no saved table on it
 
 ### `E:on_ai_tick(mob, state)`
 
@@ -550,17 +561,17 @@ and `kind`, and no other action works.
 
 Called when a mob of this type dies, by any cause.
 
-- *mob*: the mob's `id` and `kind`; `mob.data` can still be read
+- *mob*: the mob's `id` and `kind`; the view is gone with the mob, and there is no saved table on it
 - *cause*: a table with `damage_type` (such as `minecraft:on_fire`), `causing` (the id of the mob behind the death,
-  or 0) and `player` (the player credited with the kill, or nil)
+  or 0) and `player` (the uuid of the player credited with the kill, or nil)
 
 ### `E:on_interact(mob, player, held)`
 
 Called when a player right-clicks a mob of this type, before the mob and the item act.
 
-- *mob*: the mob
-- *player*: the player who clicked
-- *held*: the stack in the hand being tried (`item`, `count` and `plain`), or nil for an empty hand
+- *mob*: the mob's live view, read with `horizon.mob`
+- *player*: the first player of `horizon.players()`; with one player on, the one who clicked
+- *held*: the selected stack (`item`, `count` and `plain`), or nil for an empty hand
 
 **Returns**: true to take the click, so that neither the mob nor the item acts.
 
@@ -582,7 +593,7 @@ Called when a mob of this type is about to be knocked back. There is no host.
 
 Called when an equipment slot of a mob of this type takes a different stack.
 
-- *mob*: the mob
+- *mob*: the mob's `id` and `kind`
 - *slot*: `mainhand`, `offhand`, `head`, `chest`, `legs`, `feet`, `body` or `saddle`
 - *from*: the item table that was there, or nil
 - *to*: the item table that is there now, or nil
@@ -591,7 +602,7 @@ Called when an equipment slot of a mob of this type takes a different stack.
 
 Called when a mob of this type died and its loot is about to drop.
 
-- *mob*: the mob
+- *mob*: the mob's `id` and `kind`
 - *drops*: the [drops](#drops-and-source)
 - *source*: where the loot comes from, described under [drops and source](#drops-and-source)
 
@@ -669,11 +680,11 @@ the call.
 | `nearest_player` | the nearest player's position, or nil |
 | `home` | `x`, `y`, `z` and `radius`, or nil |
 | `nearby` | in a goal: the mobs within its follow range, nearest first (`id`, `kind`, `position`, `distance`, `health`, `alive`, `hostile`, `baby`, `target`). Empty in a callback |
-| `dimension`, `data` | in a callback only: the mob's dimension, and the mod's saved table on the mob |
+| `dimension` | in `E:on_tick` and `E:on_interact` only: the mob's dimension |
 
-`mob.data` is empty at first. The mod's changes to it are written back after the callback and kept with the mob
-through saves. A number keeps its NBT type, and a key set to nil is removed. In `E:on_death`, only `id`, `kind` and
-`data` remain.
+Callbacks outside a goal see no saved table on the mob: keep per-mob state in the world's saved table
+(`horizon.world_data()`), keyed by the mob's id. In `E:on_death`, `E:on_hurt`, `E:on_fall` and `E:on_knockback`
+only `id` and `kind` remain.
 
 ### Moving and looking
 
@@ -745,6 +756,9 @@ the stack has no components beyond its template's. Two methods act on the acting
 - `item:take(n)`: takes *n* of the item, 1 by default, the main hand first
 - `item:give(n)`: gives *n* of the item, 1 by default
 
+The use, use-on, hit, hurt-enemy, start and finish hooks take no kind: every use wakes one handler, which keeps
+the stacks with its own id. The acting *player* is the first player of `horizon.players()`.
+
 ### `I:on_use(item, player)`
 
 Called when a player right-clicks with the item in the air, or on a block that lets the click through.
@@ -767,7 +781,8 @@ Called when a player right-clicks a block with the item.
 
 ### `I:on_hit(item, player, target)`
 
-Called when a player attacks while holding the item, before the damage.
+Called when a player attacks while holding the item, before the damage. The event names no stack, so the modkit
+reads the acting player's selected slot: with one player on, the hand they hit with.
 
 - *item*: the stack in hand
 - *player*: the attacker
@@ -785,7 +800,8 @@ Called after a blow with the item has landed and dealt its damage.
 
 ### `I:on_use_start(item, player, hand, duration)`
 
-Called when a player starts to use the item over time, such as eating, drinking or drawing a bow.
+Called when a player starts to use the item over time, such as eating, drinking or drawing a bow. A mob's own
+starts reach bare handlers with that mob's entity set; the callback keeps the player's own (`entity` nil).
 
 - *item*: the stack in hand
 - *player*: the player
@@ -796,7 +812,8 @@ Called when a player starts to use the item over time, such as eating, drinking 
 
 ### `I:on_finished(item, player)`
 
-Called when a player has finished using the item: eaten, drunk, or held for the item's `use_duration`.
+Called when a player has finished using the item: eaten, drunk, or held for the item's `use_duration`. A mob's own
+finishes reach bare handlers too; the callback keeps the player's own.
 
 - *item*: the stack in hand
 - *player*: the player
@@ -804,18 +821,19 @@ Called when a player has finished using the item: eaten, drunk, or held for the 
 **Returns**: an item id, and optionally a count, for what stays in the hand. Return nothing to keep the game's own
 result.
 
-### `I:on_tick(item, player, slot, selected)`
+### `I:on_tick(slot, selected)`
 
-Called every server tick for every stack of the item in a player's inventory. Keep it light.
+Called every server tick for every stack of every item in every player's inventory. Keep it light. The ticking
+stack is not on the event, and neither is its player, so the callback takes only the slot and whether it is the
+held one.
 
-- *item*: the stack
-- *player*: the player who carries it
 - *slot*: the slot as the inventory saves it: 0 to 35, armour 100 to 103, the off hand -106
 - *selected*: true if this is the held stack
 
 ### `I:on_crafted(item, player, recipe)`
 
-Called when a player takes the item from a crafting grid.
+Called when a player takes the item from a crafting grid. *player* is the uuid's table, read with
+`horizon.player`.
 
 - *item*: the crafted stack
 - *player*: the player
@@ -824,6 +842,7 @@ Called when a player takes the item from a crafting grid.
 ### `I:on_dropped(item, player, count)`
 
 Called when a player throws the item, with the drop key or from a menu. Items scattered at death do not count.
+*player* is the uuid's table, read with `horizon.player`.
 
 - *item*: the stack thrown
 - *player*: the player
@@ -873,20 +892,20 @@ Called every server tick for every placed block that has a ticking block entity.
 ### `B:on_use(block, player, held, face)`
 
 Called when a player right-clicks the block. The game tries the main hand and then the off hand, so this runs once
-for each, and *held* is the main hand's stack both times. Make the callback do something that is the same when done
-twice, such as lighting a lamp rather than toggling it, or read the block's state first.
+for each. Make the callback do something that is the same when done twice, such as lighting a lamp rather than
+toggling it, or read the block's state first.
 
-- *block*: the [block](#the-block)
-- *player*: the player who clicked
-- *held*: the stack in the main hand (`item` and `count`), or nil
+- *block*: the [block](#the-block), without `data`: a click names no block data
+- *player*: the first player of `horizon.players()`; with one player on, the one who clicked
+- *held*: the selected stack (`item`, `count` and `plain`), or nil
 - *face*: the side that was clicked
 
 ### `B:on_break(block, player)`
 
 Called when a player breaks the block, once the game has allowed it.
 
-- *block*: the [block](#the-block)
-- *player*: the player
+- *block*: the [block](#the-block), without `data`
+- *player*: the first player of `horizon.players()`; with one player on, the one who broke it
 
 **Returns**: true to keep the block, so nothing breaks or drops.
 
@@ -894,8 +913,8 @@ Called when a player breaks the block, once the game has allowed it.
 
 Called after a player has placed the block. To stop a placement, take the click in an item's `I:on_use_on`.
 
-- *block*: the [block](#the-block)
-- *player*: the player
+- *block*: the [block](#the-block), without `data`
+- *player*: the first player of `horizon.players()`; with one player on, the one who placed it
 - *item*: the stack it was placed from
 
 ### `B:on_drops(block, drops, source)`
@@ -903,7 +922,7 @@ Called after a player has placed the block. To stop a placement, take the click 
 Called when the block was broken by a player, an explosion or a mob, and its loot is about to drop. The block is
 already gone, so its state properties come from the state that the game names.
 
-- *block*: the [block](#the-block), as it was
+- *block*: the [block](#the-block), without `data`, as it was
 - *drops*: the [drops](#drops-and-source)
 - *source*: where the loot comes from, with `tool`, `player` and `explosion`
 
@@ -917,7 +936,7 @@ The `block` table that a block callback receives.
 | `dimension` | its dimension |
 | `id` | its id |
 | a state property's name | that property's value as the state spells it, such as `block.stage`; a boolean reads `"true"` or `"false"` |
-| `data` | the block entity's saved table, or nil for a block without one |
+| `data` | the block entity's saved table in the ticks, written back after the callback; nil for a block without one, and in `B:on_use`, `B:on_break`, `B:on_place` and `B:on_drops` |
 
 The mod's changes to `block.data` are saved after the callback. A number keeps its NBT type, and a key set to nil is
 removed.
@@ -925,13 +944,13 @@ removed.
 These methods change the block:
 
 - `block:set(key, value, flags)`: sets a state property, such as `block:set("stage", "growing")`. Works in
-  `B:on_use`, the two ticks and `B:on_block_entity_tick`
+  the two ticks and `B:on_block_entity_tick`: a click's host drops it, so a click replaces the block instead
 - `block:schedule_tick(delay)`: asks for a scheduled tick in *delay* ticks. Works in the random and scheduled ticks
   only
 - `block:handled()`: skips the block's own vanilla tick. Works in the random and scheduled ticks only
 - `block:cancel()`: takes the click, so neither the block nor the held item acts. Works in `B:on_use`
 - `block:replace(id, props, flags)`: replaces the block, as `modkit.set_block` does. Not in the random and
-  scheduled ticks
+  scheduled ticks; the new block starts with its default data
 
 These methods act around the block. They need a callback with a host, except where noted.
 
@@ -977,24 +996,24 @@ Called when a player respawns after a death.
 
 - *player*: the player
 
-### `P:on_death(player, cause)`
+### `P:on_death(uuid, cause)`
 
-Called when a player dies.
+Called when a player dies. The event names the dead player by uuid only: their name is unrecoverable.
 
-- *player*: the player
+- *uuid*: the dead player's uuid
 - *cause*: the death message's key, such as `death.attack.lava`, or nil
 
 ### `P:on_tick(player)`
 
 Called every server tick for every living player. Keep it light.
 
-- *player*: the player
+- *player*: the first player of `horizon.players()`; with one player on, the one whose tick ended
 
 ### `P:on_break_block(player, block)`
 
 Called when a player breaks any block.
 
-- *player*: the player
+- *player*: the first player of `horizon.players()`; with one player on, the one who broke it
 - *block*: the block, with `x`, `y`, `z` and `id`
 
 **Returns**: true to keep the block.
@@ -1003,13 +1022,14 @@ Called when a player breaks any block.
 
 Called after a player has placed any block.
 
-- *player*: the player
+- *player*: the first player of `horizon.players()`; with one player on, the one who placed it
 - *block*: the block, with `x`, `y`, `z` and `id`
 - *item*: the stack it was placed from
 
 ### `P:on_pickup(player, item, count)`
 
-Called when a player is about to pick up items from the ground.
+Called when a player is about to pick up items from the ground. *player* is the uuid's table, read with
+`horizon.player`.
 
 - *player*: the player
 - *item*: the item's id
@@ -1020,7 +1040,7 @@ Called when a player is about to pick up items from the ground.
 ### `P:on_hurt(player, hit)`
 
 Called when a player is about to take damage. The game is in the middle of the hit: *player* has only `id` and
-`kind`, and no other action works.
+`kind`, and no other action works. Assign `hit.amount = n` to change the damage.
 
 - *player*: the player's `id` and `kind`
 - *hit*: the [hit](#hit)
@@ -1042,7 +1062,7 @@ Called when a player is about to be knocked back. There is no host.
 ### `P:on_command(player, line)`
 
 Called when a player types a command, before it runs. No player's state is in place here, so `player:reply` is the
-only way to answer.
+only way to answer: other `player:` methods, such as `give` and `tell`, reach nobody.
 
 - *player*: the player, with `player:reply(text)`
 - *line*: the command, without its slash
@@ -1051,7 +1071,8 @@ only way to answer.
 
 ### `P:on_chat(player, line)`
 
-Called when a player's chat line is about to go out, after the chat filter. There is no host.
+Called when a player's chat line is about to go out, after the chat filter. There is no host: a returned
+string answers the sender, and neither saved tables nor the world reads work here.
 
 - *player*: the player's `uuid` and `name`
 - *line*: the line
@@ -1081,7 +1102,8 @@ called.
 
 ### `P:on_exp(player, amount)`
 
-Called when a player is about to gain experience from an orb, after Mending's share.
+Called when a player is about to gain experience from an orb, after Mending's share. Assign `amount` through the
+returned number: the writeback does not clamp.
 
 - *player*: the player
 - *amount*: the experience points
@@ -1106,7 +1128,7 @@ The `player` table that a callback receives. Its fields are a copy of the player
 | `dimension`, `position` | where they are; `position` has `x`, `y` and `z` |
 | `game_mode` | 0 survival, 1 creative, 2 adventure, 3 spectator |
 | `health` | their health |
-| `held` | for the player whose action the callback reports: the main hand's `item`, `count` and `plain`, or nil |
+| `held` | the main hand's `item`, `count` and `plain`, or nil: the selected slot, tracked from `player_item_held`; a command's player table carries the engine's own |
 
 The methods below work in any callback with a host, and in a timer. Inside another player's callback, such as their
 click or their command, only that player is reached: a give to someone else does nothing, and their inventory reads
@@ -1153,8 +1175,8 @@ The *hit* of `E:on_hurt` and `P:on_hurt`.
 |---|---|
 | `damage_type` | the damage type, such as `minecraft:on_fire` |
 | `causing`, `direct` | the ids of the entity behind the damage and of the one that dealt it, or -1 for none |
-| `amount` | the damage |
-| `hit:set_amount(n)` | sets the damage |
+| `amount` | the damage; assign it to change the damage |
+| `hit:set_amount(n)` | sets the damage, as assigning `amount` does |
 | `hit:cancel()` | refuses the hit |
 
 ### Fall
@@ -1163,8 +1185,8 @@ The *fall* of `E:on_fall` and `P:on_fall`.
 
 | Member | Description |
 |---|---|
-| `distance`, `multiplier` | the fall's distance and damage multiplier |
-| `fall:set_distance(n)`, `fall:set_multiplier(n)` | change them |
+| `distance`, `multiplier` | the fall's distance and damage multiplier; assign them to change the fall |
+| `fall:set_distance(n)`, `fall:set_multiplier(n)` | change them, as assigning does |
 | `fall:cancel()` | removes the fall damage |
 
 ### Knockback
@@ -1173,10 +1195,10 @@ The *hit* of `E:on_knockback` and `P:on_knockback`.
 
 | Member | Description |
 |---|---|
-| `strength` | the raw knockback strength |
-| `x`, `z` | the direction |
+| `strength` | the raw knockback strength; assign it to change the push |
+| `x`, `z` | the direction; assign them to steer it |
 | `damage_type`, `causing`, `direct` | as in a [hit](#hit) |
-| `hit:set_strength(n)` | sets the strength |
+| `hit:set_strength(n)` | sets the strength, as assigning does |
 | `hit:cancel()` | removes the knockback |
 
 ### Drops and source
@@ -1192,10 +1214,11 @@ The *source* has these fields:
 | `table` | the loot table's id |
 | `dimension`, `origin` | where the loot drops |
 | `block` | for a block: `x`, `y`, `z`, `id` and `state` |
-| `mob` | for a mob: `id` and `kind` |
+| `entity` | for a mob: `id` and `kind` |
 | `player` | the player credited, or nil |
 | `tool` | the item table of the tool used, or nil |
 | `explosion` | the explosion's radius, or nil |
+| `used` | true once the loot has been used |
 
 ## Timers and saved data
 

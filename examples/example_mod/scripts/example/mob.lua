@@ -3,7 +3,8 @@
 -- docs/api.md, "Entity classes", "Goals", "The mob"). The type is declared in
 -- scripts/registry.lua as a pig with `goals = "none"`, so everything it
 -- does is here. `mob` is the mob's view (position, health, target...) with
--- actions the game applies after the callback; `mob.data` its saved table.
+-- actions the game applies after the callback; the feedings below are counted
+-- in the world's saved table, keyed by the mob's id.
 -- See it in game: /example spawn (or its egg); it wanders, comes to a player
 -- within eight blocks, eats wheat from a hand (three feedings make the feeder
 -- a keeper, by name), shrugs off fire, lands softly, and says how it died.
@@ -36,18 +37,20 @@ Mob:goals {
 }
 
 -- A player right-clicked it, before the mob and the item act: wheat feeds it
--- (healed, the feeder thanked, a count kept on the mob through saves) and
--- counts for the feeder too, in their own saved table: at three feedings
--- they are nicknamed a keeper (next tick, from a timer: a nickname is set
--- where no player's own action is under way) and their chat lines carry it
--- (scripts/example/players.lua). The click is taken. An empty hand reads
--- the mob's count.
+-- (healed, the feeder thanked, a count kept in the world's saved table under
+-- the mob's id) and counts for the feeder too, in their own saved table: at
+-- three feedings they are nicknamed a keeper (next tick, from a timer: a
+-- nickname is set where no player's own action is under way) and their chat
+-- lines carry it (scripts/example/players.lua). The click is taken. An empty
+-- hand reads the mob's count.
 function Mob:on_interact(mob, player, held)
+  local w = horizon.world_data()
+  w.fed = w.fed or {}
   if held and held.item == "minecraft:wheat" then
-    mob.data.fed = (mob.data.fed or 0) + 1
+    w.fed[mob.id] = (w.fed[mob.id] or 0) + 1
     mob:heal(4)
     modkit.particles("minecraft:heart", mob.position.x, mob.position.y + 1, mob.position.z, 5, 0.3, 0.02)
-    player:action_bar(("fed %d time(s)"):format(mob.data.fed))
+    player:action_bar(("fed %d time(s)"):format(w.fed[mob.id]))
     horizon.log(("EXAMPLE mob fed by %s"):format(player.name))
     local mine = player:data()
     if mine then
@@ -64,7 +67,7 @@ function Mob:on_interact(mob, player, held)
     end
     return true
   end
-  if held == nil then player:tell(("this one was fed %d time(s), has %.0f/%.0f hp"):format(mob.data.fed or 0, mob.health, mob.max_health)) end
+  if held == nil then player:tell(("this one was fed %d time(s), has %.0f/%.0f hp"):format(w.fed[mob.id] or 0, mob.health, mob.max_health)) end
   return false
 end
 
@@ -77,9 +80,14 @@ end
 -- About to land: no fall damage.
 function Mob:on_fall(mob, fall) fall:cancel() end
 
--- Died: `cause` has damage_type, causing (a mob id) and player (the killer).
+-- Died: `cause` has damage_type, causing (a mob id) and player (the killer's
+-- uuid, or nil).
 function Mob:on_death(mob, cause)
-  local who = cause.player and cause.player.name or "the world"
+  local who = "the world"
+  if cause.player then
+    local p = horizon.player(cause.player)
+    who = p and p.name or cause.player
+  end
   horizon.broadcast(("an example mob died of %s, by %s"):format(cause.damage_type, who))
   horizon.log("EXAMPLE mob died")
 end

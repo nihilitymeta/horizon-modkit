@@ -40,8 +40,8 @@ function Stick:on_hurt_enemy(item, player, target) ran("Item:on_hurt_enemy") end
 local Apple = M:item("minecraft:apple")
 function Apple:on_use_start(item, player, hand, duration) ran("Item:on_use_start") end
 
-M:on("explosion", function(dimension, center, blocks) ran("M:on explosion") end)
-M:on("entity_joined", function(dimension, id, kind, x, y, z, loaded) ran("M:on entity_joined") end, "minecraft:snowball")
-M:on("projectile_launched", function(projectile, kind, player) ran("M:on projectile_launched") end, "minecraft:snowball")
-M:on("projectile_impact", function(projectile, kind, owner, hit) ran("M:on projectile_impact") end, "minecraft:snowball")
-M:on("mob_heal", function(mob, amount) ran("M:on mob_heal") end)
+M:on("explosion_detonate", function(event) ran("M:on explosion") end)
+M:on("entity_join_level", function(event) ran("M:on entity_joined") end, "minecraft:snowball")
+M:on("projectile_launch", function(event) ran("M:on projectile_launched") end, "minecraft:snowball")
+M:on("projectile_impact", function(event) ran("M:on projectile_impact") end, "minecraft:snowball")
+M:on("living_heal", function(event) ran("M:on mob_heal") end)

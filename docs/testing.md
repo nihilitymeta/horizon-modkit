@@ -103,7 +103,7 @@ Some details to keep in mind:
 
 ## The check scripts
 
-The three scripts below each start the game, drive it, and read the log. They take the same variables:
+The four scripts below each start the game, drive it, and read the log. They take the same variables:
 
 ```sh
 HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/example-check.sh
@@ -116,7 +116,8 @@ HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/ex
 | `GAME_DIR` | the game folder to use |
 
 `tools/steps-check.sh` and `tools/hook-coverage.sh` open a fresh `modkit-check` world on each run.
-`tools/example-check.sh` opens the world named by `WORLD`, which is `New World` by default.
+`tools/example-check.sh` opens the world named by `WORLD`, which is `New World` by default. `tools/hud-check.sh`
+opens a `hud-check` world with `tools/hud-probe`.
 
 ### Every concept of the example mod
 
@@ -149,14 +150,16 @@ Lua API working on the build at hand:
 
 Before it starts, it writes `config/example_mod.json`, with a nest that breeds once.
 
-### Every hook the engine lists
+### The driven hooks, and every modkit callback
 
 `tools/hook-coverage.sh` reads Event Horizon's generated
-[hook reference](https://github.com/whos-carmen/horizon/blob/engine-work/docs/api/hook-points.md). It runs the game
-with `tools/hook-probe`, a mod with one logging handler for each Lua hook, next to the example mod. Then it drives
-the game through each hook: blocks, mobs, items, a command, `/reload`, a death, a fall, a snowball, a dropped stick,
-crafted planks, a chest and a bed, an orb, a hurt and a heal, an armed zombie, and TNT. It reports the hooks that did
-not fire, and any script error.
+[hook reference](https://github.com/whos-carmen/horizon/blob/engine-work/docs/api/hook-points.md), which lists every
+hook that reaches Lua: far more than any drive can exercise. It runs the game with `tools/hook-probe`, a mod with
+one logging handler for each hook the drive reaches, next to the example mod. Then it drives the game through each
+of those hooks: blocks, mobs, items, a command, `/reload`, a death, a fall, a snowball, a dropped stick, crafted
+planks, a chest and a bed, an orb, a hurt and a heal, an armed zombie, and TNT. A driven hook that did not fire
+fails the check. The hooks outside the driven set are reported as "not driven", which is informational, not a
+failure. The check also reports any script error.
 
 `tools/modkit-probe` runs alongside. It defines every modkit callback of those hooks, as a mod writes them, and logs
 once when each runs. The check expects all of them.
@@ -172,6 +175,12 @@ Run it after an engine change, or after adding a hook.
 
 `/reload` logs `content mods not loaded: example_mod: ... is already a block` for a mod that registers a block. This
 message is harmless and known (whos-carmen/horizon#15).
+
+### The draw hooks
+
+`tools/hud-check.sh` starts a game with `tools/hud-probe`, which draws a rect and a line of text on the `hud` and
+`gui_layer_post` hooks. The check expects the handlers' log lines and no script error. An offscreen run may never
+draw: then the check says so and passes, and the probe stays for driving the hooks in a window.
 
 ## Playing through the launcher
 

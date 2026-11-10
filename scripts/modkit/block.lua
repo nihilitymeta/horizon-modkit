@@ -14,6 +14,12 @@
 -- `block.id`, its state properties as fields (`block.stage`), `block.data`
 -- (the block entity's saved table, written back after the callback; nil
 -- without a block entity), and methods that ask the game to act after the call.
+--
+-- The native events name no acting player and no held stack, so `player` is
+-- the first player of `horizon.players()`, and `held` is their selected stack
+-- (`{item, count, plain}`, or nil). With one player on that is the player who
+-- clicked; with several on, the engine does not say who it was.
+local Held = require("@modkit/held")
 local Player = require("@modkit/player")
 
 local Block = {}
@@ -38,8 +44,6 @@ Instance.__index = function(self, key)
   return horizon.block_property(self.x, self.y, self.z, key)
 end
 
-local function dimension_of(player) return player and player.dimension or "minecraft:overworld" end
-
 -- The state properties in a state's name (`ns:hive[stage=dormant,lit=true]`), as the
 -- instance's `props`; `{}` for a block without any.
 local function props_of(state: string?): Props
@@ -55,7 +59,9 @@ local function instance(dimension, id, x, y, z, props, data)
   return setmetatable({ dimension = dimension, id = id, x = x, y = y, z = z, props = props or {}, live = props == nil, data = data }, Instance)
 end
 
---- Sets a state property of the block: `block:set("stage", "growing")`.
+--- Sets a state property of the block: `block:set("stage", "growing")`. In
+--- the two ticks and B:on_block_entity_tick; a click's host drops it (use
+--- `block:replace` there).
 function Instance:set(key: string, value: string, flags: number?) horizon.set_block_property(key, value, flags) end
 --- Asks for a scheduled tick (`on_tick`) in `delay` ticks. In the random
 --- and scheduled ticks only.
@@ -72,7 +78,8 @@ function Instance:summon(kind: string, dx: number?, dy: number?, dz: number?): n
 end
 --- Replaces the block with another, such as `block:replace("minecraft:air")`,
 --- with its state properties and `Level.setBlock` flags (3). Not in a
---- random or scheduled tick: there `block:set` changes a property.
+--- random or scheduled tick: there `block:set` changes a property. The new
+--- block starts with its default data.
 function Instance:replace(id: string, props: Props?, flags: number?) horizon.set_block(self.x, self.y, self.z, id, props, flags) end
 --- Drops `count` (1) of an item over the block.
 function Instance:drop(id: string, count: number?) horizon.drop_item(self.x + 0.5, self.y + 1, self.z + 0.5, id, count) end
@@ -85,40 +92,55 @@ function Instance:above(dy: number?): string return horizon.block(self.x, self.y
 --- Gets the id of the block `dy` (1) blocks below this one.
 function Instance:below(dy: number?): string return horizon.block(self.x, self.y - (dy or 1), self.z) end
 
+-- The acting player of a click or a break: the first player of the world.
+-- The native events name none, so with one player on this is the one who
+-- acted. `Player.wrap` keeps a nil player nil for a world with none on.
+local function acting()
+  return Player.wrap(horizon.players()[1])
+end
+
 --- Creates a new block class, with its hooks registered for its id alone,
---- so the engine calls them for this block's ticks and events only.
+--- so the engine calls them for this block's ticks and events only. The
+--- breaks and placements have no kind filter: the handler keeps the blocks
+--- with its own id.
 function Block.new(mod, id)
   local b = setmetatable({ mod = mod, id = id }, Block)
-  horizon.on("random_tick", function(dimension, _, x, y, z, props, data)
-    if b.on_random_tick then b:on_random_tick(instance(dimension, id, x, y, z, props, data)) end
+  horizon.on("random_tick", function(event)
+    if b.on_random_tick then b:on_random_tick(instance(event.dimension, id, event.pos.x, event.pos.y, event.pos.z, event.state_props, event.data)) end
   end, id)
-  horizon.on("tick_block", function(dimension, _, x, y, z, props, data)
-    if b.on_tick then b:on_tick(instance(dimension, id, x, y, z, props, data)) end
+  horizon.on("tick_block", function(event)
+    if b.on_tick then b:on_tick(instance(event.dimension, id, event.pos.x, event.pos.y, event.pos.z, event.state_props, event.data)) end
   end, id)
-  horizon.on("block_entity_tick", function(dimension, _, x, y, z, data)
-    if b.on_block_entity_tick then b:on_block_entity_tick(instance(dimension, id, x, y, z, nil, data)) end
+  horizon.on("block_entity_tick", function(event)
+    if b.on_block_entity_tick then b:on_block_entity_tick(instance(event.dimension, id, event.pos.x, event.pos.y, event.pos.z, nil, event.entity.data)) end
   end, id)
-  horizon.on("block_broken", function(x, y, z, _, player)
-    if b.on_break and b:on_break(instance(dimension_of(player), id, x, y, z, nil, nil), Player.wrap(player)) == true then horizon.cancel() end
-  end, id)
-  horizon.on("block_placed", function(x, y, z, _, player, item)
-    if b.on_place then b:on_place(instance(dimension_of(player), id, x, y, z, nil, nil), Player.wrap(player), item) end
-  end, id)
+  horizon.on("destroy_block", function(event)
+    if event.state ~= id then return end
+    if b.on_break and b:on_break(instance(horizon.time().dimension, id, event.pos.x, event.pos.y, event.pos.z, nil, nil), acting()) == true then horizon.cancel() end
+  end)
+  horizon.on("place_block", function(event)
+    if event.state ~= id then return end
+    if b.on_place then b:on_place(instance(horizon.time().dimension, id, event.pos.x, event.pos.y, event.pos.z, nil, nil), acting(), event.stack) end
+  end)
   -- The block is gone when its loot drops: its properties come from the
-  -- state the engine names (`source.block.state`), not from the world.
-  horizon.on("loot_drops", function(source, drops)
-    local at = source.block
-    if b.on_drops then b:on_drops(instance(source.dimension, id, at.x, at.y, at.z, props_of(at.state), nil), drops, source) end
+  -- state the engine names (`event.block.state`), not from the world.
+  horizon.on("loot_drops", function(event)
+    local at = event.block
+    if at == nil or at.id ~= id then return end
+    if b.on_drops then b:on_drops(instance(event.dimension, id, at.x, at.y, at.z, props_of(at.state), nil), event.drops, event) end
   end, id)
   return b
 end
 
 -- Installs the mod's handlers once (the clicks are not registered by block).
 function Block.install(mod)
-  horizon.on("right_click_block", function(x, y, z, id, face, player, held, data)
+  Held.track()
+  horizon.on("right_click_block", function(event)
+    local pos = event.pos
+    local id = horizon.block(pos.x, pos.y, pos.z)
     local b = mod.blocks[id]
     if b and b.on_use then
-      b:on_use(instance(dimension_of(player), id, x, y, z, nil, data), Player.wrap(player), held, face)
+      b:on_use(instance(horizon.time().dimension, id, pos.x, pos.y, pos.z, nil, nil), acting(), Held.of(), event.face)
     end
   end)
 end

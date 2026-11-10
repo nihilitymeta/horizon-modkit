@@ -23,13 +23,14 @@ local Lamp = M:block("example_block")
 -- kept with the chunk, and a tick every server tick when `ticks`.
 Lamp:block_entity { ticks = true, data = { lit_ticks = 0 } }
 
--- A right click lights it; the click is eaten, so the held item does nothing.
--- The game tries the main hand and then the off hand, and this runs for
--- each, so it does one thing that is the same done twice (a toggle would
+-- A right click lights it: the click names no `set_block_property`, so the
+-- whole block is replaced lit, and the click is eaten, so the held item does
+-- nothing. The game tries the main hand and then the off hand, and this runs
+-- for each, so it does one thing that is the same done twice (a toggle would
 -- flip back).
 function Lamp:on_use(block, player, held)
   if block.lit ~= "true" then
-    block:set("lit", "true")
+    block:replace(block.id, { lit = "true" })
     horizon.log(("EXAMPLE block lit by %s"):format(player.name))
   end
   block:cancel()
@@ -101,10 +102,18 @@ function Nest:on_block_entity_tick(block)
   local data = block.data
   if not data or block.stage ~= "mature" then return end
   data.charge = data.charge + 1
-  if data.charge < BREED_TICKS or block:above() ~= "minecraft:air" then return end
+  -- A mirror for the click, which names no block data.
+  local w = horizon.world_data()
+  w.nests = w.nests or {}
+  local key = block.x .. " " .. block.y .. " " .. block.z
+  if data.charge < BREED_TICKS or block:above() ~= "minecraft:air" then
+    w.nests[key] = { charge = data.charge, bred = data.bred }
+    return
+  end
   block:summon("example_mod:example_mob", 0, 1, 1)
   data.charge = 0
   data.bred = data.bred + 1
+  w.nests[key] = { charge = data.charge, bred = data.bred }
   horizon.log(("EXAMPLE nest bred an example mob (%d so far)"):format(data.bred))
   if data.bred >= cfg.nest_breeds then
     local l = block:light()
