@@ -86,8 +86,10 @@ A timer is the way out of a callback that can't reach the world, or that reaches
 | `block.data` | a block with a block entity, in the ticks |
 
 Each table is empty at first. It is written back after the callback, and kept through saves under the mod's own id,
-apart from any other mod's data. It can hold numbers, strings, booleans and nested tables. A click names no block
-data; a goal and the mid-event callbacks read `mob.data` as nil.
+apart from any other mod's data. It can hold numbers, strings, booleans and nested tables. The saved table is
+fetched per callback: a table stored from an earlier callback (an upvalue) is stale and writes nothing, so read
+`mob.data` again in the callback that changes it. A click names no block
+data; a goal and the mid-event callbacks read `mob.data` as nil, and indexing that nil raises.
 
 ## See it in the game
 

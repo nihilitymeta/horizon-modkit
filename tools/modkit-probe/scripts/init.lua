@@ -15,8 +15,10 @@ local P = M:players()
 -- The acting player's hand (`horizon.acting_player().held`, the selected
 -- slot): log each change of it, so tools/steps-check.sh can see it move with
 -- the hotbar. One player is all the harness drives: a second player's hand
--- cannot be shown here. The first tick also names the ticking player beside
--- the list's first, so the checks can see they match.
+-- cannot be shown here. The first tick also logs the ticking player beside
+-- the list's first, so the checks can see they match. One player is all the
+-- harness drives: the uuids match even for players()[1], so this only proves
+-- a player arrives (not nil), not which lookup named them.
 local last_held = false
 local tick_checked = false
 function P:on_tick(player)
@@ -47,22 +49,35 @@ function Zombie:on_fall(mob, fall) ran("Entity:on_fall") end
 function Zombie:on_knockback(mob, hit) ran("Entity:on_knockback") end
 function Zombie:on_equip(mob, slot, from, to) ran("Entity:on_equip") end
 function Zombie:on_drops(mob, drops, source) ran("Entity:on_drops") end
--- Per-mob saved data (`mob.data`): each click counts into this mob's own
--- table, so two clicks on one example mob read 1 then 2, and a zombie counts
--- its own.
+-- Per-mob saved data (`mob.data`): both mobs count into the SAME key
+-- `clicks`, so one shared table would show: two clicks on one example mob
+-- read 1 then 2, and the zombie's first click reads 1 only when its table is
+-- its own. Each line logs both mobs' value of `clicks` (the other read live
+-- through `horizon.entity_data`), so the zombie's line also proves the
+-- example mob's value is still 2 afterwards.
+local example_id: number? = nil
+local zombie_id: number? = nil
+local function other_clicks(id: number?): string
+  if id == nil then return "none" end
+  local other = horizon.entity_data(id)
+  local n = other ~= nil and other.clicks or nil
+  return n ~= nil and tostring(n) or "none"
+end
 function Zombie:on_interact(mob, player, held)
   ran("Entity:on_interact")
+  zombie_id = mob.id
   local d = mob.data
-  d.zclicks = (d.zclicks or 0) + 1
-  horizon.log(("MODKIT mobdata %s %d zclicks=%d"):format(mob.kind, mob.id, d.zclicks))
+  d.clicks = (d.clicks or 0) + 1
+  horizon.log(("MODKIT mobdata %s %d clicks=%d example_clicks=%s"):format(mob.kind, mob.id, d.clicks, other_clicks(example_id)))
 end
 
 local ExampleMob = M:entity("example_mod:example_mob")
 function ExampleMob:on_interact(mob, player, held)
   ran("Entity:on_interact")
+  example_id = mob.id
   local d = mob.data
   d.clicks = (d.clicks or 0) + 1
-  horizon.log(("MODKIT mobdata %s %d clicks=%d"):format(mob.kind, mob.id, d.clicks))
+  horizon.log(("MODKIT mobdata %s %d clicks=%d zombie_clicks=%s"):format(mob.kind, mob.id, d.clicks, other_clicks(zombie_id)))
 end
 
 local Stone = M:block("minecraft:stone")

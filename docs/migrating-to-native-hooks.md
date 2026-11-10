@@ -28,7 +28,7 @@ returned item id still sets what stays in the hand. Write the new field form (`h
 | `E:on_tick` | `mob` is the live view read with `horizon.mob`, with the mob's saved table (`mob.data`, fetched from `horizon.entity_data` on first use). Skipped when the mob has no live view (dead or gone). |
 | `E:on_interact` | `held` is the stack in the hand being tried (main then off), or nil when that hand is empty. `player` is the acting player (`horizon.acting_player()`). Skipped when the mob has no live view (dead or gone). |
 | `E:on_death` | `cause.player` is the killer's uuid text, or nil. Resolve the name with `horizon.player(cause.player)`. |
-| `E:on_equip` | `mob` is only `id` and `kind`. `from` and `to` are full item tables, with `damage` and `extra`. |
+| `E:on_equip` | `mob` is `id` and `kind`, plus `mob.data`. `from` and `to` are full item tables, with `damage` and `extra`. |
 | `E:on_drops`, `B:on_drops` | `source` is the event itself: `source.entity` (was `source.mob`) for a mob, `source.block` for a block. |
 | `I:on_hit` | The hand is read from the acting player's (`horizon.acting_player()`) selected slot: the hand they hit with. |
 | `I:on_finished`, `I:on_use_start` | A mob's own uses reach the bare handlers too; the callback keeps the player's own. |

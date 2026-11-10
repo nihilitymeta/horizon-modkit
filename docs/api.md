@@ -693,7 +693,7 @@ the call.
 | `home` | `x`, `y`, `z` and `radius`, or nil |
 | `nearby` | in a goal: the mobs within its follow range, nearest first (`id`, `kind`, `position`, `distance`, `health`, `alive`, `hostile`, `baby`, `target`). Empty in a callback |
 | `dimension` | in a callback with a host only: the mob's dimension |
-| `data` | in a callback with a host only: the mob's saved table, fetched from `horizon.entity_data` on first use, written back after the call. Nil in a goal and where there is no host (`E:on_hurt`, `E:on_fall`, `E:on_knockback`), and nil when the entity is gone. On a client copy an unknown id reads as an empty table, so a table is no proof the entity exists there |
+| `data` | in a callback with a host only: the mob's saved table, fetched from `horizon.entity_data` on first use, written back after the call. A table stored from an earlier callback (an upvalue) is stale and writes nothing: read `mob.data` again in the callback that changes it. Nil in a goal and where there is no host (`E:on_hurt`, `E:on_fall`, `E:on_knockback`), and nil when the entity is gone; indexing that nil raises. On a client copy an unknown id reads as an empty table, so a table is no proof the entity exists there |
 
 In `E:on_hurt`, `E:on_fall` and `E:on_knockback` only `id` and `kind` remain: the game is in the middle of the
 event, and the helper is refused there, as `horizon.world_data()` is. Every other entity callback reads
@@ -1274,9 +1274,10 @@ host.
 
 - *id*: the entity's id
 
-**Returns**: the table, written back after the call and kept with the entity. Nil on a server when the entity is
-not in the level. On a client copy an unknown id reads as an empty table, so a table is no proof the entity
-exists there.
+**Returns**: the table, written back after the call and kept with the entity. A table stored from an earlier callback
+(an upvalue) is stale and writes nothing: read `mob.data` again in the callback that changes it. Nil on a server
+when the entity is not in the level. On a client copy an unknown id reads as an empty table, so a table is no proof
+the entity exists there.
 
 ## Reading the world
 

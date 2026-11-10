@@ -113,14 +113,16 @@ $CTL select 9 >/dev/null
 sleep 0.5
 [ -n "$PID" ] && $CTL interact-entity "$PID" | j 'print("clicked the example mob again:", d.get("ok", d.get("error")))'
 sleep 0.5
-$CTL command "kill @e[type=example_mod:example_mob]" >/dev/null
 say "mobs: a zombie clicked once, hit with the stick, then killed with a sword"
 $CTL command "summon minecraft:zombie $CX $CY $((CZ-2)) {NoAI:1b}" >/dev/null
 sleep 1
 ZID=$(mob_id minecraft:zombie)
-# One click on another mob: its own saved table counts its own 1 (tools/modkit-probe).
+# One click on another mob: the same `clicks` key counts from 1 there, after
+# the example mob already reached 2, while the example mob still lives (its
+# value is read live on the zombie's line: tools/modkit-probe).
 [ -n "$ZID" ] && $CTL interact-entity "$ZID" | j 'print("clicked the zombie:", d.get("ok", d.get("error")))'
 sleep 0.5
+$CTL command "kill @e[type=example_mod:example_mob]" >/dev/null
 $CTL select stick >/dev/null
 for try in 1 2 3 4; do
   $CTL look-at-entity "$ZID" >/dev/null
@@ -311,23 +313,33 @@ print(f"{len(callbacks)} modkit callbacks; {len(callbacks) - len(missing_callbac
 print("modkit callbacks missing:", " ".join(missing_callbacks) if missing_callbacks else "none")
 missing += missing_callbacks
 # The new helper reads (issue 48), asserted in game. Per-mob data: one
-# example mob clicked twice counts 1 then 2 in its own table, and a zombie
-# counts its own. The acting player's hand in a click is what they hold (the
-# drive right-clicks stone holding a stick). P:on_tick names the ticking
-# player. A two-player run would tell acting_player from players()[1] apart;
-# the harness drives one player, so that difference is not shown here.
+# example mob clicked twice counts 1 then 2 in its own table under the key
+# `clicks`, and a zombie counts that same key from 1 after the example mob
+# already reached 2, while the example mob's own value is undisturbed (read
+# live on the zombie's line): one shared table could not do that. The acting
+# player's hand in a click is what they
+# hold (the drive right-clicks stone holding a stick). P:on_tick receives a
+# player whose uuid is the one player online; the harness drives one player,
+# so this does not separate acting_player() from players()[1] (it still
+# catches a nil or missing player).
 by_id = {}
+example_events = []
 for m in re.finditer(r"MODKIT mobdata example_mod:example_mob (\d+) clicks=(\d+)", log):
     by_id.setdefault(m.group(1), []).append(int(m.group(2)))
+    example_events.append((m.start(), int(m.group(2))))
 if not any(1 in v and 2 in v for v in by_id.values()):
     missing.append("mob.data persists across two clicks of one example mob")
-if not re.search(r"MODKIT mobdata minecraft:zombie \d+ zclicks=1", log):
-    missing.append("mob.data of a second mob counts its own")
+first_two = re.search(r"MODKIT mobdata example_mod:example_mob \d+ clicks=2", log)
+zombie = re.search(r"MODKIT mobdata minecraft:zombie \d+ clicks=(\d+) example_clicks=(\S+)", log)
+prior = [n for (pos, n) in example_events if zombie and pos < zombie.start()]
+if (not zombie or zombie.group(1) != "1" or not first_two or zombie.start() < first_two.start()
+        or not prior or zombie.group(2) != str(prior[-1])):
+    missing.append("mob.data stays per mob: the same key counts 1 on a second mob while the first keeps its value")
 if not re.search(r"MODKIT blockuse held=minecraft:stick", log):
     missing.append("acting held in a click is what the player holds")
 tick = re.search(r"MODKIT tick: (\S+) first=(\S+) match=true", log)
 if not tick or tick.group(1) != tick.group(2):
-    missing.append("P:on_tick names the ticking player")
+    missing.append("P:on_tick receives a player matching the one player online (single player: does not separate acting_player from players()[1])")
 errors = [l for l in log.splitlines() if "[lua:" in l and "error" in l]
 print("script errors:", len(errors))
 for l in errors[:5]: print("  " + l[:200])

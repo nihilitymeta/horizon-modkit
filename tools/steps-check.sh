@@ -165,11 +165,12 @@ $CTL interact-entity "$PID" >/dev/null; sleep 1
 echo "fed example mob: $($CTL entities 8 | j 'print([(e.get("health"), e.get("effects")) for e in d["entities"] if e.get("type")=="example_mod:example_mob"])')"
 grep -q 'EXAMPLE mob fed by' "$LOG" || { echo "STEP9: the wheat did not feed the example mob"; exit 1; }
 # Per-mob saved data: the click above counted into this mob's own table; the
-# tick below names the ticking player (a two-player difference is not drivable
-# by the harness, which runs one player).
+# tick below receives a player whose uuid is the one player online (a
+# two-player difference is not drivable by the harness, which runs one
+# player: the line cannot separate acting_player from players()[1]).
 grep -q "MODKIT mobdata example_mod:example_mob [0-9]* clicks=1" "$LOG" || { echo "STEP9: no per-mob count from the click"; exit 1; }
 echo "STEP9 per-mob data: $(grep -o 'MODKIT mobdata [a-z_:]* [0-9]* clicks=[0-9]*' "$LOG" | tail -1)"
-grep -q "MODKIT tick: .* match=true" "$LOG" || { echo "STEP9: P:on_tick did not name the ticking player"; exit 1; }
+grep -q "MODKIT tick: .* match=true" "$LOG" || { echo "STEP9: P:on_tick did not hand the callback a player (single player: uuid matches players()[1])"; exit 1; }
 echo "STEP9 ticking player: $(grep -o 'MODKIT tick: [^ ]* first=[^ ]* match=true' "$LOG" | tail -1)"
 $CTL command "setblock $((CX+3)) $CY $((CZ-3)) example_mod:example_nest[stage=mature]" >/dev/null
 echo "a mature nest, set to breed one example mob then turn to sculk (400 ticks)"
