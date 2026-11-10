@@ -4,9 +4,9 @@
 # ones that did not fire. tools/modkit-probe rides along: every modkit
 # callback of those hooks, each expected too. The reference (Event Horizon's
 # docs/api/hook-points.md) lists every hook that reaches Lua, far more than
-# this script can drive; the ones outside the driven set are reported as
-# "not driven", which is informational, not a failure. A driven hook that did
-# not fire fails the check.
+# this script can drive; the undriven rest is reported as a count with a
+# pointer, which is informational, not a failure. A driven hook that did not
+# fire fails the check.
 #
 #   HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/hook-coverage.sh
 #
@@ -102,19 +102,25 @@ for try in 1 2 3; do
 done
 $CTL look 0 -60 >/dev/null
 $CTL use-item | j 'print("used in the air:", d.get("ok", d.get("error")))'
-say "mobs: an example mob spawned, hurt, clicked and killed by command"
+say "mobs: an example mob spawned, hurt, clicked twice and killed by command"
 $CTL command "summon example_mod:example_mob $CX $CY $((CZ+2)) {NoAI:1b}" >/dev/null
 sleep 1
 $CTL command "damage @e[type=example_mod:example_mob,limit=1,sort=nearest] 1 minecraft:generic" >/dev/null
 PID=$(mob_id example_mod:example_mob)
 $CTL select 9 >/dev/null
+# Two clicks on the same mob: its own saved table counts 1 then 2 (tools/modkit-probe).
 [ -n "$PID" ] && $CTL interact-entity "$PID" | j 'print("clicked the example mob:", d.get("ok", d.get("error")))'
 sleep 0.5
+[ -n "$PID" ] && $CTL interact-entity "$PID" | j 'print("clicked the example mob again:", d.get("ok", d.get("error")))'
+sleep 0.5
 $CTL command "kill @e[type=example_mod:example_mob]" >/dev/null
-say "mobs: a zombie hit with the stick, then killed with a sword"
+say "mobs: a zombie clicked once, hit with the stick, then killed with a sword"
 $CTL command "summon minecraft:zombie $CX $CY $((CZ-2)) {NoAI:1b}" >/dev/null
 sleep 1
 ZID=$(mob_id minecraft:zombie)
+# One click on another mob: its own saved table counts its own 1 (tools/modkit-probe).
+[ -n "$ZID" ] && $CTL interact-entity "$ZID" | j 'print("clicked the zombie:", d.get("ok", d.get("error")))'
+sleep 0.5
 $CTL select stick >/dev/null
 for try in 1 2 3 4; do
   $CTL look-at-entity "$ZID" >/dev/null
@@ -289,13 +295,14 @@ not_driven = [h for h in listed if h not in driven and h not in dedicated_only a
 print(f"{len(listed)} hooks reach Lua by the reference; {len(driven) - len(missing)} of {len(driven)} driven hooks fired in game")
 print("driven and fired:", " ".join(h for h in driven if h not in missing and h not in dedicated_only))
 print("driven but silent:", " ".join(missing) if missing else "none")
-print("reaches Lua but not driven here:", " ".join(not_driven) if not_driven else "none")
+print(f"reaches Lua but not driven here: {len(not_driven)} (the reference lists them: docs/api/hook-points.md)")
 print("guests and dedicated servers only, not checked here:", " ".join(sorted(dedicated_only)))
 print("declaration-served, no handler to drive:", " ".join(sorted(declared_only)))
 # The modkit's callbacks for the same hooks (tools/modkit-probe), each written as a mod writes it.
 callbacks = ["Players:on_tick", "Players:on_hurt", "Players:on_fall", "Players:on_knockback", "Players:on_chat",
     "Players:on_command", "Players:on_change_dimension", "Players:on_sleep", "Players:on_exp", "Players:on_open_menu",
-    "Entity:on_fall", "Entity:on_knockback", "Entity:on_equip", "Entity:on_drops", "Block:on_drops",
+    "Entity:on_fall", "Entity:on_knockback", "Entity:on_equip", "Entity:on_drops", "Entity:on_interact",
+    "Block:on_drops", "Block:on_use",
     "Item:on_crafted", "Item:on_dropped", "Item:on_hurt_enemy", "Item:on_use_start",
     "M:on explosion", "M:on entity_joined", "M:on projectile_launched", "M:on projectile_impact", "M:on mob_heal"]
 ran = set(re.findall(r"MODKIT cb (\S+(?: \S+)?)", log))
@@ -303,6 +310,24 @@ missing_callbacks = [c for c in callbacks if c not in ran]
 print(f"{len(callbacks)} modkit callbacks; {len(callbacks) - len(missing_callbacks)} ran in game")
 print("modkit callbacks missing:", " ".join(missing_callbacks) if missing_callbacks else "none")
 missing += missing_callbacks
+# The new helper reads (issue 48), asserted in game. Per-mob data: one
+# example mob clicked twice counts 1 then 2 in its own table, and a zombie
+# counts its own. The acting player's hand in a click is what they hold (the
+# drive right-clicks stone holding a stick). P:on_tick names the ticking
+# player. A two-player run would tell acting_player from players()[1] apart;
+# the harness drives one player, so that difference is not shown here.
+by_id = {}
+for m in re.finditer(r"MODKIT mobdata example_mod:example_mob (\d+) clicks=(\d+)", log):
+    by_id.setdefault(m.group(1), []).append(int(m.group(2)))
+if not any(1 in v and 2 in v for v in by_id.values()):
+    missing.append("mob.data persists across two clicks of one example mob")
+if not re.search(r"MODKIT mobdata minecraft:zombie \d+ zclicks=1", log):
+    missing.append("mob.data of a second mob counts its own")
+if not re.search(r"MODKIT blockuse held=minecraft:stick", log):
+    missing.append("acting held in a click is what the player holds")
+tick = re.search(r"MODKIT tick: (\S+) first=(\S+) match=true", log)
+if not tick or tick.group(1) != tick.group(2):
+    missing.append("P:on_tick names the ticking player")
 errors = [l for l in log.splitlines() if "[lua:" in l and "error" in l]
 print("script errors:", len(errors))
 for l in errors[:5]: print("  " + l[:200])

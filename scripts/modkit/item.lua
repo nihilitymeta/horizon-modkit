@@ -17,8 +17,7 @@
 -- engine's tables (docs/api.md, "Item classes"). A callback is wired to the game's hook the
 -- moment it is defined. The hooks name no item, so the handler keeps the
 -- stacks with this item's id; `on_use`, `on_use_on` and `on_hit` read the
--- acting player (`horizon.players()[1]`) and the hand they hold.
-local Held = require("@modkit/held")
+-- acting player (`horizon.acting_player()`) and the hand they hold.
 local Player = require("@modkit/player")
 local wrap_player = Player.wrap
 
@@ -30,10 +29,10 @@ function Stack:take(n) horizon.take_items(self.id, n or 1) end
 function Stack:give(n) horizon.give_items(self.id, n or 1) end
 local function wrap(item) return setmetatable(item, Stack) end
 
--- The acting player of a use or a blow: the first player of the world.
--- The item events hand out no player table.
+-- The acting player of a use or a blow. The item events hand out no player
+-- table. Skipped when the hook names no acting player.
 local function acting()
-  return wrap_player(horizon.players()[1])
+  return wrap_player(horizon.acting_player())
 end
 
 -- The player a uuid names, or a bare uuid table when the server does not
@@ -45,25 +44,33 @@ end
 local CALLBACKS = {
   on_use = { "use_item", function(e, event)
     if event.stack.id ~= e.id then return end
-    if e:on_use(wrap(event.stack), acting()) == true then horizon.cancel() end
+    local player = acting()
+    if player == nil then return end
+    if e:on_use(wrap(event.stack), player) == true then horizon.cancel() end
   end },
   on_use_on = { "use_item_on", function(e, event)
     if event.stack.id ~= e.id then return end
+    local player = acting()
+    if player == nil then return end
     local pos = event.pos
     local block = { x = pos.x, y = pos.y, z = pos.z, id = horizon.block(pos.x, pos.y, pos.z) }
-    if e:on_use_on(wrap(event.stack), acting(), block, event.face) == true then horizon.cancel() end
+    if e:on_use_on(wrap(event.stack), player, block, event.face) == true then horizon.cancel() end
   end },
   on_hit = { "attack_entity", function(e, event)
-    local held = Held.of()
+    local player = acting()
+    if player == nil then return end
+    local held = player.held
     if held == nil or held.item ~= e.id then return end
     local item = wrap({ id = held.item, count = held.count, plain = held.plain })
     local pos = event.pos
     local target = { id = event.entity, kind = event.kind, position = { x = pos.x, y = pos.y, z = pos.z } }
-    if e:on_hit(item, acting(), target) == true then horizon.cancel() end
+    if e:on_hit(item, player, target) == true then horizon.cancel() end
   end },
   on_finished = { "living_entity_use_item_finish", function(e, event)
     if event.entity ~= nil or event.stack.id ~= e.id then return end
-    local id, count = e:on_finished(wrap(event.stack), acting())
+    local player = acting()
+    if player == nil then return end
+    local id, count = e:on_finished(wrap(event.stack), player)
     if id ~= nil then event.result = { id = id, count = count or 1 } end
   end },
   on_tick = { "inventory_tick", function(e, event)
@@ -79,11 +86,15 @@ local CALLBACKS = {
   end },
   on_hurt_enemy = { "hurt_enemy", function(e, event)
     if event.stack.id ~= e.id then return end
-    e:on_hurt_enemy(wrap(event.stack), acting(), { id = event.entity, kind = event.kind })
+    local player = acting()
+    if player == nil then return end
+    e:on_hurt_enemy(wrap(event.stack), player, { id = event.entity, kind = event.kind })
   end },
   on_use_start = { "living_entity_use_item_start", function(e, event)
     if event.entity ~= nil or event.stack.id ~= e.id then return end
-    local r = e:on_use_start(wrap(event.stack), acting(), event.hand, event.duration)
+    local player = acting()
+    if player == nil then return end
+    local r = e:on_use_start(wrap(event.stack), player, event.hand, event.duration)
     if r == true then horizon.cancel() elseif type(r) == "number" then event.duration = r end
   end },
 }
@@ -102,7 +113,6 @@ end
 function Item:_listen(name, hook, adapt)
   if self._hooked[hook] then return end
   self._hooked[hook] = true
-  if name == "on_hit" then Held.track() end
   local e = self
   horizon.on(hook, function(event)
     if e[name] then adapt(e, event) end

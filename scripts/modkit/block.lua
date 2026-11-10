@@ -15,11 +15,10 @@
 -- (the block entity's saved table, written back after the callback; nil
 -- without a block entity), and methods that ask the game to act after the call.
 --
--- The native events name no acting player and no held stack, so `player` is
--- the first player of `horizon.players()`, and `held` is their selected stack
--- (`{item, count, plain}`, or nil). With one player on that is the player who
--- clicked; with several on, the engine does not say who it was.
-local Held = require("@modkit/held")
+-- The native events name no player and no held stack, so `player` is the
+-- acting player (`horizon.acting_player()`), and `held` is their selected
+-- stack (`{item, count, plain}`, or nil): with several players on, the one
+-- who clicked.
 local Player = require("@modkit/player")
 
 local Block = {}
@@ -92,11 +91,10 @@ function Instance:above(dy: number?): string return horizon.block(self.x, self.y
 --- Gets the id of the block `dy` (1) blocks below this one.
 function Instance:below(dy: number?): string return horizon.block(self.x, self.y - (dy or 1), self.z) end
 
--- The acting player of a click or a break: the first player of the world.
--- The native events name none, so with one player on this is the one who
--- acted. `Player.wrap` keeps a nil player nil for a world with none on.
+-- The acting player of a click, a break or a placement. The native events
+-- name none. Skipped when the hook names no acting player.
 local function acting()
-  return Player.wrap(horizon.players()[1])
+  return Player.wrap(horizon.acting_player())
 end
 
 --- Creates a new block class, with its hooks registered for its id alone,
@@ -116,11 +114,15 @@ function Block.new(mod, id)
   end, id)
   horizon.on("destroy_block", function(event)
     if event.state ~= id then return end
-    if b.on_break and b:on_break(instance(horizon.time().dimension, id, event.pos.x, event.pos.y, event.pos.z, nil, nil), acting()) == true then horizon.cancel() end
+    local player = acting()
+    if player == nil then return end
+    if b.on_break and b:on_break(instance(horizon.time().dimension, id, event.pos.x, event.pos.y, event.pos.z, nil, nil), player) == true then horizon.cancel() end
   end)
   horizon.on("place_block", function(event)
     if event.state ~= id then return end
-    if b.on_place then b:on_place(instance(horizon.time().dimension, id, event.pos.x, event.pos.y, event.pos.z, nil, nil), acting(), event.stack) end
+    local player = acting()
+    if player == nil then return end
+    if b.on_place then b:on_place(instance(horizon.time().dimension, id, event.pos.x, event.pos.y, event.pos.z, nil, nil), player, event.stack) end
   end)
   -- The block is gone when its loot drops: its properties come from the
   -- state the engine names (`event.block.state`), not from the world.
@@ -134,13 +136,14 @@ end
 
 -- Installs the mod's handlers once (the clicks are not registered by block).
 function Block.install(mod)
-  Held.track()
   horizon.on("right_click_block", function(event)
     local pos = event.pos
     local id = horizon.block(pos.x, pos.y, pos.z)
     local b = mod.blocks[id]
     if b and b.on_use then
-      b:on_use(instance(horizon.time().dimension, id, pos.x, pos.y, pos.z, nil, nil), acting(), Held.of(), event.face)
+      local player = acting()
+      if player == nil then return end
+      b:on_use(instance(horizon.time().dimension, id, pos.x, pos.y, pos.z, nil, nil), player, player.held, event.face)
     end
   end)
 end

@@ -19,13 +19,16 @@
 -- A callback is wired to the game's hook for the class's kind the moment it
 -- is defined, so a kind without one costs nothing each tick.
 --
--- The native events carry no per-mob saved table. A callback that documents
--- `mob` as the live view (`on_tick`, `on_interact`) is skipped when
--- `horizon.mob(id)` is nil (the mob is dead or gone): there is nothing to
--- hand it. The rest document `mob` as id and kind only and keep running.
--- The acting player of `on_interact` is the first player of
--- `horizon.players()`, and `held` is the stack in the hand being tried (main
--- then off), or nil when that hand is empty.
+-- A callback with a host reads `mob.data`, the mob's saved table
+-- (`horizon.entity_data`), fetched on first use: the view callbacks
+-- (`on_tick`, `on_interact`), `on_death`, `on_equip` and `on_drops`. The
+-- hostless callbacks (`on_hurt`, `on_fall`, `on_knockback`) and goals read
+-- nil there. A callback that documents `mob` as the live view
+-- (`on_tick`, `on_interact`) is skipped when `horizon.mob(id)` is nil (the
+-- mob is dead or gone): there is nothing to hand it. The rest document `mob`
+-- as id and kind only and keep running. The acting player of `on_interact`
+-- is `horizon.acting_player()`, and `held` is the stack in the hand being
+-- tried (main then off), or nil when that hand is empty.
 local Goal = require("@modkit/goal")
 local Mob = require("@modkit/mob")
 local Player = require("@modkit/player")
@@ -68,9 +71,11 @@ local CALLBACKS = {
   on_interact = { "interact_entity", function(e, event)
     local v = live(event)
     if v == nil then return end
+    local player = Player.wrap(horizon.acting_player())
+    if player == nil then return end
     local stack = event.stack
     local held = stack ~= nil and { item = stack.id, count = stack.count, plain = stack.plain } or nil
-    if e:on_interact(Mob.host(v, horizon.time().dimension, nil), Player.wrap(horizon.players()[1]), held) == true then horizon.cancel() end
+    if e:on_interact(Mob.host(v, horizon.time().dimension, nil), player, held) == true then horizon.cancel() end
   end },
   on_fall = { "living_fall", function(e, event)
     e:on_fall(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), {

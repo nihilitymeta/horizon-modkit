@@ -1,8 +1,8 @@
 -- A player as a callback sees it: the engine's table (`uuid`, `name`,
--- `dimension`, `position`, `game_mode`, `health`, `held` on a command's player
--- table only) with methods that ask the game to act on them, applied after
--- the call, and reads answered at once. Any callback with a host. Only
--- `command` handlers name the hand: elsewhere the engine hands out no `held`.
+-- `dimension`, `position`, `game_mode`, `health`, `held`: the selected hotbar
+-- stack, or nil when the hand is empty) with methods that ask the game to act
+-- on them, applied after the call, and reads answered at once. Any callback
+-- with a host.
 --
 --   function Players:on_join(player)
 --     player:give("minecraft:bread", 3)
@@ -10,25 +10,36 @@
 --     player:title("Welcome", player.name)
 --     if player:count("minecraft:diamond") > 0 then ... end
 --   end
-local Held = require("@modkit/held")
-
 local Player = {}
 Player.__index = Player
 
+-- The modkit's hand from the engine's (`{id, count, damage, extra, plain}`):
+-- `{item, count, plain}`, or nil when the hand is empty.
+local function modkit_held(engine_held)
+  if engine_held == nil then return nil end
+  return { item = engine_held.id, count = engine_held.count, plain = engine_held.plain }
+end
+
 --- Adds the player methods to the engine's player table, and returns it.
---- A table that already has them is returned as it is. A table without the
---- hand names it from the selected-slot tracking of the player the table
---- names (`held` is `{item, count, plain}`, or absent). Pass `from_engine`
---- for a table whose hand the engine set itself (a command's player table),
---- so the engine's own hand is kept: an empty command hand arrives with
---- `held` absent, which Lua cannot tell from a table that never had one, so
---- only the call site knows.
+--- A table that already has them is returned as it is. The engine names the
+--- hand on the tables of `horizon.players()`, `horizon.player()` and
+--- `horizon.acting_player()`; a bare hook seed without one reads it from
+--- `horizon.player(uuid)`. Either way `held` is `{item, count, plain}`, or
+--- nil. Pass `from_engine` for a table whose hand the engine set itself (a
+--- command's player table), so the engine's own hand is kept: an empty
+--- command hand arrives with `held` absent, which Lua cannot tell from a
+--- table that never had one, so only the call site knows.
 function Player.wrap(t: Player, from_engine: boolean?)
   local raw: any = t
   if raw == nil or getmetatable(raw) == Player then return raw end
-  if raw.held == nil and not from_engine then
-    Held.track()
-    raw.held = Held.of(raw.uuid)
+  if not from_engine then
+    local held = rawget(raw, "held")
+    if type(held) == "table" and held.item == nil and held.id ~= nil then
+      raw.held = modkit_held(held)
+    elseif held == nil and raw.uuid ~= nil then
+      local ok, full = pcall(horizon.player, raw.uuid)
+      if ok and full ~= nil then raw.held = modkit_held(full.held) end
+    end
   end
   return setmetatable(raw, Player)
 end

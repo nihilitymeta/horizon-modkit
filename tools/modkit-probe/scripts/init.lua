@@ -12,13 +12,20 @@ local function ran(name)
 end
 
 local P = M:players()
--- The hand tracking (`Held.of` follows the selected slot): log each change of
--- the acting player's held stack, so tools/steps-check.sh can see the map
--- move with the hotbar. One player is all the harness drives: a second
--- player's slots cannot be shown here, only that the one map follows.
+-- The acting player's hand (`horizon.acting_player().held`, the selected
+-- slot): log each change of it, so tools/steps-check.sh can see it move with
+-- the hotbar. One player is all the harness drives: a second player's hand
+-- cannot be shown here. The first tick also names the ticking player beside
+-- the list's first, so the checks can see they match.
 local last_held = false
+local tick_checked = false
 function P:on_tick(player)
   ran("Players:on_tick")
+  if not tick_checked then
+    tick_checked = true
+    local first = horizon.players()[1]
+    horizon.log(("MODKIT tick: %s first=%s match=%s"):format(player.uuid, first and first.uuid or "none", tostring(first ~= nil and first.uuid == player.uuid)))
+  end
   local held = player.held and player.held.item or "empty"
   if held ~= last_held then
     last_held = held
@@ -40,9 +47,32 @@ function Zombie:on_fall(mob, fall) ran("Entity:on_fall") end
 function Zombie:on_knockback(mob, hit) ran("Entity:on_knockback") end
 function Zombie:on_equip(mob, slot, from, to) ran("Entity:on_equip") end
 function Zombie:on_drops(mob, drops, source) ran("Entity:on_drops") end
+-- Per-mob saved data (`mob.data`): each click counts into this mob's own
+-- table, so two clicks on one example mob read 1 then 2, and a zombie counts
+-- its own.
+function Zombie:on_interact(mob, player, held)
+  ran("Entity:on_interact")
+  local d = mob.data
+  d.zclicks = (d.zclicks or 0) + 1
+  horizon.log(("MODKIT mobdata %s %d zclicks=%d"):format(mob.kind, mob.id, d.zclicks))
+end
+
+local ExampleMob = M:entity("example_mod:example_mob")
+function ExampleMob:on_interact(mob, player, held)
+  ran("Entity:on_interact")
+  local d = mob.data
+  d.clicks = (d.clicks or 0) + 1
+  horizon.log(("MODKIT mobdata %s %d clicks=%d"):format(mob.kind, mob.id, d.clicks))
+end
 
 local Stone = M:block("minecraft:stone")
 function Stone:on_drops(block, drops, source) ran("Block:on_drops") end
+-- A click with the acting player's hand: the drive right-clicks stone while
+-- holding a stick, so the logged hand is the stick.
+function Stone:on_use(block, player, held)
+  ran("Block:on_use")
+  horizon.log(("MODKIT blockuse held=%s by=%s"):format(held and held.item or "empty", player.uuid))
+end
 
 local Planks = M:item("minecraft:oak_planks")
 function Planks:on_crafted(item, player, recipe) ran("Item:on_crafted") end

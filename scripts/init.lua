@@ -2,7 +2,6 @@
 -- the library (scripts/modkit.lua). What runs here is the modkit's own: the
 -- inspect stick (scripts/registry.lua).
 local modkit = require("@modkit")
-local Held = require("@modkit/held")
 horizon.log("modkit " .. modkit.VERSION .. " ready")
 
 -- The inspect stick: a right-click on a block or an entity opens the inspect
@@ -13,13 +12,12 @@ horizon.log("modkit " .. modkit.VERSION .. " ready")
 -- the messages.
 -- The click the stick took this tick, by player: the off hand's turn of it is
 -- cancelled too, so an item there does nothing either. The native
--- `right_click_block` event names no held stack and no hand: `Held.of()`
--- reads the selected (main-hand) slot, so a stick in the off hand alone
--- never opens the windows on a block (docs/api.md, "The inspect stick"). The
--- tried hand's stack names the hand, so either hand's stick opens them on an
--- entity.
+-- `right_click_block` event names no held stack and no hand: the acting
+-- player's `held` is the selected (main-hand) slot, so a stick in the off
+-- hand alone never opens the windows on a block (docs/api.md, "The inspect
+-- stick"). The tried hand's stack names the hand, so either hand's stick
+-- opens them on an entity.
 local STICK = "horizon_modkit:inspect_stick"
-Held.track()
 local took = {}
 -- Takes the click when the stick took it: records this tick and key the first
 -- time the engine answers true for a hand holding the stick, and cancels
@@ -36,22 +34,25 @@ local function inspect(player_uuid, key, what, is_stick)
   end
   return false
 end
-local function acting_uuid()
-  local players = horizon.players()
-  return players[1] ~= nil and players[1].uuid or nil
+-- The acting player of the click, or nil where the hook names none: the
+-- click is left alone then.
+local function acting()
+  return horizon.acting_player()
 end
 horizon.on("right_click_block", function(event)
-  local uuid = acting_uuid()
-  if uuid == nil then return end
+  local player = acting()
+  if player == nil then return end
+  local uuid = player.uuid
   local pos = event.pos
-  local held = Held.of()
-  if inspect(uuid, pos.x .. " " .. pos.y .. " " .. pos.z, { x = pos.x, y = pos.y, z = pos.z, face = event.face }, held ~= nil and held.item == STICK) then
+  local held = player.held
+  if inspect(uuid, pos.x .. " " .. pos.y .. " " .. pos.z, { x = pos.x, y = pos.y, z = pos.z, face = event.face }, held ~= nil and held.id == STICK) then
     horizon.cancel()
   end
 end)
 horizon.on("interact_entity", function(event)
-  local uuid = acting_uuid()
-  if uuid == nil then return end
+  local player = acting()
+  if player == nil then return end
+  local uuid = player.uuid
   local stack = event.stack
   if stack == nil then
     -- An empty hand's turn (the off hand's, after the main hand's click):

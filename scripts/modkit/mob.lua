@@ -6,27 +6,60 @@
 -- table: steering, fighting and life actions on this mob. In a lifecycle
 -- callback (`on_tick`, `on_death`, `on_interact`) it is wrapped with the
 -- hook's dimension; the actions there go by the mob's id (`set_health`,
--- `push`, `teleport`, `kill`, `remove`, `summon`, `broadcast`). The events
--- carry no per-mob saved table and no view, so `dimension` may be nil and the
--- view's fields (position, health...) read nil outside a goal. `on_hurt`,
--- `on_fall` and `on_knockback` have neither.
+-- `push`, `teleport`, `kill`, `remove`, `summon`, `broadcast`). A callback
+-- with a host also reads `mob.data`, the mob's saved table, fetched from
+-- `horizon.entity_data` on first use. `dimension` is nil where there is no
+-- host (`on_hurt`, `on_fall`, `on_knockback`) and the view's fields
+-- (position, health...) read nil outside a goal.
 local Mob = {}
+
+-- The saved table, not yet asked of the engine: `mob.data` fetches it on
+-- first use, so a callback that never touches it pays nothing.
+local UNFETCHED = {}
+
+--- Reads the mob's saved table (`horizon.entity_data`), fetching it on first
+--- use. Nil where there is no host to read from (a goal, `on_hurt`,
+--- `on_fall`, `on_knockback`), and nil when the entity is gone. On a client
+--- copy an unknown id reads as an empty table, so a table is no proof the
+--- entity exists there. Written back after the call.
+local function fetch_data(self)
+  local slot = rawget(self, "_data")
+  if slot == nil or slot == false then return nil end
+  if slot ~= UNFETCHED then return slot end
+  if rawget(self, "dimension") == nil then
+    rawset(self, "_data", false)
+    return nil
+  end
+  local view = rawget(self, "_view")
+  local id = type(view) == "table" and view.id or nil
+  if type(id) ~= "number" then
+    rawset(self, "_data", false)
+    return nil
+  end
+  local data = horizon.entity_data(id)
+  rawset(self, "_data", data == nil and false or data)
+  return data
+end
+
 Mob.__index = function(self, key)
   local method = Mob[key]
   if method ~= nil then return method end
+  if key == "data" then return fetch_data(self) end
   return (rawget(self, "_view") :: any)[key]
 end
 
---- Creates a mob from the view and the `out` table of a goal call.
+--- Creates a mob from the view and the `out` table of a goal call. A goal
+--- has no host, so `mob.data` reads nil there.
 function Mob.wrap(view, out)
-  return setmetatable({ _view = view, _out = out }, Mob)
+  return setmetatable({ _view = view, _out = out, _data = false }, Mob)
 end
 
 --- Creates a mob from the view (or `{id, kind}`) of a lifecycle hook, with
---- the dimension the mob is in and `data`, its saved table (nil: the native
---- hooks carry none).
+--- the dimension the mob is in. `mob.data` is fetched from
+--- `horizon.entity_data` on first use; pass a table for `data` to hand one
+--- in instead. A nil dimension (no host) leaves `mob.data` nil.
 function Mob.host(view, dimension, data)
-  return setmetatable({ _view = view, dimension = dimension, data = data }, Mob)
+  return setmetatable({ _view = view, dimension = dimension, _data = data == nil and UNFETCHED or data }, Mob)
 end
 
 local function goal_out(self, name)

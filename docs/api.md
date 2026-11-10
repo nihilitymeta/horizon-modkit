@@ -37,12 +37,12 @@ of an event, such as a hit, when the game cannot act on the world. This decides 
 callback.
 
 - **With the whole world**: a timer, `E:on_tick`, `E:on_death` and `B:on_block_entity_tick`. The world reads, the
-  actions and every player work. Saved tables are the world's and the players': there is none per mob or per
-  block click.
+  actions and every player work. Saved tables are the world's, the players' and each mob's (`mob.data`): a block
+  click names no block data.
 - **In a player's own action**: the item callbacks, `B:on_use`, `E:on_interact`, `P:on_join` and a command. The
-  reads and actions work. The native events name no acting player, so the modkit reads the first player of
-  `horizon.players()`; with one player on that is the one who acted. A command queues summons and block changes
-  for the next tick.
+  reads and actions work. The native events name no player, so the modkit reads the acting player
+  (`horizon.acting_player()`): the one who acted, even with several players on. A command queues summons and
+  block changes for the next tick.
 - **In a random or scheduled tick**: `B:on_random_tick` and `B:on_tick` read blocks only, and act through
   `block:set`, `block:schedule_tick`, `block:handled` and `block:summon`.
 - **In a goal**: the goal reads its `mob` view and acts through the mob's goal methods only.
@@ -543,10 +543,10 @@ Called when a mob of this type spawns, by any means.
 
 Called every server tick for every mob of this type. Keep it light. This is NeoForge's `tick`.
 
-- *mob*: the mob's live view, read with `horizon.mob`, with the actions by id; there is no saved table on it.
-  Skipped when the mob is dead or gone and has no live view. The rule for every entity callback: one that
-  documents `mob` as the live view (`E:on_tick`, `E:on_interact`) never runs viewless, while one that
-  documents `mob` as id and kind only still runs.
+- *mob*: the mob's live view, read with `horizon.mob`, with the actions by id and the mob's saved table
+  (`mob.data`, fetched from `horizon.entity_data` on first use). Skipped when the mob is dead or gone and has
+  no live view. The rule for every entity callback: one that documents `mob` as the live view (`E:on_tick`,
+  `E:on_interact`) never runs viewless, while one that documents `mob` as id and kind only still runs.
 
 ### `E:on_ai_tick(mob, state)`
 
@@ -567,8 +567,9 @@ and `kind`, and no other action works. It still runs when the mob has no live vi
 
 Called when a mob of this type dies, by any cause.
 
-- *mob*: the mob's `id` and `kind`; the view is gone with the mob, and there is no saved table on it.
-  It still runs when the mob has no live view
+- *mob*: the mob's `id` and `kind`; the view is gone with the mob. Its saved table (`mob.data`) is read from
+  `horizon.entity_data` on first use, or nil when the entity is already gone. It still runs when the mob has no
+  live view
 - *cause*: a table with `damage_type` (such as `minecraft:on_fire`), `causing` (the id of the mob behind the death,
   or 0) and `player` (the uuid of the player credited with the kill, or nil)
 
@@ -576,9 +577,10 @@ Called when a mob of this type dies, by any cause.
 
 Called when a player right-clicks a mob of this type, before the mob and the item act.
 
-- *mob*: the mob's live view, read with `horizon.mob`. Skipped when the mob is dead or gone and has no
-  live view, as `E:on_tick`
-- *player*: the first player of `horizon.players()`; with one player on, the one who clicked
+- *mob*: the mob's live view, read with `horizon.mob`, with the actions by id and the mob's saved table
+  (`mob.data`, fetched from `horizon.entity_data` on first use). Skipped when the mob is dead or gone and has
+  no live view, as `E:on_tick`
+- *player*: the acting player (`horizon.acting_player()`), with their selected stack in `held`
 - *held*: the stack in the hand being tried (`item`, `count` and `plain`), main hand then off hand, or nil when that hand is empty
 
 **Returns**: true to take the click, so that neither the mob nor the item acts.
@@ -690,11 +692,12 @@ the call.
 | `nearest_player` | the nearest player's position, or nil |
 | `home` | `x`, `y`, `z` and `radius`, or nil |
 | `nearby` | in a goal: the mobs within its follow range, nearest first (`id`, `kind`, `position`, `distance`, `health`, `alive`, `hostile`, `baby`, `target`). Empty in a callback |
-| `dimension` | in `E:on_tick` and `E:on_interact` only: the mob's dimension |
+| `dimension` | in a callback with a host only: the mob's dimension |
+| `data` | in a callback with a host only: the mob's saved table, fetched from `horizon.entity_data` on first use, written back after the call. Nil in a goal and where there is no host (`E:on_hurt`, `E:on_fall`, `E:on_knockback`), and nil when the entity is gone. On a client copy an unknown id reads as an empty table, so a table is no proof the entity exists there |
 
-Callbacks outside a goal see no saved table on the mob: keep per-mob state in the world's saved table
-(`horizon.world_data()`), keyed by the mob's id. In `E:on_death`, `E:on_hurt`, `E:on_fall` and `E:on_knockback`
-only `id` and `kind` remain.
+In `E:on_hurt`, `E:on_fall` and `E:on_knockback` only `id` and `kind` remain: the game is in the middle of the
+event, and the helper is refused there, as `horizon.world_data()` is. Every other entity callback reads
+`mob.data`: the view callbacks (`E:on_tick`, `E:on_interact`), `E:on_death`, `E:on_equip` and `E:on_drops`.
 
 ### Moving and looking
 
@@ -767,7 +770,8 @@ the stack has no components beyond its template's. Two methods act on the acting
 - `item:give(n)`: gives *n* of the item, 1 by default
 
 The use, use-on, hit, hurt-enemy, start and finish hooks take no kind: every use wakes one handler, which keeps
-the stacks with its own id. The acting *player* is the first player of `horizon.players()`.
+the stacks with its own id. The acting *player* is the player who acted (`horizon.acting_player()`), correct
+with several players on.
 
 ### `I:on_use(item, player)`
 
@@ -792,7 +796,7 @@ Called when a player right-clicks a block with the item.
 ### `I:on_hit(item, player, target)`
 
 Called when a player attacks while holding the item, before the damage. The event names no stack, so the modkit
-reads the acting player's selected slot: with one player on, the hand they hit with.
+reads the acting player's selected slot: the hand they hit with.
 
 - *item*: the stack in hand
 - *player*: the attacker
@@ -906,7 +910,7 @@ for each. Make the callback do something that is the same when done twice, such 
 toggling it, or read the block's state first.
 
 - *block*: the [block](#the-block), without `data`: a click names no block data
-- *player*: the first player of `horizon.players()`; with one player on, the one who clicked
+- *player*: the acting player (`horizon.acting_player()`): the one who clicked
 - *held*: the selected stack (`item`, `count` and `plain`), or nil
 - *face*: the side that was clicked
 
@@ -915,7 +919,7 @@ toggling it, or read the block's state first.
 Called when a player breaks the block, once the game has allowed it.
 
 - *block*: the [block](#the-block), without `data`
-- *player*: the first player of `horizon.players()`; with one player on, the one who broke it
+- *player*: the acting player (`horizon.acting_player()`): the one who broke it
 
 **Returns**: true to keep the block, so nothing breaks or drops.
 
@@ -924,7 +928,7 @@ Called when a player breaks the block, once the game has allowed it.
 Called after a player has placed the block. To stop a placement, take the click in an item's `I:on_use_on`.
 
 - *block*: the [block](#the-block), without `data`
-- *player*: the first player of `horizon.players()`; with one player on, the one who placed it
+- *player*: the acting player (`horizon.acting_player()`): the one who placed it
 - *item*: the stack it was placed from
 
 ### `B:on_drops(block, drops, source)`
@@ -1015,15 +1019,15 @@ Called when a player dies. The event names the dead player by uuid only: their n
 
 ### `P:on_tick(player)`
 
-Called every server tick for every living player. Keep it light.
+Called every server tick for every living player, each time with that player. Keep it light.
 
-- *player*: the first player of `horizon.players()`; with one player on, the one whose tick ended
+- *player*: the acting player (`horizon.acting_player()`): the one whose tick ended
 
 ### `P:on_break_block(player, block)`
 
 Called when a player breaks any block.
 
-- *player*: the first player of `horizon.players()`; with one player on, the one who broke it
+- *player*: the acting player (`horizon.acting_player()`): the one who broke it
 - *block*: the block, with `x`, `y`, `z` and `id`
 
 **Returns**: true to keep the block.
@@ -1032,7 +1036,7 @@ Called when a player breaks any block.
 
 Called after a player has placed any block.
 
-- *player*: the first player of `horizon.players()`; with one player on, the one who placed it
+- *player*: the acting player (`horizon.acting_player()`): the one who placed it
 - *block*: the block, with `x`, `y`, `z` and `id`
 - *item*: the stack it was placed from
 
@@ -1138,7 +1142,7 @@ The `player` table that a callback receives. Its fields are a copy of the player
 | `dimension`, `position` | where they are; `position` has `x`, `y` and `z` |
 | `game_mode` | 0 survival, 1 creative, 2 adventure, 3 spectator |
 | `health` | their health |
-| `held` | `{item, count, plain}` of that player's tracked hotbar slot (`player_item_held`), or nil: the engine's own hand on a command's player table; the first player's (`horizon.players()[1]`) only in the callbacks whose events name nobody. Another mod's cancel of `player_item_held` is invisible here: the map moves on, and stays ahead until the next change |
+| `held` | the player's selected hotbar stack (`{item, count, plain}`), or nil when the hand is empty: the engine hands it out on the player tables, and a bare hook seed reads it from `horizon.player(uuid)`. A command's own player table carries the engine's hand instead |
 
 The methods below work in any callback with a host, and in a timer. Inside another player's callback, such as their
 click or their command, only that player is reached: a give to someone else does nothing, and their inventory reads
@@ -1262,6 +1266,17 @@ Gets the mod's saved table on a player. `player:data()` is the same.
 - *player*: a name or a UUID
 
 **Returns**: the table, or nil for a player the server does not hold.
+
+### `horizon.entity_data(id)`
+
+Gets the mod's saved table on an entity. `mob.data` is the same, fetched on the first use in a callback with a
+host.
+
+- *id*: the entity's id
+
+**Returns**: the table, written back after the call and kept with the entity. Nil on a server when the entity is
+not in the level. On a client copy an unknown id reads as an empty table, so a table is no proof the entity
+exists there.
 
 ## Reading the world
 

@@ -50,8 +50,8 @@ end
 |---|---|
 | `on_join`, `on_leave`, `on_respawn` | a player joins, leaves, or respawns |
 | `on_death(uuid, cause)` | a player dies; `cause` is the death message's key. The dead player is named by uuid only |
-| `on_break_block(player, block)` | a player breaks a block. Return true to keep it. The event names nobody: `player` is the first player of `horizon.players()`; with one player on, the one who acted |
-| `on_place_block(player, block, item)` | a player places a block. The event names nobody: `player` is the first player of `horizon.players()`; with one player on, the one who acted |
+| `on_break_block(player, block)` | a player breaks a block. Return true to keep it. The event names nobody: `player` is the acting player, the one who acted |
+| `on_place_block(player, block, item)` | a player places a block. The event names nobody: `player` is the acting player, the one who acted |
 | `on_pickup(player, item, count)` | a player is about to pick up items. Return true to leave them |
 | `on_chat(player, line)` | a chat line. Return a string to answer the sender, or true to drop it |
 | `on_command(player, line)` | a command, before it runs. Return true to stop it; `player:reply` answers |
@@ -60,14 +60,14 @@ end
 | `on_exp` | a player is about to gain experience |
 | `on_open_menu` | a player opens a menu |
 | `on_change_dimension` | a player arrives in another dimension |
-| `on_tick(player)` | every tick. Keep it light. The event names nobody: `player` is the first player of `horizon.players()`; with one player on, the one whose tick ended |
+| `on_tick(player)` | every tick of every player, each time with that player. Keep it light |
 
 ## The player table
 
 In these callbacks, and in every other callback that names a player, `player` is a table with:
 
-- the fields `uuid`, `name`, `position`, `dimension`, `game_mode`, `health` and `held` (the selected slot, tracked
-  from `player_item_held`; a command's table carries the engine's own)
+- the fields `uuid`, `name`, `position`, `dimension`, `game_mode`, `health` and `held` (the selected slot, or
+  nil; a command's table carries the engine's own)
 - the methods `give`, `take`, `inventory`, `count`, `effect`, `experience`, `levels`, `nickname`, `tell`,
   `action_bar`, `title`, `data` (the mod's saved table on the player), `raycast` and `block_below`
 

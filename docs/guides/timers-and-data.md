@@ -82,12 +82,12 @@ A timer is the way out of a callback that can't reach the world, or that reaches
 |---|---|
 | `horizon.world_data()` | the world |
 | `player:data()` | a player |
+| `mob.data` | a mob, in a callback with a host |
 | `block.data` | a block with a block entity, in the ticks |
 
 Each table is empty at first. It is written back after the callback, and kept through saves under the mod's own id,
-apart from any other mod's data. It can hold numbers, strings, booleans and nested tables. Keep per-mob state in
-the world's table, keyed by the mob's id: the events carry no saved table on a mob, and a click names no block
-data either.
+apart from any other mod's data. It can hold numbers, strings, booleans and nested tables. A click names no block
+data; a goal and the mid-event callbacks read `mob.data` as nil.
 
 ## See it in the game
 

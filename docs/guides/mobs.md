@@ -76,8 +76,8 @@ Callbacks run when something happens to the mob:
 | `on_death(mob, cause)` | it dies. `cause.player` is the killer's uuid, or nil |
 | `on_drops(mob, drops, source)` | its loot is about to drop. Change `drops` in place |
 
-The events carry no saved table on the mob. Keep per-mob state in the world's saved table (`horizon.world_data()`),
-keyed by the mob's id, as the feeding count in mob.lua does.
+Each mob keeps its own saved table, `mob.data`, read from `horizon.entity_data` on first use and written back
+after the callback, as the feeding count in mob.lua does. It reads nil in a goal and where there is no host.
 
 ## Vanilla mobs
 

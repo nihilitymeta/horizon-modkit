@@ -29,10 +29,11 @@ local wrap = Player.wrap
 
 local Players = {}
 
--- The acting player: the first player of the world. The break, place and
--- tick events hand out no player table.
+-- The acting player: the player whose action or tick the hook hears. The
+-- break, place and tick events hand out no player table. Nil where the hook
+-- has no acting player; the caller skips the callback then.
 local function acting()
-  return wrap(horizon.players()[1])
+  return wrap(horizon.acting_player())
 end
 
 -- The player a uuid names, or a bare uuid table when the server does not
@@ -49,15 +50,23 @@ local CALLBACKS = {
   on_respawn = { "player_respawned", function(e, event) e:on_respawn(wrap(event.player)) end },
   on_death = { "player_died", function(e, event) e:on_death(event.player, event.cause) end },
   on_break_block = { "destroy_block", function(e, event)
-    if e:on_break_block(acting(), { x = event.pos.x, y = event.pos.y, z = event.pos.z, id = event.state }) == true then horizon.cancel() end
+    local player = acting()
+    if player == nil then return end
+    if e:on_break_block(player, { x = event.pos.x, y = event.pos.y, z = event.pos.z, id = event.state }) == true then horizon.cancel() end
   end },
   on_place_block = { "place_block", function(e, event)
-    e:on_place_block(acting(), { x = event.pos.x, y = event.pos.y, z = event.pos.z, id = event.state }, event.stack)
+    local player = acting()
+    if player == nil then return end
+    e:on_place_block(player, { x = event.pos.x, y = event.pos.y, z = event.pos.z, id = event.state }, event.stack)
   end },
   on_pickup = { "item_picked_up", function(e, event)
     if e:on_pickup(named(event.player), event.item, event.count) == true then horizon.cancel() end
   end },
-  on_tick = { "player_tick", function(e, event) e:on_tick(acting()) end },
+  on_tick = { "player_tick", function(e, event)
+    local player = acting()
+    if player == nil then return end
+    e:on_tick(player)
+  end },
   on_hurt = { "living_incoming_damage", function(e, event)
     e:on_hurt({ id = event.entity, kind = event.kind }, {
       damage_type = event.damage_type, causing = event.causing, direct = event.direct, amount = event.amount,
