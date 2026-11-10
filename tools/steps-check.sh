@@ -198,6 +198,12 @@ $CTL chat "hello from steps-check" >/dev/null; sleep 0.5
 $CTL command "damage @s 1 minecraft:generic" >/dev/null; sleep 0.5
 $CTL give minecraft:stick 2 >/dev/null; sleep 0.5
 $CTL select minecraft:stick >/dev/null; sleep 0.5
+# The hand tracking follows the selected slot (the probe logs each change of
+# the acting player's held stack; one player is all the harness drives, so
+# only the one map is shown here, not two players' slots staying apart).
+for i in $(seq 1 10); do sleep 0.5; grep -q "MODKIT held: minecraft:stick" "$LOG" && break; done
+grep -q "MODKIT held: minecraft:stick" "$LOG" || { echo "STEP10: the held stack did not follow the selected slot"; exit 1; }
+echo "STEP10 held: $(grep -o 'MODKIT held: [a-z_:]*' "$LOG" | tail -3 | tr '\n' ',' | sed 's/,$//')"
 $CTL drop >/dev/null; sleep 1
 $CTL give minecraft:snowball 2 >/dev/null; sleep 0.5
 $CTL select minecraft:snowball >/dev/null; sleep 0.5

@@ -102,7 +102,7 @@ function Mod:command(usage: string, level: number | ((player: Player, args: Comm
   local run: any = fn
   local at: any = level
   if type(level) == "function" then at, run = 0, level end
-  horizon.command(usage, at, function(player, args) return run(Player.wrap(player), args) end)
+  horizon.command(usage, at, function(player, args) return run(Player.wrap(player, true), args) end)
 end
 
 --- Gets the mod's settings from `config/<id>.json` in the game folder.

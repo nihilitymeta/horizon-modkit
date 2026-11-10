@@ -191,9 +191,11 @@ to choose another. Both need the game restarted.
 ## The inspect stick
 
 The modkit declares one item of its own, `horizon_modkit:inspect_stick`, in its `scripts/registry.lua`, and handles
-its clicks in its `scripts/init.lua`. A mod writes nothing for it. The stick calls the engine's
-`horizon.dev.inspect(who, what)` from the `interact_entity` and `right_click_block` hooks, and cancels the click when
-the engine answers true. The [inspect stick guide](guides/inspect-stick.md) says how to use it.
+its clicks in its `scripts/init.lua`. A mod writes nothing for it. Only a click that holds the stick asks the
+engine's `horizon.dev.inspect(who, what)` from the `interact_entity` and `right_click_block` hooks, and cancels the
+click when the engine answers true; anything else keeps its vanilla click. A stick in the off hand alone never
+opens the windows on a block: `right_click_block` names no hand, and the selected slot it reads is the main hand's.
+The [inspect stick guide](guides/inspect-stick.md) says how to use it.
 
 ## The modkit table
 
@@ -475,7 +477,8 @@ handler takes one event table:
   `event.entity`, `event.kind`, `event.pos` and `event.loaded_from_disk`; `horizon.cancel()` keeps it out
 - `projectile_impact`, with a kind such as `minecraft:snowball`: `event.projectile`, `event.kind`, `event.owner`,
   and the entity half (`event.entity`, `event.entity_kind`) or the block half (`event.block`, `event.face`) of
-  the hit, with `event.at`
+  the hit, with `event.at`. Branch on `event.entity`: on an entity hit `event.block` and `event.face` are still
+  `{0, 0, 0}`, and on a block hit `event.entity` is nil and `event.entity_kind` is `""`
 - `projectile_launch`, with a kind such as `minecraft:snowball`: `event.player` (the shooter's table, or nil),
   `event.entity` and `event.kind`
 - `living_heal`, with `event.entity` and `event.amount`: every living entity that is about to heal; every handler
@@ -571,7 +574,7 @@ Called when a player right-clicks a mob of this type, before the mob and the ite
 
 - *mob*: the mob's live view, read with `horizon.mob`
 - *player*: the first player of `horizon.players()`; with one player on, the one who clicked
-- *held*: the selected stack (`item`, `count` and `plain`), or nil for an empty hand
+- *held*: the stack in the hand being tried (`item`, `count` and `plain`), main hand then off hand, or nil when that hand is empty
 
 **Returns**: true to take the click, so that neither the mob nor the item acts.
 
@@ -1128,7 +1131,7 @@ The `player` table that a callback receives. Its fields are a copy of the player
 | `dimension`, `position` | where they are; `position` has `x`, `y` and `z` |
 | `game_mode` | 0 survival, 1 creative, 2 adventure, 3 spectator |
 | `health` | their health |
-| `held` | the main hand's `item`, `count` and `plain`, or nil: the selected slot, tracked from `player_item_held`; a command's player table carries the engine's own |
+| `held` | `{item, count, plain}` of that player's tracked hotbar slot (`player_item_held`), or nil: the engine's own hand on a command's player table; the first player's (`horizon.players()[1]`) only in the callbacks whose events name nobody. Another mod's cancel of `player_item_held` is invisible here: the map moves on, and stays ahead until the next change |
 
 The methods below work in any callback with a host, and in a timer. Inside another player's callback, such as their
 click or their command, only that player is reached: a give to someone else does nothing, and their inventory reads

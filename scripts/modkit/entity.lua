@@ -6,7 +6,7 @@
 --   Crawler:target_goals { ... }
 --   Crawler.replace_goals = true               -- drop the vanilla goals first (a mod type with "goals": "template")
 --   function Crawler:on_spawned(ev) end        -- ev: dimension, kind, x, y, z, natural
---   function Crawler:on_tick(mob) end          -- every server tick: mob is id and kind only, host actions
+--   function Crawler:on_tick(mob) end          -- every server tick: the live view, host actions
 --   function Crawler:on_ai_tick(mob, state) end -- every AI tick, as a goal of its own: steering actions
 --   function Crawler:on_hurt(mob, hit) end     -- about to take damage: hit.amount = n, hit:cancel()
 --   function Crawler:on_death(mob, cause) end  -- it died, by any cause: cause.damage_type, .causing, .player (a uuid, or nil)
@@ -19,11 +19,11 @@
 -- A callback is wired to the game's hook for the class's kind the moment it
 -- is defined, so a kind without one costs nothing each tick.
 --
--- The native events carry no per-mob saved table and no mob view: `mob` is
--- the mob's id and kind, except in `on_spawned` and the goal callbacks. The
--- acting player of `on_interact` is the first player of `horizon.players()`,
--- and `held` is their selected stack. Read the mob with `horizon.mob(id)`
--- when the callback's host allows it.
+-- The native events carry no per-mob saved table: `mob` is the live view
+-- read with `horizon.mob(id)` where the hook's host holds it, else only id
+-- and kind. The acting player of `on_interact` is the first player of
+-- `horizon.players()`, and `held` is the stack in the hand being tried (main
+-- then off), or nil when that hand is empty.
 local Goal = require("@modkit/goal")
 local Mob = require("@modkit/mob")
 local Player = require("@modkit/player")

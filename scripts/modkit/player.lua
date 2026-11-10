@@ -17,14 +17,18 @@ Player.__index = Player
 
 --- Adds the player methods to the engine's player table, and returns it.
 --- A table that already has them is returned as it is. A table without the
---- hand names it from the selected-slot tracking (`held` is `{item, count,
---- plain}`, or absent): a command's player table keeps the engine's own.
-function Player.wrap(t: Player)
+--- hand names it from the selected-slot tracking of the player the table
+--- names (`held` is `{item, count, plain}`, or absent). Pass `from_engine`
+--- for a table whose hand the engine set itself (a command's player table),
+--- so the engine's own hand is kept: an empty command hand arrives with
+--- `held` absent, which Lua cannot tell from a table that never had one, so
+--- only the call site knows.
+function Player.wrap(t: Player, from_engine: boolean?)
   local raw: any = t
   if raw == nil or getmetatable(raw) == Player then return raw end
-  if raw.held == nil then
+  if raw.held == nil and not from_engine then
     Held.track()
-    raw.held = Held.of()
+    raw.held = Held.of(raw.uuid)
   end
   return setmetatable(raw, Player)
 end

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Starts a game with tools/hud-probe beside this modkit, lets a few seconds of
-# frames run, and checks that the draw hooks fired: the probe's handlers log
-# when they run, and any failing draw call is an error of the handler in the
-# log. An offscreen run may never draw: then the probe stays for manual use
-# (start the game in a window with --dev-mod tools/hud-probe) and this check
-# reports that instead of failing.
+# Starts a game with tools/hud-probe beside this modkit and checks that both
+# draw hooks fired and their draws were accepted: the probe logs once per
+# hook after its batch.* calls returned, so a log line means the draws ran.
+# Either hook silent, or any [lua:hud_probe] line at WARN or ERROR, fails the
+# run: an offscreen run that never draws fails too (drive the probe in a
+# window with --dev-mod tools/hud-probe, then point this check at that game
+# dir's log).
 #
 #   HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/hud-check.sh
 set -u
@@ -29,20 +30,23 @@ for i in $(seq 1 20); do
   echo "$S" | grep -q '"player"' && break
   $CTL close >/dev/null 2>&1; $CTL key esc tap >/dev/null 2>&1; sleep 1
 done
-sleep 15
+# The first frame can be late offscreen: poll the log until both hooks showed,
+# up to about forty seconds, instead of sleeping a fixed while.
+HUD=0
+LAYER=0
+for i in $(seq 1 40); do
+  HUD=$(grep -c "PROBE hud hud" "$LOG" 2>/dev/null || true); HUD=${HUD:-0}
+  LAYER=$(grep -c "PROBE hud gui_layer_post" "$LOG" 2>/dev/null || true); LAYER=${LAYER:-0}
+  [ "$HUD" -gt 0 ] && [ "$LAYER" -gt 0 ] && break
+  sleep 1
+done
 $CTL quit >/dev/null; sleep 3
-HUD=$(grep -c "PROBE hud hud" "$LOG" || true)
-LAYER=$(grep -c "PROBE hud gui_layer_post" "$LOG" || true)
 echo "hud handlers ran: hud=$HUD gui_layer_post=$LAYER"
 grep "PROBE hud gui_layer_post" "$LOG" | cut -c1-160 | head -3
-if [ "$HUD" = 0 ] && [ "$LAYER" = 0 ]; then
-  echo "MANUAL ONLY: neither draw hook fired offscreen; drive the probe in a window to see them"
-  errors=$(grep "hud_probe" "$LOG" | grep -i "error" || true)
-  [ -n "$errors" ] && { echo "$errors" | cut -c1-200 | head -5; exit 1; }
-  exit 0
-fi
-[ "$HUD" -gt 0 ] || { echo "the hud hook did not fire"; exit 1; }
-[ "$LAYER" -gt 0 ] || { echo "the gui_layer_post hook did not fire"; exit 1; }
-errors=$(grep "hud_probe" "$LOG" | grep -ci "error" || true)
-[ "$errors" = 0 ] || { grep "hud_probe" "$LOG" | grep -i "error" | cut -c1-200 | head -5; echo "script errors in the hud probe"; exit 1; }
+[ "$HUD" -gt 0 ] || { echo "FAILED: the hud hook did not fire"; exit 1; }
+[ "$LAYER" -gt 0 ] || { echo "FAILED: the gui_layer_post hook did not fire"; exit 1; }
+# The log's level field (`[thread/LEVEL]:`), not an "error" substring: a draw
+# that fails is WARN or ERROR, and so is anything else the probe did wrong.
+bad=$(grep -E "/(WARN|ERROR)\]: \[lua:hud_probe\]" "$LOG" || true)
+[ -n "$bad" ] && { echo "$bad" | cut -c1-200 | head -5; echo "FAILED: script warnings or errors in the hud probe"; exit 1; }
 echo "HUD OK: both draw hooks ran and their draw calls were accepted"

@@ -179,8 +179,9 @@ message is harmless and known (whos-carmen/horizon#15).
 ### The draw hooks
 
 `tools/hud-check.sh` starts a game with `tools/hud-probe`, which draws a rect and a line of text on the `hud` and
-`gui_layer_post` hooks. The check expects the handlers' log lines and no script error. An offscreen run may never
-draw: then the check says so and passes, and the probe stays for driving the hooks in a window.
+`gui_layer_post` hooks. The check polls the log until both handlers logged after their draws, and fails on any
+`[lua:hud_probe]` line at WARN or ERROR. An offscreen run that never draws fails: drive the probe in a window with
+`--dev-mod tools/hud-probe` first, then point the check at that game dir's log.
 
 ## Playing through the launcher
 

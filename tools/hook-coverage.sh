@@ -239,9 +239,9 @@ import re, sys
 log = open(sys.argv[1], errors="replace").read()
 seen = set(re.findall(r"PROBE hook (\S+)", log))
 # The hooks the drive above exercises, by their native names: every one must
-# have fired. `perform_command` and `register_commands` share one proof, the
-# probe's `/probe` command declared and typed; `data_pack_files` is the
-# scripts reloading on `/reload`.
+# have fired. `perform_command` shares one proof with the probe's `/probe`
+# command declared and typed; `data_pack_files` is the scripts reloading on
+# `/reload`.
 driven = ["server_tick", "world_lifecycle", "player_logged_in", "player_logged_out",
     "player_respawned", "player_died", "tick_block", "right_click_block", "block_entity_tick", "random_tick",
     "mob_spawned", "mob_ai_register", "register_goals", "entity_tick_post", "living_incoming_damage",
@@ -252,7 +252,7 @@ driven = ["server_tick", "world_lifecycle", "player_logged_in", "player_logged_o
     "explosion_detonate", "player_changed_dimension", "player_bed_enter", "player_exp_change",
     "player_container_open", "player_item_held", "projectile_impact", "projectile_launch", "entity_join_level",
     "perform_command", "register_commands", "data_pack_files"]
-evidence = {"perform_command": "command", "register_commands": "command"}
+evidence = {"perform_command": "command"}
 # Hooks the engine's docs give to dedicated servers or LAN guests only; empty while the
 # single-player owner, a guest of their own hub, is heard too.
 dedicated_only = set()

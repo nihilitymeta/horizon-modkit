@@ -12,7 +12,19 @@ local function ran(name)
 end
 
 local P = M:players()
-function P:on_tick(player) ran("Players:on_tick") end
+-- The hand tracking (`Held.of` follows the selected slot): log each change of
+-- the acting player's held stack, so tools/steps-check.sh can see the map
+-- move with the hotbar. One player is all the harness drives: a second
+-- player's slots cannot be shown here, only that the one map follows.
+local last_held = false
+function P:on_tick(player)
+  ran("Players:on_tick")
+  local held = player.held and player.held.item or "empty"
+  if held ~= last_held then
+    last_held = held
+    horizon.log("MODKIT held: " .. held)
+  end
+end
 function P:on_hurt(player, hit) ran("Players:on_hurt") end
 function P:on_fall(player, fall) ran("Players:on_fall") end
 function P:on_knockback(player, hit) ran("Players:on_knockback") end

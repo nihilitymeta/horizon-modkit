@@ -50,8 +50,8 @@ end
 |---|---|
 | `on_join`, `on_leave`, `on_respawn` | a player joins, leaves, or respawns |
 | `on_death(uuid, cause)` | a player dies; `cause` is the death message's key. The dead player is named by uuid only |
-| `on_break_block(player, block)` | a player breaks a block. Return true to keep it |
-| `on_place_block(player, block, item)` | a player places a block |
+| `on_break_block(player, block)` | a player breaks a block. Return true to keep it. The event names nobody: `player` is the first player of `horizon.players()`; with one player on, the one who acted |
+| `on_place_block(player, block, item)` | a player places a block. The event names nobody: `player` is the first player of `horizon.players()`; with one player on, the one who acted |
 | `on_pickup(player, item, count)` | a player is about to pick up items. Return true to leave them |
 | `on_chat(player, line)` | a chat line. Return a string to answer the sender, or true to drop it |
 | `on_command(player, line)` | a command, before it runs. Return true to stop it; `player:reply` answers |
@@ -60,7 +60,7 @@ end
 | `on_exp` | a player is about to gain experience |
 | `on_open_menu` | a player opens a menu |
 | `on_change_dimension` | a player arrives in another dimension |
-| `on_tick(player)` | every tick. Keep it light |
+| `on_tick(player)` | every tick. Keep it light. The event names nobody: `player` is the first player of `horizon.players()`; with one player on, the one whose tick ended |
 
 ## The player table
 

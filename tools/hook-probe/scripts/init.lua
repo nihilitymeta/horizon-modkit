@@ -40,4 +40,5 @@ for _, n in ipairs({ "player_tick", "player_command", "player_chat",
 by("projectile_impact", { "minecraft:snowball" }); by("projectile_launch", { "minecraft:snowball" })
 by("entity_join_level", { "minecraft:snowball", "minecraft:item", Z })
 horizon.block_entity("hook_probe:probe", { ticks = true, data = { ticks = 0 } })
+horizon.on("register_commands", function() saw("register_commands") end)
 horizon.command("probe", 0, function(player, args) saw("command"); horizon.feedback("probe ok") end)

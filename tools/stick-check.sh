@@ -79,6 +79,25 @@ case "$BUTTON" in *powered=false*) echo "ok: the button stayed up";; *) echo "FA
 $CTL interact 0 200 3 >/dev/null; sleep 0.5; want "the block window" "an example mod block's window"
 $CTL screenshot "$SHOTS/nest.png" >/dev/null
 
+echo "--- without the stick nothing is inspected and clicks go through"
+$CTL give minecraft:stick 1 >/dev/null; sleep 0.5
+$CTL select minecraft:stick | j 'print("holding:", d.get("held", {}).get("item", d.get("error")))'
+# A chest: it opens instead of the block window (an open screen means no
+# inspect window took the click).
+$CTL interact 1 200 2 >/dev/null; sleep 0.5
+[ "$(screen)" != playing ] && echo "ok: the chest opened with a plain stick" || { echo "FAILED: the chest stayed shut with a plain stick (the click was cancelled)"; failed=1; }
+$CTL close >/dev/null 2>&1
+# A button: it is pressed, so the click was not cancelled either.
+BUTTON=$($CTL interact -1 200 2 | j 'print(d["block"]["state"])')
+case "$BUTTON" in *powered=true*) echo "ok: the button was pressed with a plain stick";; *) echo "FAILED: the button stayed up with a plain stick ($BUTTON)"; failed=1;; esac
+# A villager: the trading screen opens instead of a mob's pages.
+$CTL command "summon minecraft:villager 0.5 200 2.5 {NoAI:1b,VillagerData:{profession:\"minecraft:farmer\",level:2,type:\"minecraft:plains\"}}" >/dev/null; sleep 1
+VIL=$($CTL entities | j 'es=[e for e in d["entities"] if e["type"]=="minecraft:villager"]; print(es[0]["id"])')
+$CTL interact-entity "$VIL" >/dev/null; sleep 0.5
+[ "$(screen)" != playing ] && echo "ok: trading opened with a plain stick" || { echo "FAILED: no trading screen with a plain stick (the click was cancelled)"; failed=1; }
+$CTL close >/dev/null 2>&1
+$CTL command "kill @e[type=minecraft:villager]" >/dev/null
+
 echo "--- in survival the stick is a stick: the chest opens"
 $CTL command "gamemode survival" >/dev/null; sleep 1
 $CTL interact 1 200 2 >/dev/null; sleep 1

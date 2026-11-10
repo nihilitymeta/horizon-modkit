@@ -26,7 +26,7 @@ returned item id still sets what stays in the hand. Write the new field form (`h
 | Callback | What changed |
 |---|---|
 | `E:on_tick` | `mob` is the live view read with `horizon.mob`. There is no saved table on it: keep per-mob state in `horizon.world_data()`, keyed by `mob.id`. |
-| `E:on_interact` | `held` is the selected stack (`item`, `count`, `plain`), or nil. `player` is the first player of `horizon.players()`. |
+| `E:on_interact` | `held` is the stack in the hand being tried (main then off), or nil when that hand is empty. `player` is the first player of `horizon.players()`. |
 | `E:on_death` | `cause.player` is the killer's uuid text, or nil. Resolve the name with `horizon.player(cause.player)`. |
 | `E:on_equip` | `mob` is only `id` and `kind`. `from` and `to` are full item tables, with `damage` and `extra`. |
 | `E:on_drops`, `B:on_drops` | `source` is the event itself: `source.entity` (was `source.mob`) for a mob, `source.block` for a block. |
