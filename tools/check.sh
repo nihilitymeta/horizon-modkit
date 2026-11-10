@@ -25,7 +25,7 @@ for a in "$@"; do
   case "$a" in --self-test) self_test=true ;; *) mods+=("$a") ;; esac
 done
 if [ ${#mods[@]} = 0 ]; then
-  mods=("$HERE/examples/example_mod" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe")
+  mods=("$HERE/examples/example_mod" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe" "$HERE/tools/viewless-probe")
 fi
 failed=0
 res=()

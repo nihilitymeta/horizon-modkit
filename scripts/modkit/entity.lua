@@ -19,9 +19,11 @@
 -- A callback is wired to the game's hook for the class's kind the moment it
 -- is defined, so a kind without one costs nothing each tick.
 --
--- The native events carry no per-mob saved table: `mob` is the live view
--- read with `horizon.mob(id)` where the hook's host holds it, else only id
--- and kind. The acting player of `on_interact` is the first player of
+-- The native events carry no per-mob saved table. A callback that documents
+-- `mob` as the live view (`on_tick`, `on_interact`) is skipped when
+-- `horizon.mob(id)` is nil (the mob is dead or gone): there is nothing to
+-- hand it. The rest document `mob` as id and kind only and keep running.
+-- The acting player of `on_interact` is the first player of
 -- `horizon.players()`, and `held` is the stack in the hand being tried (main
 -- then off), or nil when that hand is empty.
 local Goal = require("@modkit/goal")
@@ -30,11 +32,13 @@ local Player = require("@modkit/player")
 
 local Entity = {}
 
--- The event's mob as the callbacks see it: the live view when the hook's
--- host holds it, else only id and kind. The mid-event hooks have no host,
--- and a dead or gone mob has no view.
-local function view(event)
-  return horizon.mob(event.entity) or { id = event.entity, kind = event.kind }
+-- The live view for the view callbacks (`on_tick`, `on_interact`), or nil
+-- when the mob is dead or gone: those callbacks are skipped then, since
+-- there is no mob to hand them. Every other entity callback documents `mob`
+-- as id and kind only, so it keeps running without a view. The mid-event
+-- hooks have no host, and a dead or gone mob has no view.
+local function live(event)
+  return horizon.mob(event.entity)
 end
 
 -- Which hook each callback listens to, and how the hook's one event table
@@ -44,7 +48,9 @@ local CALLBACKS = {
     e:on_spawned({ dimension = event.dimension, kind = event.kind, x = event.pos.x, y = event.pos.y, z = event.pos.z, natural = event.natural })
   end },
   on_tick = { "entity_tick_post", function(e, event)
-    e:on_tick(Mob.host(view(event), event.dimension, nil))
+    local v = live(event)
+    if v == nil then return end
+    e:on_tick(Mob.host(v, event.dimension, nil))
   end },
   on_hurt = { "living_incoming_damage", function(e, event)
     local hit = {
@@ -60,9 +66,11 @@ local CALLBACKS = {
     })
   end },
   on_interact = { "interact_entity", function(e, event)
+    local v = live(event)
+    if v == nil then return end
     local stack = event.stack
     local held = stack ~= nil and { item = stack.id, count = stack.count, plain = stack.plain } or nil
-    if e:on_interact(Mob.host(view(event), horizon.time().dimension, nil), Player.wrap(horizon.players()[1]), held) == true then horizon.cancel() end
+    if e:on_interact(Mob.host(v, horizon.time().dimension, nil), Player.wrap(horizon.players()[1]), held) == true then horizon.cancel() end
   end },
   on_fall = { "living_fall", function(e, event)
     e:on_fall(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), {
@@ -108,6 +116,10 @@ end
 function Entity:_listen(name, hook, adapt)
   if self._hooked[hook] then return end
   self._hooked[hook] = true
+  -- Kept for the headless guard test (tools/viewless-probe): the same
+  -- function the engine's hook calls, driven there with a fake event.
+  self._adapter = self._adapter or {}
+  self._adapter[name] = adapt
   local e = self
   horizon.on(hook, function(...)
     if e[name] then adapt(e, ...) end

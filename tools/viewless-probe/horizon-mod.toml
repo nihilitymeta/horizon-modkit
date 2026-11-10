@@ -1,0 +1,10 @@
+id = "viewless_probe"
+name = "Viewless Probe"
+version = "0.1.0"
+description = "Guards the viewless-mob rule headlessly: the view callbacks never run without a live view (tools/check.sh)."
+authors = ["whos-carmen"]
+api = "0.2"
+side = "both"
+capabilities = ["scripts"]
+experimental = ["scripts"]
+depends = ["horizon_modkit >= 0.7"]

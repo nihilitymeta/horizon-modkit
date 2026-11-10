@@ -67,7 +67,7 @@ function Mob:on_interact(mob, player, held)
     end
     return true
   end
-  if held == nil then player:tell(("this one was fed %d time(s), has %.0f/%.0f hp"):format(w.fed[mob.id] or 0, mob.health, mob.max_health)) end
+  if held == nil then player:tell(("this one was fed %d time(s), has %.0f/%.0f hp"):format(w.fed[mob.id] or 0, mob.health or 0, mob.max_health or 0)) end
   return false
 end
 

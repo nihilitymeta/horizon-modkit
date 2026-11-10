@@ -543,7 +543,10 @@ Called when a mob of this type spawns, by any means.
 
 Called every server tick for every mob of this type. Keep it light. This is NeoForge's `tick`.
 
-- *mob*: the mob's live view, read with `horizon.mob`, with the actions by id; there is no saved table on it
+- *mob*: the mob's live view, read with `horizon.mob`, with the actions by id; there is no saved table on it.
+  Skipped when the mob is dead or gone and has no live view. The rule for every entity callback: one that
+  documents `mob` as the live view (`E:on_tick`, `E:on_interact`) never runs viewless, while one that
+  documents `mob` as id and kind only still runs.
 
 ### `E:on_ai_tick(mob, state)`
 
@@ -555,7 +558,7 @@ Called every AI tick, as a goal of its own. The mob's goal actions, such as stee
 ### `E:on_hurt(mob, hit)`
 
 Called when a mob of this type is about to take damage. The game is in the middle of the hit, so *mob* has only `id`
-and `kind`, and no other action works.
+and `kind`, and no other action works. It still runs when the mob has no live view.
 
 - *mob*: the mob's `id` and `kind`
 - *hit*: the [hit](#hit)
@@ -564,7 +567,8 @@ and `kind`, and no other action works.
 
 Called when a mob of this type dies, by any cause.
 
-- *mob*: the mob's `id` and `kind`; the view is gone with the mob, and there is no saved table on it
+- *mob*: the mob's `id` and `kind`; the view is gone with the mob, and there is no saved table on it.
+  It still runs when the mob has no live view
 - *cause*: a table with `damage_type` (such as `minecraft:on_fire`), `causing` (the id of the mob behind the death,
   or 0) and `player` (the uuid of the player credited with the kill, or nil)
 
@@ -572,7 +576,8 @@ Called when a mob of this type dies, by any cause.
 
 Called when a player right-clicks a mob of this type, before the mob and the item act.
 
-- *mob*: the mob's live view, read with `horizon.mob`
+- *mob*: the mob's live view, read with `horizon.mob`. Skipped when the mob is dead or gone and has no
+  live view, as `E:on_tick`
 - *player*: the first player of `horizon.players()`; with one player on, the one who clicked
 - *held*: the stack in the hand being tried (`item`, `count` and `plain`), main hand then off hand, or nil when that hand is empty
 
@@ -581,13 +586,15 @@ Called when a player right-clicks a mob of this type, before the mob and the ite
 ### `E:on_fall(mob, fall)`
 
 Called when a mob of this type is about to land. There is no host, so *mob* has only `id` and `kind`.
+It still runs when the mob has no live view.
 
 - *mob*: the mob's `id` and `kind`
 - *fall*: the [fall](#fall)
 
 ### `E:on_knockback(mob, hit)`
 
-Called when a mob of this type is about to be knocked back. There is no host.
+Called when a mob of this type is about to be knocked back. There is no host. It still runs when the mob
+has no live view.
 
 - *mob*: the mob's `id` and `kind`
 - *hit*: the [knockback](#knockback)
@@ -596,7 +603,7 @@ Called when a mob of this type is about to be knocked back. There is no host.
 
 Called when an equipment slot of a mob of this type takes a different stack.
 
-- *mob*: the mob's `id` and `kind`
+- *mob*: the mob's `id` and `kind`. It still runs when the mob has no live view
 - *slot*: `mainhand`, `offhand`, `head`, `chest`, `legs`, `feet`, `body` or `saddle`
 - *from*: the item table that was there, or nil
 - *to*: the item table that is there now, or nil
@@ -605,7 +612,7 @@ Called when an equipment slot of a mob of this type takes a different stack.
 
 Called when a mob of this type died and its loot is about to drop.
 
-- *mob*: the mob's `id` and `kind`
+- *mob*: the mob's `id` and `kind`. It still runs when the mob has no live view
 - *drops*: the [drops](#drops-and-source)
 - *source*: where the loot comes from, described under [drops and source](#drops-and-source)
 
