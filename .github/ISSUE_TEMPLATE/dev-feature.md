@@ -41,7 +41,7 @@ What a player sees without it: <!-- e.g. the item is missing from the creative t
 
 - [ ] `tools/check.sh --self-test` passes (with `RESOURCES` set)
 - [ ] The example mod uses it, and `tools/example-check.sh` checks it in game
-- [ ] `types/horizon.d.lua` copied from the engine if a binding changed; luau-lsp clean
+- [ ] `types/horizon.d.lua` copied from the engine if a binding changed; `cargo horizon-mod check` clean
 - [ ] Docs: the API reference (`docs/api.md`) and a guide section, GNOME style
 - [ ] Without `--dev-tools`, nothing of it shows up (checked in game)
 

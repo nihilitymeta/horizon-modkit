@@ -36,21 +36,12 @@ check() {
 }
 check "$HERE"
 for m in "${mods[@]}"; do check "$m"; done
-# The types for an editor: this copy equal to the engine's generated one, and luau-lsp (when installed) clean
-# on the modkit's scripts and on each mod's (its .luaurc names this modkit for `require("@modkit")`).
+# The types for an editor: this copy equal to the engine's generated one. `cargo horizon-mod check` above
+# analyses every folder's scripts against it itself, with the pinned luau-lsp it fetches (first run downloads it).
 if ! cmp -s "$HERE/types/horizon.d.lua" "$HORIZON/docs/api/horizon.d.lua"; then
   echo "FAILED: types/horizon.d.lua differs from $HORIZON/docs/api/horizon.d.lua (copy it)"; failed=1
 else
   echo "ok: types/horizon.d.lua is the engine's"
-fi
-if command -v luau-lsp >/dev/null; then
-  for m in "$HERE" "${mods[@]}"; do
-    echo "--- luau-lsp analyze $m"
-    if (cd "$m" && luau-lsp analyze --definitions "@horizon=$HERE/types/horizon.d.lua" --platform=standard scripts 2>&1 | grep -v '^\['); then :; fi
-    (cd "$m" && luau-lsp analyze --definitions "@horizon=$HERE/types/horizon.d.lua" --platform=standard scripts >/dev/null 2>&1) && echo "ok: analyze $m" || { echo "FAILED: analyze $m"; failed=1; }
-  done
-else
-  echo "luau-lsp not installed: the scripts are not analyzed (install it for completion and this check)"
 fi
 if $self_test; then
   echo "--- self-test: a mod with a misspelled hook must fail with its line"
@@ -62,12 +53,15 @@ if $self_test; then
   else
     echo "$OUT" | grep -q 'init.lua"\]:[0-9]*:.*no such hook' && echo "ok: refused with its line: $(echo "$OUT" | grep -o 'init.lua"\]:[0-9]*:[^;]*' | head -1)" || { echo "FAILED: refused, but not with the line and the hook: $OUT"; failed=1; }
   fi
-  if command -v luau-lsp >/dev/null; then
-    # The same misspelling, and a misspelled function, caught by the editor's analysis before any game.
-    printf 'horizon.brodcast("x")\n' >> "$W/broken/scripts/server/init.lua"
-    sed -i.bak "s|../horizon-modkit/scripts/modkit|$HERE/scripts/server/modkit|" "$W/broken/.luaurc"
-    OUT=$(cd "$W/broken" && luau-lsp analyze --definitions "@horizon=$HERE/types/horizon.d.lua" --platform=standard scripts 2>&1 | grep -v '^\[')
-    echo "$OUT" | grep -q 'player_jioned' && echo "$OUT" | grep -q 'brodcast' && echo "ok: luau-lsp reports the misspelled hook and function: $(echo "$OUT" | grep -c 'TypeError') errors" || { echo "FAILED: luau-lsp did not report both misspellings: $OUT"; failed=1; }
+  # A misspelling that still loads (it sits in an uncalled function) must fail the type step the check runs
+  # before any game, naming both the hook and the function.
+  (cd "$W" && "$TOOL" horizon-mod new typed --template lua >/dev/null) || exit 1
+  printf 'local function unused()\n  horizon.on("player_jioned", function() end)\n  horizon.brodcast("x")\nend\n' \
+    > "$W/typed/scripts/server/init.lua"
+  if OUT=$("$TOOL" horizon-mod check "$W/typed" --game "$GAME" --dev-mod "$HERE" 2>&1); then
+    echo "FAILED: the type step passed a misspelled hook and function"; failed=1
+  else
+    echo "$OUT" | grep -q 'player_jioned' && echo "$OUT" | grep -q 'brodcast' && echo "ok: the type step reports the misspelled hook and function: $(echo "$OUT" | grep -c 'TypeError') errors" || { echo "FAILED: the type step did not report both misspellings: $OUT"; failed=1; }
   fi
   # A mod that asks for a modkit newer than this one is refused, with what was found.
   (cd "$W" && "$TOOL" horizon-mod new tooold --template lua >/dev/null) || exit 1

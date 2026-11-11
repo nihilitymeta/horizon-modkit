@@ -90,15 +90,17 @@ The modkit ships `types/horizon.d.lua`, a copy of the engine's generated Luau ty
 `horizon` and `registry` tables, every engine function, the signature of every hook handler, and the tables a script
 receives. The modkit's own classes are annotated with these types.
 
-To use it, point [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) at the file as a definitions file. Your
-editor then completes `M:entity`, `M:block`, `M:item`, `M:players`, `M:command` and the `player`, `mob` and `block`
-tables, and marks a misspelled function or hook name.
+To use it in your editor, point [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) at the file as a definitions
+file. Your editor then completes `M:entity`, `M:block`, `M:item`, `M:players`, `M:command` and the `player`, `mob`
+and `block` tables, and marks a misspelled function or hook name.
 
 A mod's `.luaurc` names the modkit checkout, so that `require("@modkit")` resolves. The Lua template of
-`cargo horizon-mod new` writes one for you. To check a mod from a shell:
+`cargo horizon-mod new` writes one for you. `cargo horizon-mod check` runs the same analysis from a shell with a
+pinned luau-lsp it downloads on the first run, so nothing needs to be installed (`--offline` skips that step, and
+`--luau-lsp <path>` runs a binary of your choosing):
 
 ```sh
-luau-lsp analyze --definitions @horizon=/path/to/horizon-modkit/types/horizon.d.lua --platform=standard scripts
+cargo horizon-mod check . --game /path/to/horizon-client --dev-mod /path/to/horizon-modkit
 ```
 
 ## The registry script

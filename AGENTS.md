@@ -49,7 +49,7 @@ must be built in Event Horizon (`target/fast/horizon-client`, `horizon-ctl`, and
 
 | Check | What it proves |
 |---|---|
-| `tools/check.sh --self-test` | every mod here loads, `luau-lsp analyze` is clean, a broken mod is refused |
+| `tools/check.sh --self-test` | every mod here loads and passes its script checks, a broken mod is refused |
 | `tools/example-check.sh` | every concept in the example mod works in a running game |
 | `tools/stick-check.sh` | the inspect stick works in a game without `--dev-tools`, and is a plain stick in survival |
 | `tools/hook-coverage.sh` | every modkit callback is reached from the game |
@@ -61,7 +61,7 @@ must be built in Event Horizon (`target/fast/horizon-client`, `horizon-ctl`, and
 - A failed in-game check can leave the game running. Quit it with the `horizon-ctl ... quit` line the script
   prints before you run another.
 - Write your own game drives as bash scripts: zsh does not split a `$CTL` variable into words.
-- Judge `luau-lsp analyze` by its exit code, not by its output.
+- Judge the type step by its exit code, not by luau-lsp's output (a pass still prints its `[INFO]` lines).
 
 ## Facts that cost time before
 

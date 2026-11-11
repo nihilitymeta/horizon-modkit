@@ -40,17 +40,9 @@ say() { echo "--- $*"; }
 # load stops here, with its line, before a game is started.
 TOOL=${TOOL:-$HORIZON/target/debug/cargo-horizon-mod}
 for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe"; do
-  "$TOOL" horizon-mod check "$m" --game "$HORIZON/target/fast/horizon-client" --dev-mod "$MODKIT" >/dev/null || { echo "the scripts of $m do not load; see above"; exit 1; }
+  OUT=$("$TOOL" horizon-mod check "$m" --game "$HORIZON/target/fast/horizon-client" --dev-mod "$MODKIT" 2>&1) || { echo "$OUT"; echo "the checks of $m fail (above)"; exit 1; }
 done
-echo "scripts load: the example mod and the probes"
-# With luau-lsp installed: the scripts analyzed against the modkit's types (a misspelled function or hook, a nil
-# used as a number), before any game.
-if command -v luau-lsp >/dev/null; then
-  for m in "$MOD" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe"; do
-    OUT=$(cd "$m" && luau-lsp analyze --definitions "@horizon=$MODKIT/types/horizon.d.lua" --platform=standard scripts 2>&1) || { echo "$OUT" | grep -v '^\['; echo "luau-lsp analyze: errors in $m (above)"; exit 1; }
-  done
-  echo "luau-lsp analyze: clean"
-fi
+echo "scripts load and pass their checks (formatting, lint, types): the example mod and the probes"
 # Quiet: the game's master volume off in the game dir's options, read at launch (it has no mute flag).
 [ -f "$GAME_DIR/options.txt" ] && sed -i.bak 's/^soundCategory_master:.*/soundCategory_master:0.0/' "$GAME_DIR/options.txt" && rm -f "$GAME_DIR/options.txt.bak"
 $CTL launch --game "$HORIZON/target/fast/horizon-client" --wait --game-dir "$GAME_DIR" --resources "$RESOURCES" \

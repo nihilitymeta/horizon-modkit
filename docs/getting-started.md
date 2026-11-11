@@ -66,16 +66,17 @@ A new item, block or entity type in `scripts/registry.lua`, or a module it requi
 
 ## 4. Check it without a game
 
-Two commands find most mistakes before you start the game:
+One command finds most mistakes before you start the game:
 
 ```sh
 cargo horizon-mod check . --game /path/to/horizon-client --dev-mod /path/to/horizon-modkit
-luau-lsp analyze --definitions @horizon=/path/to/horizon-modkit/types/horizon.d.lua --platform=standard scripts
 ```
 
-The first command loads your scripts in the game's Lua runtime, and names the file and line of anything that fails.
-The second needs [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp). It marks a misspelled function or hook
-name. In an editor, luau-lsp also completes the API ([editor support](api.md#editor-support)).
+It loads your scripts in the game's Lua runtime, names the file and line of anything that fails, and runs the
+script checks: formatting, linting and type analysis. The type analysis marks a misspelled function or hook name,
+with a pinned [luau-lsp](https://github.com/JohnnyMorganz/luau-lsp) that the command fetches itself on the first run
+(`--offline` skips that step). In an editor, luau-lsp also completes the API
+([editor support](api.md#editor-support)).
 
 ## 5. Learn more
 

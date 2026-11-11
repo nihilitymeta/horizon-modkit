@@ -93,7 +93,7 @@ built checkout of the engine.
 
 | Script | What it does |
 |---|---|
-| `tools/check.sh` | loads the modkit, the example mod, the probes and a mod you name, without a game, and runs luau-lsp over them |
+| `tools/check.sh` | loads the modkit, the example mod, the probes and a mod you name, without a game, and runs the script checks (formatting, lint, types) over them |
 | `tools/scaffold-check.sh` | creates a mod with the template, then builds, checks and plays it |
 | `tools/example-check.sh` | plays the example mod through every concept |
 | `tools/stick-check.sh` | uses the inspect stick on a mob, a villager, a chest, a button and a mod block |
