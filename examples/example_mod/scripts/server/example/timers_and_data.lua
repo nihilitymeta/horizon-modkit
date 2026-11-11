@@ -10,12 +10,12 @@ local M = require("@example/mod")
 -- The mod's settings: config/example_mod.json, written with these defaults
 -- the first time, for the player to edit. Read at load; what the scripts
 -- read is this table. A command below changes one and saves it.
-local cfg = M:config {
+local cfg = M:config({
   greeting = "Welcome to the example",
   report_minutes = 1,
-  max_mobs = 12,     -- more example mobs than this and the minute timer culls the rest
-  nest_breeds = 3,   -- example mobs a nest breeds before it is spent (scripts/server/example/nest.lua)
-}
+  max_mobs = 12, -- more example mobs than this and the minute timer culls the rest
+  nest_breeds = 3, -- example mobs a nest breeds before it is spent (scripts/server/example/nest.lua)
+})
 
 -- Once, in 40 ticks (two seconds): a timer runs with the reads and actions
 -- at hand.
@@ -33,9 +33,18 @@ horizon.every(1200 * cfg.report_minutes, function()
   w.reports = (w.reports or 0) + 1
   local count = 0
   for _, m in ipairs(horizon.mobs()) do
-    if m.kind == "example_mod:example_mob" then count = count + 1 end
+    if m.kind == "example_mod:example_mob" then
+      count = count + 1
+    end
   end
-  horizon.log(("EXAMPLE report %d: %d player(s), %d mob(s) loaded, %d example mob(s)"):format(w.reports, #horizon.players(), #horizon.mobs(), count))
+  horizon.log(
+    ("EXAMPLE report %d: %d player(s), %d mob(s) loaded, %d example mob(s)"):format(
+      w.reports,
+      #horizon.players(),
+      #horizon.mobs(),
+      count
+    )
+  )
   if count > cfg.max_mobs then
     modkit.run_command(("kill @e[type=example_mod:example_mob,sort=random,limit=%d]"):format(count - cfg.max_mobs))
     horizon.broadcast(("%d example mob(s) culled: the world holds %d"):format(count - cfg.max_mobs, cfg.max_mobs))
@@ -45,7 +54,9 @@ end)
 
 M:command("example report", 0, function(player, args)
   local w = horizon.world_data()
-  horizon.feedback(("%d report(s) so far in this world, one every %d minute(s)"):format(w.reports or 0, cfg.report_minutes))
+  horizon.feedback(
+    ("%d report(s) so far in this world, one every %d minute(s)"):format(w.reports or 0, cfg.report_minutes)
+  )
 end)
 
 -- A setting changed from the game and saved to the file.

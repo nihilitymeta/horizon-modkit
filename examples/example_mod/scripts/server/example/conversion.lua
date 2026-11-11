@@ -14,11 +14,15 @@ local Zombie = M:entity("minecraft:zombie")
 
 -- No flags: it runs beside whatever else the zombie does. mob:nearest(kind,
 -- range) reads the goal's view of the mobs around (nearest first).
-local Succumb = modkit.Goal {
+local Succumb = modkit.Goal({
   name = "succumb",
   flags = {},
-  can_use = function(self, mob) return mob:nearest("example_mod:example_mob", 2.5) ~= nil end,
-  start = function(self, mob) self.ticks = 0 end,
+  can_use = function(self, mob)
+    return mob:nearest("example_mod:example_mob", 2.5) ~= nil
+  end,
+  start = function(self, mob)
+    self.ticks = 0
+  end,
   tick = function(self, mob)
     self.ticks = self.ticks + 1
     if self.ticks == 60 then
@@ -27,22 +31,30 @@ local Succumb = modkit.Goal {
       horizon.log("EXAMPLE conversion: a zombie became an example mob")
     end
   end,
-}
+})
 
 -- A low priority: the zombie's own attack goal (1) wins when it has a target.
-local Stalk = modkit.Goal {
+local Stalk = modkit.Goal({
   name = "stalk",
   flags = { "move", "look" },
-  can_use = function(self, mob) return mob:player_within(24) end,
+  can_use = function(self, mob)
+    return mob:player_within(24)
+  end,
   tick = function(self, mob)
     local p = mob.nearest_player
-    if not p then return end
+    if not p then
+      return
+    end
     mob:look_at(p.x, p.y + 1.6, p.z)
-    if mob.navigation_done or self:every("path", 20) then mob:navigate_to(p.x, p.y, p.z, 1.1) end
+    if mob.navigation_done or self:every("path", 20) then
+      mob:navigate_to(p.x, p.y, p.z, 1.1)
+    end
   end,
-  stop = function(self, mob) mob:stop_navigation() end,
-}
+  stop = function(self, mob)
+    mob:stop_navigation()
+  end,
+})
 
-Zombie:goals { { 0, Succumb }, { 3, Stalk } }
+Zombie:goals({ { 0, Succumb }, { 3, Stalk } })
 
 return Zombie

@@ -47,60 +47,138 @@ end
 -- Which hook each callback listens to, and how the hook's one event table
 -- becomes the callback's arguments.
 local CALLBACKS = {
-  on_spawned = { "mob_spawned", function(e, event)
-    e:on_spawned({ dimension = event.dimension, kind = event.kind, x = event.pos.x, y = event.pos.y, z = event.pos.z, natural = event.natural })
-  end },
-  on_tick = { "entity_tick_post", function(e, event)
-    local v = live(event)
-    if v == nil then return end
-    e:on_tick(Mob.host(v, event.dimension, nil))
-  end },
-  on_hurt = { "living_incoming_damage", function(e, event)
-    local hit = {
-      damage_type = event.damage_type, causing = event.causing, direct = event.direct, amount = event.amount,
-      set_amount = function(self, n) self.amount = n; event.amount = n end,
-      cancel = function(self) self.canceled = true; horizon.cancel() end,
-    }
-    e:on_hurt(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), hit)
-  end },
-  on_death = { "mob_died", function(e, event)
-    e:on_death(Mob.host({ id = event.entity, kind = event.kind }, event.dimension, nil), {
-      damage_type = event.damage_type, causing = event.causing, player = event.player,
-    })
-  end },
-  on_interact = { "interact_entity", function(e, event)
-    local v = live(event)
-    if v == nil then return end
-    local player = Player.wrap(horizon.acting_player())
-    if player == nil then return end
-    local stack = event.stack
-    local held = stack ~= nil and { item = stack.id, count = stack.count, plain = stack.plain } or nil
-    if e:on_interact(Mob.host(v, horizon.time().dimension, nil), player, held) == true then horizon.cancel() end
-  end },
-  on_fall = { "living_fall", function(e, event)
-    e:on_fall(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), {
-      distance = event.distance, multiplier = event.multiplier,
-      set_distance = function(self, n) self.distance = n; event.distance = n end,
-      set_multiplier = function(self, n) self.multiplier = n; event.multiplier = n end,
-      cancel = function(self) self.canceled = true; horizon.cancel() end,
-    })
-  end },
-  on_knockback = { "living_knockback", function(e, event)
-    local hit = {
-      damage_type = event.damage_type, causing = event.causing, direct = event.direct,
-      strength = event.strength, x = event.x, z = event.z,
-      set_strength = function(self, n) self.strength = n; event.strength = n end,
-      cancel = function(self) self.canceled = true; horizon.cancel() end,
-    }
-    e:on_knockback(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), hit)
-    event.x, event.z = hit.x, hit.z
-  end },
-  on_equip = { "living_equipment_change", function(e, event)
-    e:on_equip(Mob.host({ id = event.entity, kind = event.kind }, horizon.time().dimension, nil), event.slot, event.from, event.to)
-  end },
-  on_drops = { "loot_drops", function(e, event)
-    e:on_drops(Mob.host(event.entity, event.dimension, nil), event.drops, event)
-  end },
+  on_spawned = {
+    "mob_spawned",
+    function(e, event)
+      e:on_spawned({
+        dimension = event.dimension,
+        kind = event.kind,
+        x = event.pos.x,
+        y = event.pos.y,
+        z = event.pos.z,
+        natural = event.natural,
+      })
+    end,
+  },
+  on_tick = {
+    "entity_tick_post",
+    function(e, event)
+      local v = live(event)
+      if v == nil then
+        return
+      end
+      e:on_tick(Mob.host(v, event.dimension, nil))
+    end,
+  },
+  on_hurt = {
+    "living_incoming_damage",
+    function(e, event)
+      local hit = {
+        damage_type = event.damage_type,
+        causing = event.causing,
+        direct = event.direct,
+        amount = event.amount,
+        set_amount = function(self, n)
+          self.amount = n
+          event.amount = n
+        end,
+        cancel = function(self)
+          self.canceled = true
+          horizon.cancel()
+        end,
+      }
+      e:on_hurt(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), hit)
+    end,
+  },
+  on_death = {
+    "mob_died",
+    function(e, event)
+      e:on_death(Mob.host({ id = event.entity, kind = event.kind }, event.dimension, nil), {
+        damage_type = event.damage_type,
+        causing = event.causing,
+        player = event.player,
+      })
+    end,
+  },
+  on_interact = {
+    "interact_entity",
+    function(e, event)
+      local v = live(event)
+      if v == nil then
+        return
+      end
+      local player = Player.wrap(horizon.acting_player())
+      if player == nil then
+        return
+      end
+      local stack = event.stack
+      local held = stack ~= nil and { item = stack.id, count = stack.count, plain = stack.plain } or nil
+      if e:on_interact(Mob.host(v, horizon.time().dimension, nil), player, held) == true then
+        horizon.cancel()
+      end
+    end,
+  },
+  on_fall = {
+    "living_fall",
+    function(e, event)
+      e:on_fall(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), {
+        distance = event.distance,
+        multiplier = event.multiplier,
+        set_distance = function(self, n)
+          self.distance = n
+          event.distance = n
+        end,
+        set_multiplier = function(self, n)
+          self.multiplier = n
+          event.multiplier = n
+        end,
+        cancel = function(self)
+          self.canceled = true
+          horizon.cancel()
+        end,
+      })
+    end,
+  },
+  on_knockback = {
+    "living_knockback",
+    function(e, event)
+      local hit = {
+        damage_type = event.damage_type,
+        causing = event.causing,
+        direct = event.direct,
+        strength = event.strength,
+        x = event.x,
+        z = event.z,
+        set_strength = function(self, n)
+          self.strength = n
+          event.strength = n
+        end,
+        cancel = function(self)
+          self.canceled = true
+          horizon.cancel()
+        end,
+      }
+      e:on_knockback(Mob.host({ id = event.entity, kind = event.kind }, nil, nil), hit)
+      event.x, event.z = hit.x, hit.z
+    end,
+  },
+  on_equip = {
+    "living_equipment_change",
+    function(e, event)
+      e:on_equip(
+        Mob.host({ id = event.entity, kind = event.kind }, horizon.time().dimension, nil),
+        event.slot,
+        event.from,
+        event.to
+      )
+    end,
+  },
+  on_drops = {
+    "loot_drops",
+    function(e, event)
+      e:on_drops(Mob.host(event.entity, event.dimension, nil), event.drops, event)
+    end,
+  },
 }
 
 Entity.__index = Entity
@@ -109,17 +187,24 @@ Entity.__index = Entity
 Entity.__newindex = function(self, key, value)
   rawset(self, key, value)
   local cb = CALLBACKS[key]
-  if cb and value ~= nil then self:_listen(key, cb[1], cb[2]) end
+  if cb and value ~= nil then
+    self:_listen(key, cb[1], cb[2])
+  end
 end
 
 function Entity.new(mod, id)
-  local e = setmetatable({ mod = mod, id = id, goal_list = {}, target_list = {}, replace_goals = false, _hooked = {} }, Entity)
-  horizon.on("mob_ai_register", function(event) e:_register(event.mob) end, id)
+  local e =
+    setmetatable({ mod = mod, id = id, goal_list = {}, target_list = {}, replace_goals = false, _hooked = {} }, Entity)
+  horizon.on("mob_ai_register", function(event)
+    e:_register(event.mob)
+  end, id)
   return e
 end
 
 function Entity:_listen(name, hook, adapt)
-  if self._hooked[hook] then return end
+  if self._hooked[hook] then
+    return
+  end
   self._hooked[hook] = true
   -- Kept for the headless guard test (tools/viewless-probe): the same
   -- function the engine's hook calls, driven there with a fake event.
@@ -127,24 +212,32 @@ function Entity:_listen(name, hook, adapt)
   self._adapter[name] = adapt
   local e = self
   horizon.on(hook, function(...)
-    if e[name] then adapt(e, ...) end
+    if e[name] then
+      adapt(e, ...)
+    end
   end, self.id)
 end
 
 --- Adds goals that every mob of this type gets: `{ {priority, goal}, ... }`,
 --- a lower priority first.
 function Entity:goals(list: { { any } })
-  for _, row in ipairs(list) do self.goal_list[#self.goal_list + 1] = row end
+  for _, row in ipairs(list) do
+    self.goal_list[#self.goal_list + 1] = row
+  end
   return self
 end
 
 --- Adds goals to the mob's target selector: `{ {priority, goal}, ... }`.
 function Entity:target_goals(list: { { any } })
-  for _, row in ipairs(list) do self.target_list[#self.target_list + 1] = row end
+  for _, row in ipairs(list) do
+    self.target_list[#self.target_list + 1] = row
+  end
   return self
 end
 
-local function short(id) return (id:gsub("^[^:]*:", "")) end
+local function short(id)
+  return (id:gsub("^[^:]*:", ""))
+end
 
 -- Called as a mob of this type sets its goals up (`mob_ai_register`).
 function Entity:_register(mob)
@@ -158,7 +251,9 @@ function Entity:_register(mob)
   local taken = {}
   for i, row in ipairs(self.goal_list) do
     local name = base .. "." .. (row[2].def.name or ("goal" .. i))
-    if taken[name] then name = name .. i end
+    if taken[name] then
+      name = name .. i
+    end
     taken[name] = true
     horizon.add_goal(row[1], row[2]:register(name))
   end
@@ -168,12 +263,20 @@ function Entity:_register(mob)
   if self.on_ai_tick then
     local entity = self
     if not rawget(self, "_tick_goal") then
-      rawset(self, "_tick_goal", Goal.new {
-        flags = {},
-        every_tick = true,
-        can_use = function() return true end,
-        tick = function(state, mob) entity:on_ai_tick(mob, state) end,
-      })
+      rawset(
+        self,
+        "_tick_goal",
+        Goal.new({
+          flags = {},
+          every_tick = true,
+          can_use = function()
+            return true
+          end,
+          tick = function(state, mob)
+            entity:on_ai_tick(mob, state)
+          end,
+        })
+      )
     end
     horizon.add_goal(99, self._tick_goal:register(base .. ".tick"))
   end

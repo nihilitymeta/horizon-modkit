@@ -15,7 +15,9 @@ local Lure = M:item("example_lure")
 function Lure:on_use_on(item, player, block, face)
   local x, y, z = block.x + face.x + 0.5, block.y + face.y, block.z + face.z + 0.5
   local id = horizon.summon(player.dimension, "example_mod:example_mob", x, y, z)
-  if id then modkit.effect(id, "minecraft:slowness", 60, 2) end
+  if id then
+    modkit.effect(id, "minecraft:slowness", 60, 2)
+  end
   modkit.sound("minecraft:entity.zombie.infect", x, y, z, 1.0, 0.6)
   modkit.particles("minecraft:crimson_spore", x, y + 1, z, 40, 0.6, 0.02)
   item:take(1)
@@ -26,7 +28,9 @@ end
 -- Before the blow lands: `target` has id, kind and position. A zombie is
 -- taken out with no death and no loot, and an example mob stands in for it.
 function Lure:on_hit(item, player, target)
-  if target.kind ~= "minecraft:zombie" then return end
+  if target.kind ~= "minecraft:zombie" then
+    return
+  end
   horizon.remove_mob(player.dimension, target.id)
   horizon.summon(player.dimension, "example_mod:example_mob", target.position.x, target.position.y, target.position.z)
   item:take(1)

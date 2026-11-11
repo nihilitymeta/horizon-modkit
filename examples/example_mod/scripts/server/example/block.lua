@@ -13,7 +13,7 @@ local Lamp = M:block("example_block")
 
 -- Every placed block of this kind gets a block entity: saved data of its own,
 -- kept with the chunk, and a tick every server tick when `ticks`.
-Lamp:block_entity { ticks = true, data = { lit_ticks = 0 } }
+Lamp:block_entity({ ticks = true, data = { lit_ticks = 0 } })
 
 -- A right click lights it: the click names no `set_block_property`, so the
 -- whole block is replaced lit, and the click is eaten, so the held item does
@@ -33,7 +33,9 @@ end
 -- placed block, every tick.
 function Lamp:on_block_entity_tick(block)
   local data = block.data
-  if not data or block.lit ~= "true" then return end
+  if not data or block.lit ~= "true" then
+    return
+  end
   data.lit_ticks = data.lit_ticks + 1
   if data.lit_ticks >= 100 then
     data.lit_ticks = 0
@@ -72,7 +74,9 @@ end
 -- Its loot is about to drop: `drops` is a list of {id, count} to change in
 -- place; `source` says who (player, tool, explosion). A player gets dust too.
 function Lamp:on_drops(block, drops, source)
-  if source.player then drops[#drops + 1] = { id = "minecraft:glowstone_dust", count = 2 } end
+  if source.player then
+    drops[#drops + 1] = { id = "minecraft:glowstone_dust", count = 2 }
+  end
 end
 
 return Lamp

@@ -12,7 +12,9 @@ local modkit = require("@modkit")
 local M = require("@example/mod")
 
 M:command("example", 0, function(player, args)
-  horizon.feedback("/example feather [count] | lamp | nest | lure [count] | where | spawn [count] | show | report | max [limit] | greeting <text>")
+  horizon.feedback(
+    "/example feather [count] | lamp | nest | lure [count] | where | spawn [count] | show | report | max [limit] | greeting <text>"
+  )
 end)
 
 M:command("example feather [count:integer] [to:player]", 2, function(player, args)
@@ -21,7 +23,9 @@ M:command("example feather [count:integer] [to:player]", 2, function(player, arg
     local to = args.to
     horizon.after(1, function()
       local p = horizon.player(to)
-      if p then modkit.player(p):give("example_mod:example_item", count) end
+      if p then
+        modkit.player(p):give("example_mod:example_item", count)
+      end
     end)
     horizon.feedback(("%d feather(s) sent to %s"):format(count, to))
     return
@@ -38,8 +42,17 @@ end)
 
 M:command("example where", 0, function(player, args)
   local p, t = player.position, horizon.time()
-  horizon.feedback(("%s is at %.0f %.0f %.0f in %s, day %d, %s"):format(
-    player.name, p.x, p.y, p.z, player.dimension, t.day, t.rain and "raining" or "dry"))
+  horizon.feedback(
+    ("%s is at %.0f %.0f %.0f in %s, day %d, %s"):format(
+      player.name,
+      p.x,
+      p.y,
+      p.z,
+      player.dimension,
+      t.day,
+      t.rain and "raining" or "dry"
+    )
+  )
 end)
 
 return M

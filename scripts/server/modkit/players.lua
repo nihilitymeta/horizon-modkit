@@ -45,78 +45,197 @@ end
 local KIND_PLAYER = "minecraft:player"
 
 local CALLBACKS = {
-  on_join = { "player_logged_in", function(e, event) e:on_join(wrap(event.player)) end },
-  on_leave = { "player_logged_out", function(e, event) e:on_leave(wrap(event.player)) end },
-  on_respawn = { "player_respawned", function(e, event) e:on_respawn(wrap(event.player)) end },
-  on_death = { "player_died", function(e, event) e:on_death(event.player, event.cause) end },
-  on_break_block = { "destroy_block", function(e, event)
-    local player = acting()
-    if player == nil then return end
-    if e:on_break_block(player, { x = event.pos.x, y = event.pos.y, z = event.pos.z, id = event.state }) == true then horizon.cancel() end
-  end },
-  on_place_block = { "place_block", function(e, event)
-    local player = acting()
-    if player == nil then return end
-    e:on_place_block(player, { x = event.pos.x, y = event.pos.y, z = event.pos.z, id = event.state }, event.stack)
-  end },
-  on_pickup = { "item_picked_up", function(e, event)
-    if e:on_pickup(named(event.player), event.item, event.count) == true then horizon.cancel() end
-  end },
-  on_tick = { "player_tick", function(e, event)
-    local player = acting()
-    if player == nil then return end
-    e:on_tick(player)
-  end },
-  on_hurt = { "living_incoming_damage", function(e, event)
-    e:on_hurt({ id = event.entity, kind = event.kind }, {
-      damage_type = event.damage_type, causing = event.causing, direct = event.direct, amount = event.amount,
-      set_amount = function(self, n) self.amount = n; event.amount = n end,
-      cancel = function(self) self.canceled = true; horizon.cancel() end,
-    })
-  end, KIND_PLAYER },
-  on_fall = { "living_fall", function(e, event)
-    e:on_fall({ id = event.entity, kind = event.kind }, {
-      distance = event.distance, multiplier = event.multiplier,
-      set_distance = function(self, n) self.distance = n; event.distance = n end,
-      set_multiplier = function(self, n) self.multiplier = n; event.multiplier = n end,
-      cancel = function(self) self.canceled = true; horizon.cancel() end,
-    })
-  end, KIND_PLAYER },
-  on_knockback = { "living_knockback", function(e, event)
-    local hit = {
-      damage_type = event.damage_type, causing = event.causing, direct = event.direct,
-      strength = event.strength, x = event.x, z = event.z,
-      set_strength = function(self, n) self.strength = n; event.strength = n end,
-      cancel = function(self) self.canceled = true; horizon.cancel() end,
-    }
-    e:on_knockback({ id = event.entity, kind = event.kind }, hit)
-    event.x, event.z = hit.x, hit.z
-  end, KIND_PLAYER },
-  on_chat = { "player_chat", function(e, event)
-    local r = e:on_chat({ uuid = event.player, name = event.name }, event.message)
-    if r == true then horizon.cancel() elseif type(r) == "string" then event.replies = { r } end
-  end },
-  on_command = { "player_command", function(e, event)
-    local player = wrap(event.player)
-    player.reply = function(_, text) event.replies[#event.replies + 1] = text end
-    if e:on_command(player, event.command) == true then horizon.cancel() end
-  end },
-  on_change_dimension = { "player_changed_dimension", function(e, event) e:on_change_dimension(wrap(event.player), event.from, event.to) end },
-  on_sleep = { "player_bed_enter", function(e, event)
-    if e:on_sleep(wrap(event.player), event.pos.x, event.pos.y, event.pos.z) == true then horizon.cancel() end
-  end },
-  on_exp = { "player_exp_change", function(e, event)
-    local n = e:on_exp(wrap(event.player), event.amount)
-    if type(n) == "number" then event.amount = n end
-  end },
-  on_open_menu = { "player_container_open", function(e, event) e:on_open_menu(wrap(event.player), event.menu, event.pos) end },
+  on_join = {
+    "player_logged_in",
+    function(e, event)
+      e:on_join(wrap(event.player))
+    end,
+  },
+  on_leave = {
+    "player_logged_out",
+    function(e, event)
+      e:on_leave(wrap(event.player))
+    end,
+  },
+  on_respawn = {
+    "player_respawned",
+    function(e, event)
+      e:on_respawn(wrap(event.player))
+    end,
+  },
+  on_death = {
+    "player_died",
+    function(e, event)
+      e:on_death(event.player, event.cause)
+    end,
+  },
+  on_break_block = {
+    "destroy_block",
+    function(e, event)
+      local player = acting()
+      if player == nil then
+        return
+      end
+      if e:on_break_block(player, { x = event.pos.x, y = event.pos.y, z = event.pos.z, id = event.state }) == true then
+        horizon.cancel()
+      end
+    end,
+  },
+  on_place_block = {
+    "place_block",
+    function(e, event)
+      local player = acting()
+      if player == nil then
+        return
+      end
+      e:on_place_block(player, { x = event.pos.x, y = event.pos.y, z = event.pos.z, id = event.state }, event.stack)
+    end,
+  },
+  on_pickup = {
+    "item_picked_up",
+    function(e, event)
+      if e:on_pickup(named(event.player), event.item, event.count) == true then
+        horizon.cancel()
+      end
+    end,
+  },
+  on_tick = {
+    "player_tick",
+    function(e, event)
+      local player = acting()
+      if player == nil then
+        return
+      end
+      e:on_tick(player)
+    end,
+  },
+  on_hurt = {
+    "living_incoming_damage",
+    function(e, event)
+      e:on_hurt({ id = event.entity, kind = event.kind }, {
+        damage_type = event.damage_type,
+        causing = event.causing,
+        direct = event.direct,
+        amount = event.amount,
+        set_amount = function(self, n)
+          self.amount = n
+          event.amount = n
+        end,
+        cancel = function(self)
+          self.canceled = true
+          horizon.cancel()
+        end,
+      })
+    end,
+    KIND_PLAYER,
+  },
+  on_fall = {
+    "living_fall",
+    function(e, event)
+      e:on_fall({ id = event.entity, kind = event.kind }, {
+        distance = event.distance,
+        multiplier = event.multiplier,
+        set_distance = function(self, n)
+          self.distance = n
+          event.distance = n
+        end,
+        set_multiplier = function(self, n)
+          self.multiplier = n
+          event.multiplier = n
+        end,
+        cancel = function(self)
+          self.canceled = true
+          horizon.cancel()
+        end,
+      })
+    end,
+    KIND_PLAYER,
+  },
+  on_knockback = {
+    "living_knockback",
+    function(e, event)
+      local hit = {
+        damage_type = event.damage_type,
+        causing = event.causing,
+        direct = event.direct,
+        strength = event.strength,
+        x = event.x,
+        z = event.z,
+        set_strength = function(self, n)
+          self.strength = n
+          event.strength = n
+        end,
+        cancel = function(self)
+          self.canceled = true
+          horizon.cancel()
+        end,
+      }
+      e:on_knockback({ id = event.entity, kind = event.kind }, hit)
+      event.x, event.z = hit.x, hit.z
+    end,
+    KIND_PLAYER,
+  },
+  on_chat = {
+    "player_chat",
+    function(e, event)
+      local r = e:on_chat({ uuid = event.player, name = event.name }, event.message)
+      if r == true then
+        horizon.cancel()
+      elseif type(r) == "string" then
+        event.replies = { r }
+      end
+    end,
+  },
+  on_command = {
+    "player_command",
+    function(e, event)
+      local player = wrap(event.player)
+      player.reply = function(_, text)
+        event.replies[#event.replies + 1] = text
+      end
+      if e:on_command(player, event.command) == true then
+        horizon.cancel()
+      end
+    end,
+  },
+  on_change_dimension = {
+    "player_changed_dimension",
+    function(e, event)
+      e:on_change_dimension(wrap(event.player), event.from, event.to)
+    end,
+  },
+  on_sleep = {
+    "player_bed_enter",
+    function(e, event)
+      if e:on_sleep(wrap(event.player), event.pos.x, event.pos.y, event.pos.z) == true then
+        horizon.cancel()
+      end
+    end,
+  },
+  on_exp = {
+    "player_exp_change",
+    function(e, event)
+      local n = e:on_exp(wrap(event.player), event.amount)
+      if type(n) == "number" then
+        event.amount = n
+      end
+    end,
+  },
+  on_open_menu = {
+    "player_container_open",
+    function(e, event)
+      e:on_open_menu(wrap(event.player), event.menu, event.pos)
+    end,
+  },
 }
 
 Players.__index = Players
 Players.__newindex = function(self, key, value)
   rawset(self, key, value)
   local cb = CALLBACKS[key]
-  if cb and value ~= nil then self:_listen(key, cb[1], cb[2], cb[3]) end
+  if cb and value ~= nil then
+    self:_listen(key, cb[1], cb[2], cb[3])
+  end
 end
 
 function Players.new(mod)
@@ -124,11 +243,15 @@ function Players.new(mod)
 end
 
 function Players:_listen(name, hook, adapt, kind)
-  if self._hooked[hook] then return end
+  if self._hooked[hook] then
+    return
+  end
   self._hooked[hook] = true
   local e = self
   horizon.on(hook, function(event)
-    if e[name] then adapt(e, event) end
+    if e[name] then
+      adapt(e, event)
+    end
   end, kind)
 end
 

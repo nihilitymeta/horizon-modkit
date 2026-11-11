@@ -21,7 +21,9 @@ M:command("example spawn [count:integer]", 2, function(player, args)
   horizon.after(1, function()
     for i = 1, count do
       local id = horizon.summon(dimension, "example_mod:example_mob", p.x + i, p.y, p.z)
-      if id then modkit.effect(id, "minecraft:glowing", 100) end
+      if id then
+        modkit.effect(id, "minecraft:glowing", 100)
+      end
     end
   end)
   horizon.feedback(("%d example mob(s) coming"):format(count))

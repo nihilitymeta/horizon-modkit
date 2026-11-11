@@ -1,6 +1,6 @@
 -- The example mod's mob and how it spawns; scripts/registry.lua requires this
 -- file.
-local ns = registry.id   -- "example_mod"
+local ns = registry.id -- "example_mod"
 
 -- ENTITY TYPES: a vanilla mob as the template, the attributes that differ,
 -- and `goals = "none"`: the mod's scripts give it all of its behaviour
@@ -19,8 +19,14 @@ registry.data("loot_table/entities/example_mob", {
 -- SPAWNING (docs/guides/spawning.md): a spawn egg is an item whose id ends
 -- in _spawn_egg and names the kind; natural spawns are a biome modifier.
 registry.item("example_mob_spawn_egg", { template = "minecraft:pig_spawn_egg" })
-registry.asset("items/example_mob_spawn_egg", { model = { type = "minecraft:model", model = ns .. ":item/example_mob_spawn_egg" } })
-registry.asset("models/item/example_mob_spawn_egg", { parent = "minecraft:item/generated", textures = { layer0 = "minecraft:item/pig_spawn_egg" } })
+registry.asset(
+  "items/example_mob_spawn_egg",
+  { model = { type = "minecraft:model", model = ns .. ":item/example_mob_spawn_egg" } }
+)
+registry.asset(
+  "models/item/example_mob_spawn_egg",
+  { parent = "minecraft:item/generated", textures = { layer0 = "minecraft:item/pig_spawn_egg" } }
+)
 registry.data("neoforge/biome_modifier/example_mob_spawns", {
   type = "neoforge:add_spawns",
   biomes = "#minecraft:is_overworld",

@@ -51,7 +51,9 @@ function Goal.new(def)
 end
 
 local function wrap(fn)
-  if fn == nil then return nil end
+  if fn == nil then
+    return nil
+  end
   return function(view, state, out)
     return fn(setmetatable(state, State), Mob.wrap(view, out))
   end

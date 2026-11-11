@@ -41,17 +41,28 @@ local function acting()
 end
 horizon.on("right_click_block", function(event)
   local player = acting()
-  if player == nil then return end
+  if player == nil then
+    return
+  end
   local uuid = player.uuid
   local pos = event.pos
   local held = player.held
-  if inspect(uuid, pos.x .. " " .. pos.y .. " " .. pos.z, { x = pos.x, y = pos.y, z = pos.z, face = event.face }, held ~= nil and held.id == STICK) then
+  if
+    inspect(
+      uuid,
+      pos.x .. " " .. pos.y .. " " .. pos.z,
+      { x = pos.x, y = pos.y, z = pos.z, face = event.face },
+      held ~= nil and held.id == STICK
+    )
+  then
     horizon.cancel()
   end
 end)
 horizon.on("interact_entity", function(event)
   local player = acting()
-  if player == nil then return end
+  if player == nil then
+    return
+  end
   local uuid = player.uuid
   local stack = event.stack
   if stack == nil then

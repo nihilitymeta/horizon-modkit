@@ -45,7 +45,9 @@ end
 --- Gets the full id of `name`: `name` itself when it has a namespace,
 --- otherwise `<mod>:<name>`.
 function Mod:qualify(name: string): string
-  if name:find(":", 1, true) then return name end
+  if name:find(":", 1, true) then
+    return name
+  end
   return self.id .. ":" .. name
 end
 
@@ -77,7 +79,9 @@ end
 --- Gets the players class, which holds the callbacks for what every player
 --- does, creating it the first time.
 function Mod:players()
-  if not self._players then self._players = Players.new(self) end
+  if not self._players then
+    self._players = Players.new(self)
+  end
   return self._players
 end
 
@@ -98,11 +102,19 @@ end
 --- `level` is the operator level a player needs (0 everyone, 2 operators,
 --- 4 the console) and may be left out. Inside `fn`, `horizon.feedback(text)`
 --- answers the player.
-function Mod:command(usage: string, level: number | ((player: Player, args: CommandArgs) -> ()), fn: ((player: Player, args: CommandArgs) -> ())?)
+function Mod:command(
+  usage: string,
+  level: number | ((player: Player, args: CommandArgs) -> ()),
+  fn: ((player: Player, args: CommandArgs) -> ())?
+)
   local run: any = fn
   local at: any = level
-  if type(level) == "function" then at, run = 0, level end
-  horizon.command(usage, at, function(player, args) return run(Player.wrap(player, true), args) end)
+  if type(level) == "function" then
+    at, run = 0, level
+  end
+  horizon.command(usage, at, function(player, args)
+    return run(Player.wrap(player, true), args)
+  end)
 end
 
 --- Gets the mod's settings from `config/<id>.json` in the game folder.
@@ -112,14 +124,21 @@ function Mod:config(defaults: Data?): Data
   local c = horizon.config()
   local added = false
   for k, v in pairs(defaults or {}) do
-    if c[k] == nil then c[k] = v; added = true end
+    if c[k] == nil then
+      c[k] = v
+      added = true
+    end
   end
-  if added then horizon.save_config(c) end
+  if added then
+    horizon.save_config(c)
+  end
   self._config = c
   return c
 end
 --- Saves the settings table back to the mod's settings file.
-function Mod:save_config(c: Data?) horizon.save_config(c or self._config) end
+function Mod:save_config(c: Data?)
+  horizon.save_config(c or self._config)
+end
 
 --- Registers a handler for an engine hook, as `horizon.on` does, for what
 --- the classes do not cover: `M:on("explosion_detonate", fn)`,
@@ -130,51 +149,93 @@ function Mod:on(hook: string, fn: (...any) -> (), kind: string?)
 end
 
 --- Writes a line to the game log, tagged with the mod's id.
-function modkit.log(msg: string) horizon.log(msg) end
+function modkit.log(msg: string)
+  horizon.log(msg)
+end
 -- Effects in the world and on a player: the engine's actions, from a
 -- callback with a host.
 --- Plays a sound for the players in range of a position, as `/playsound` does.
-function modkit.sound(name: string, x: number, y: number, z: number, volume: number?, pitch: number?) horizon.sound(name, x, y, z, volume, pitch) end
+function modkit.sound(name: string, x: number, y: number, z: number, volume: number?, pitch: number?)
+  horizon.sound(name, x, y, z, volume, pitch)
+end
 --- Shows particles to the players near a position, as `/particle` does.
-function modkit.particles(name: string, x: number, y: number, z: number, count: number?, spread: number?, speed: number?) horizon.particles(name, x, y, z, count, spread, speed) end
+function modkit.particles(
+  name: string,
+  x: number,
+  y: number,
+  z: number,
+  count: number?,
+  spread: number?,
+  speed: number?
+)
+  horizon.particles(name, x, y, z, count, spread, speed)
+end
 -- A player as the engine's helpers take one: a table's uuid, or a name or UUID as given.
 local function who(player: Player | string): string
-  if type(player) == "table" then return player.uuid end
+  if type(player) == "table" then
+    return player.uuid
+  end
   return player
 end
 --- Shows a title, and an optional subtitle, across a player's screen.
 function modkit.title(player: Player | string, text: string, subtitle: string?)
   horizon.title(who(player), text)
-  if subtitle then horizon.subtitle(who(player), subtitle) end
+  if subtitle then
+    horizon.subtitle(who(player), subtitle)
+  end
 end
 --- Sends a chat line to one player.
-function modkit.tell(player: Player | string, text: string) horizon.tell(who(player), text) end
+function modkit.tell(player: Player | string, text: string)
+  horizon.tell(who(player), text)
+end
 --- Shows a line over a player's hotbar.
-function modkit.action_bar(player: Player | string, text: string) horizon.action_bar(who(player), text) end
+function modkit.action_bar(player: Player | string, text: string)
+  horizon.action_bar(who(player), text)
+end
 --- Gets the distance between two positions, in blocks.
-function modkit.distance(a: Vec3, b: Vec3): number return horizon.distance(a, b) end
+function modkit.distance(a: Vec3, b: Vec3): number
+  return horizon.distance(a, b)
+end
 -- The world: the engine's actions and reads, from a callback with a host.
 --- Sets a block, as `/setblock` does. Not in a random or scheduled tick.
-function modkit.set_block(x: number, y: number, z: number, id: string, props: Props?, flags: number?) horizon.set_block(x, y, z, id, props, flags) end
+function modkit.set_block(x: number, y: number, z: number, id: string, props: Props?, flags: number?)
+  horizon.set_block(x, y, z, id, props, flags)
+end
 --- Fills a box with one block state, as `/fill ... strict` does.
-function modkit.fill(x1: number, y1: number, z1: number, x2: number, y2: number, z2: number, id: string, props: Props?) horizon.fill(x1, y1, z1, x2, y2, z2, id, props) end
+function modkit.fill(x1: number, y1: number, z1: number, x2: number, y2: number, z2: number, id: string, props: Props?)
+  horizon.fill(x1, y1, z1, x2, y2, z2, id, props)
+end
 --- Drops an item entity of `count` (1) of a plain item at a position.
-function modkit.drop_item(x: number, y: number, z: number, id: string, count: number?) horizon.drop_item(x, y, z, id, count) end
+function modkit.drop_item(x: number, y: number, z: number, id: string, count: number?)
+  horizon.drop_item(x, y, z, id, count)
+end
 --- Throws a falling block from a position at a velocity in blocks per tick.
-function modkit.falling_block(x: number, y: number, z: number, id: string, vx: number?, vy: number?, vz: number?) horizon.falling_block(x, y, z, id, vx, vy, vz) end
+function modkit.falling_block(x: number, y: number, z: number, id: string, vx: number?, vy: number?, vz: number?)
+  horizon.falling_block(x, y, z, id, vx, vy, vz)
+end
 --- Gets the `{block, sky}` light at a position, each 0 to 15.
-function modkit.light(x: number, y: number, z: number): Light return horizon.light(x, y, z) end
+function modkit.light(x: number, y: number, z: number): Light
+  return horizon.light(x, y, z)
+end
 --- Gets the height of a column by a heightmap (`world_surface` by default),
 --- or nil where nothing is loaded.
-function modkit.surface_height(x: number, z: number, heightmap: string?): number? return horizon.surface_height(x, z, heightmap) end
+function modkit.surface_height(x: number, z: number, heightmap: string?): number?
+  return horizon.surface_height(x, z, heightmap)
+end
 --- Runs a command as the server console does. Inside a player's own
 --- callback, queue it with `horizon.after(1, ...)` instead.
-function modkit.run_command(line: string) horizon.run_command(line) end
+function modkit.run_command(line: string)
+  horizon.run_command(line)
+end
 --- Reads a data file of the game's resources: JSON as a table, any other
 --- file as a string, nil when there is none.
-function modkit.data(path: string): any return horizon.data(path) end
+function modkit.data(path: string): any
+  return horizon.data(path)
+end
 --- Gives a status effect to a mob (by id) or a player (a table, a name or a
 --- UUID), as `/effect give` does: 200 ticks at amplifier 0 by default.
-function modkit.effect(target: number | string | Player, name: string, ticks: number?, amplifier: number?) horizon.effect(target, name, ticks or 200, amplifier or 0) end
+function modkit.effect(target: number | string | Player, name: string, ticks: number?, amplifier: number?)
+  horizon.effect(target, name, ticks or 200, amplifier or 0)
+end
 
 return modkit

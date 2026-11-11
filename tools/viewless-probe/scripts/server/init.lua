@@ -11,11 +11,17 @@ local M = modkit.mod("viewless_probe")
 
 local E = M:entity("minecraft:pig")
 local ran = {}
-function E:on_tick(mob) ran.tick = true end
-function E:on_interact(mob, player, held) ran.interact = true end
+function E:on_tick(mob)
+  ran.tick = true
+end
+function E:on_interact(mob, player, held)
+  ran.interact = true
+end
 
 local real_mob = horizon.mob
-horizon.mob = function(id) return nil end
+horizon.mob = function(id)
+  return nil
+end
 E._adapter.on_tick(E, { entity = 424242, kind = "minecraft:pig", dimension = "minecraft:overworld" })
 assert(ran.tick == nil, "E:on_tick ran for a mob with no live view")
 E._adapter.on_interact(E, { entity = 424242, kind = "minecraft:pig", stack = nil })

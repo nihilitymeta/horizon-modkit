@@ -24,13 +24,17 @@ function Players:on_join(player)
   modkit.title(player, cfg.greeting, "Example Mod on modkit " .. modkit.VERSION)
   local mine = player:data()
   if mine then
-    if (mine.fed or 0) >= 3 then Players.keepers[player.uuid] = true end
+    if (mine.fed or 0) >= 3 then
+      Players.keepers[player.uuid] = true
+    end
     mine.visits = (mine.visits or 0) + 1
     if mine.visits == 1 then
       local name = player.name
       horizon.after(1, function()
         local p = horizon.player(name)
-        if p then modkit.player(p):give("example_mod:example_item", 1) end
+        if p then
+          modkit.player(p):give("example_mod:example_item", 1)
+        end
       end)
     end
     horizon.log(("EXAMPLE player joined: %s, visit %d"):format(player.name, mine.visits))
@@ -55,7 +59,9 @@ end
 
 -- A block broken (return true to keep it) or placed.
 function Players:on_break_block(player, block)
-  if block.id == "minecraft:bedrock" then return true end
+  if block.id == "minecraft:bedrock" then
+    return true
+  end
   horizon.log(("EXAMPLE player broke %s"):format(block.id))
   return false
 end
@@ -65,7 +71,9 @@ end
 
 -- About to pick an item up (return true to leave it on the ground).
 function Players:on_pickup(player, item, count)
-  if item == "minecraft:poisonous_potato" then return true end
+  if item == "minecraft:poisonous_potato" then
+    return true
+  end
   return false
 end
 
@@ -89,7 +97,9 @@ end
 function Players:on_sleep(player, x, y, z)
   local roaming = 0
   for _, m in ipairs(horizon.mobs()) do
-    if m.kind == "example_mod:example_mob" then roaming = roaming + 1 end
+    if m.kind == "example_mod:example_mob" then
+      roaming = roaming + 1
+    end
   end
   if roaming > 0 then
     player:action_bar(("%d example mob(s) roam: no sleep tonight"):format(roaming))

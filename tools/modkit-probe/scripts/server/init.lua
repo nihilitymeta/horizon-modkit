@@ -6,7 +6,9 @@ local M = modkit.mod("modkit_probe")
 
 local seen = {}
 local function ran(name)
-  if seen[name] then return end
+  if seen[name] then
+    return
+  end
   seen[name] = true
   horizon.log("MODKIT cb " .. name)
 end
@@ -26,7 +28,13 @@ function P:on_tick(player)
   if not tick_checked then
     tick_checked = true
     local first = horizon.players()[1]
-    horizon.log(("MODKIT tick: %s first=%s match=%s"):format(player.uuid, first and first.uuid or "none", tostring(first ~= nil and first.uuid == player.uuid)))
+    horizon.log(
+      ("MODKIT tick: %s first=%s match=%s"):format(
+        player.uuid,
+        first and first.uuid or "none",
+        tostring(first ~= nil and first.uuid == player.uuid)
+      )
+    )
   end
   local held = player.held and player.held.item or "empty"
   if held ~= last_held then
@@ -34,21 +42,47 @@ function P:on_tick(player)
     horizon.log("MODKIT held: " .. held)
   end
 end
-function P:on_hurt(player, hit) ran("Players:on_hurt") end
-function P:on_fall(player, fall) ran("Players:on_fall") end
-function P:on_knockback(player, hit) ran("Players:on_knockback") end
-function P:on_chat(player, line) ran("Players:on_chat") end
-function P:on_command(player, line) ran("Players:on_command") end
-function P:on_change_dimension(player, from, to) ran("Players:on_change_dimension") end
-function P:on_sleep(player, x, y, z) ran("Players:on_sleep") end
-function P:on_exp(player, amount) ran("Players:on_exp") end
-function P:on_open_menu(player, menu, pos) ran("Players:on_open_menu") end
+function P:on_hurt(player, hit)
+  ran("Players:on_hurt")
+end
+function P:on_fall(player, fall)
+  ran("Players:on_fall")
+end
+function P:on_knockback(player, hit)
+  ran("Players:on_knockback")
+end
+function P:on_chat(player, line)
+  ran("Players:on_chat")
+end
+function P:on_command(player, line)
+  ran("Players:on_command")
+end
+function P:on_change_dimension(player, from, to)
+  ran("Players:on_change_dimension")
+end
+function P:on_sleep(player, x, y, z)
+  ran("Players:on_sleep")
+end
+function P:on_exp(player, amount)
+  ran("Players:on_exp")
+end
+function P:on_open_menu(player, menu, pos)
+  ran("Players:on_open_menu")
+end
 
 local Zombie = M:entity("minecraft:zombie")
-function Zombie:on_fall(mob, fall) ran("Entity:on_fall") end
-function Zombie:on_knockback(mob, hit) ran("Entity:on_knockback") end
-function Zombie:on_equip(mob, slot, from, to) ran("Entity:on_equip") end
-function Zombie:on_drops(mob, drops, source) ran("Entity:on_drops") end
+function Zombie:on_fall(mob, fall)
+  ran("Entity:on_fall")
+end
+function Zombie:on_knockback(mob, hit)
+  ran("Entity:on_knockback")
+end
+function Zombie:on_equip(mob, slot, from, to)
+  ran("Entity:on_equip")
+end
+function Zombie:on_drops(mob, drops, source)
+  ran("Entity:on_drops")
+end
 -- Per-mob saved data (`mob.data`): both mobs count into the SAME key
 -- `clicks`, so one shared table would show: two clicks on one example mob
 -- read 1 then 2, and the zombie's first click reads 1 only when its table is
@@ -58,7 +92,9 @@ function Zombie:on_drops(mob, drops, source) ran("Entity:on_drops") end
 local example_id: number? = nil
 local zombie_id: number? = nil
 local function other_clicks(id: number?): string
-  if id == nil then return "none" end
+  if id == nil then
+    return "none"
+  end
   local other = horizon.entity_data(id)
   local n = other ~= nil and other.clicks or nil
   return n ~= nil and tostring(n) or "none"
@@ -68,7 +104,9 @@ function Zombie:on_interact(mob, player, held)
   zombie_id = mob.id
   local d = mob.data
   d.clicks = (d.clicks or 0) + 1
-  horizon.log(("MODKIT mobdata %s %d clicks=%d example_clicks=%s"):format(mob.kind, mob.id, d.clicks, other_clicks(example_id)))
+  horizon.log(
+    ("MODKIT mobdata %s %d clicks=%d example_clicks=%s"):format(mob.kind, mob.id, d.clicks, other_clicks(example_id))
+  )
 end
 
 local ExampleMob = M:entity("example_mod:example_mob")
@@ -77,11 +115,15 @@ function ExampleMob:on_interact(mob, player, held)
   example_id = mob.id
   local d = mob.data
   d.clicks = (d.clicks or 0) + 1
-  horizon.log(("MODKIT mobdata %s %d clicks=%d zombie_clicks=%s"):format(mob.kind, mob.id, d.clicks, other_clicks(zombie_id)))
+  horizon.log(
+    ("MODKIT mobdata %s %d clicks=%d zombie_clicks=%s"):format(mob.kind, mob.id, d.clicks, other_clicks(zombie_id))
+  )
 end
 
 local Stone = M:block("minecraft:stone")
-function Stone:on_drops(block, drops, source) ran("Block:on_drops") end
+function Stone:on_drops(block, drops, source)
+  ran("Block:on_drops")
+end
 -- A click with the acting player's hand: the drive right-clicks stone while
 -- holding a stick, so the logged hand is the stick.
 function Stone:on_use(block, player, held)
@@ -90,15 +132,33 @@ function Stone:on_use(block, player, held)
 end
 
 local Planks = M:item("minecraft:oak_planks")
-function Planks:on_crafted(item, player, recipe) ran("Item:on_crafted") end
+function Planks:on_crafted(item, player, recipe)
+  ran("Item:on_crafted")
+end
 local Stick = M:item("minecraft:stick")
-function Stick:on_dropped(item, player, count) ran("Item:on_dropped") end
-function Stick:on_hurt_enemy(item, player, target) ran("Item:on_hurt_enemy") end
+function Stick:on_dropped(item, player, count)
+  ran("Item:on_dropped")
+end
+function Stick:on_hurt_enemy(item, player, target)
+  ran("Item:on_hurt_enemy")
+end
 local Apple = M:item("minecraft:apple")
-function Apple:on_use_start(item, player, hand, duration) ran("Item:on_use_start") end
+function Apple:on_use_start(item, player, hand, duration)
+  ran("Item:on_use_start")
+end
 
-M:on("explosion_detonate", function(event) ran("M:on explosion") end)
-M:on("entity_join_level", function(event) ran("M:on entity_joined") end, "minecraft:snowball")
-M:on("projectile_launch", function(event) ran("M:on projectile_launched") end, "minecraft:snowball")
-M:on("projectile_impact", function(event) ran("M:on projectile_impact") end, "minecraft:snowball")
-M:on("living_heal", function(event) ran("M:on mob_heal") end)
+M:on("explosion_detonate", function(event)
+  ran("M:on explosion")
+end)
+M:on("entity_join_level", function(event)
+  ran("M:on entity_joined")
+end, "minecraft:snowball")
+M:on("projectile_launch", function(event)
+  ran("M:on projectile_launched")
+end, "minecraft:snowball")
+M:on("projectile_impact", function(event)
+  ran("M:on projectile_impact")
+end, "minecraft:snowball")
+M:on("living_heal", function(event)
+  ran("M:on mob_heal")
+end)

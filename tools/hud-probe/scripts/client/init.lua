@@ -5,7 +5,9 @@
 -- handler at WARN or ERROR, which the check fails on.
 local seen = {}
 local function saw(name, extra)
-  if seen[name] then return end
+  if seen[name] then
+    return
+  end
   seen[name] = true
   horizon.log("PROBE hud " .. name .. (extra and (" " .. extra) or ""))
 end
@@ -14,7 +16,9 @@ horizon.on("hud", function(event)
   local x, y = event.corners.place("top_left", 120, 20)
   batch.fill(x, y, 120, 20, 4278190080)
   batch.text("hud probe", 10, 10, 16777215, true)
-  if event.corners.shown("top_left") then batch.fill(0, 0, 1, 1, 1) end
+  if event.corners.shown("top_left") then
+    batch.fill(0, 0, 1, 1, 1)
+  end
   saw("hud")
 end)
 horizon.on("gui_layer_post", function(event)

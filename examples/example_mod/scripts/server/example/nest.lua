@@ -15,7 +15,7 @@ local Nest = M:block("example_nest")
 
 -- Each placed nest has a block entity: `charge` counts the ticks since it
 -- last bred and `bred` how many mobs it made, saved with the chunk.
-Nest:block_entity { ticks = true, data = { charge = 0, bred = 0 } }
+Nest:block_entity({ ticks = true, data = { charge = 0, bred = 0 } })
 local NEXT_STAGE = { dormant = "growing", growing = "mature" }
 local BREED_TICKS = 400
 
@@ -68,7 +68,9 @@ end
 -- and turns to sculk.
 function Nest:on_block_entity_tick(block)
   local data = block.data
-  if not data or block.stage ~= "mature" then return end
+  if not data or block.stage ~= "mature" then
+    return
+  end
   data.charge = data.charge + 1
   -- A mirror for the click, which names no block data.
   local w = horizon.world_data()
@@ -85,7 +87,16 @@ function Nest:on_block_entity_tick(block)
   horizon.log(("EXAMPLE nest bred an example mob (%d so far)"):format(data.bred))
   if data.bred >= cfg.nest_breeds then
     local l = block:light()
-    block:broadcast(("the nest at %d %d %d is spent after %d example mob(s) (light %d/%d)"):format(block.x, block.y, block.z, data.bred, l.block, l.sky))
+    block:broadcast(
+      ("the nest at %d %d %d is spent after %d example mob(s) (light %d/%d)"):format(
+        block.x,
+        block.y,
+        block.z,
+        data.bred,
+        l.block,
+        l.sky
+      )
+    )
     block:drop("minecraft:wheat", 2)
     block:replace("minecraft:sculk")
     horizon.log(("EXAMPLE nest spent after %d"):format(data.bred))
