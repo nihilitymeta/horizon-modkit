@@ -31,7 +31,7 @@ end
 --- command's player table), so the engine's own hand is kept: an empty
 --- command hand arrives with `held` absent, which Lua cannot tell from a
 --- table that never had one, so only the call site knows.
-function Player.wrap(t: Player, from_engine: boolean?)
+function Player.wrap(t: ReadPlayer?, from_engine: boolean?)
   local raw: any = t
   if raw == nil or getmetatable(raw) == Player then
     return raw

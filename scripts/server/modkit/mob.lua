@@ -41,7 +41,7 @@ local function fetch_data(self)
     return nil
   end
   local data = horizon.entity_data(id)
-  rawset(self, "_data", data == nil and false or data)
+  rawset(self, "_data", if data == nil then nil else data)
   return data
 end
 

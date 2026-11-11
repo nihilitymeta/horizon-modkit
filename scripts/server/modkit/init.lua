@@ -234,7 +234,7 @@ function modkit.data(path: string): any
 end
 --- Gives a status effect to a mob (by id) or a player (a table, a name or a
 --- UUID), as `/effect give` does: 200 ticks at amplifier 0 by default.
-function modkit.effect(target: number | string | Player, name: string, ticks: number?, amplifier: number?)
+function modkit.effect(target: number | string | ReadPlayer, name: string, ticks: number?, amplifier: number?)
   horizon.effect(target, name, ticks or 200, amplifier or 0)
 end
 
