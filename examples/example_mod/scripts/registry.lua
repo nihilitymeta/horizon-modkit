@@ -7,7 +7,7 @@
 -- show more: a staged block with a block entity (the nest) and an item that
 -- summons (the lure). Guides: docs/guides/items.md, blocks.md, mobs.md,
 -- spawning.md. A change here or in a module needs the game restarted;
--- scripts/init.lua and the files it requires reload with /reload. Each module
+-- scripts/server/init.lua and the files it requires reload with /reload. Each module
 -- names what it adds with registry.lang, which merges every module's names
 -- into one lang file.
 -- See it in game: the Example Mod tab of the creative inventory.

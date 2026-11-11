@@ -11,7 +11,7 @@ local cfg = require("@example/timers_and_data")
 
 local Players = M:players()
 
--- Who fed three example mobs, by uuid (scripts/example/mob.lua fills it, and
+-- Who fed three example mobs, by uuid (scripts/server/example/mob.lua fills it, and
 -- the join below): the chat callback has no host to read the saved data
 -- with, so it reads this.
 Players.keepers = {}

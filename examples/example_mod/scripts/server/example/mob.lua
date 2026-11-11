@@ -41,7 +41,7 @@ Mob:goals {
 -- and counts for the feeder too, in their own saved table: at three feedings
 -- they are nicknamed a keeper (next tick, from a timer: a nickname is set
 -- where no player's own action is under way) and their chat lines carry it
--- (scripts/example/players.lua). The click is taken. An empty hand reads the
+-- (scripts/server/example/players.lua). The click is taken. An empty hand reads the
 -- mob's count.
 function Mob:on_interact(mob, player, held)
   local fed = mob.data

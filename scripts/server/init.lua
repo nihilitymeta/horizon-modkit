@@ -1,5 +1,5 @@
 -- Horizon Modkit: mods that depend on this one `require("@modkit")` and get
--- the library (scripts/modkit.lua). What runs here is the modkit's own: the
+-- the library (scripts/server/modkit/). What runs here is the modkit's own: the
 -- inspect stick (scripts/registry.lua).
 local modkit = require("@modkit")
 horizon.log("modkit " .. modkit.VERSION .. " ready")

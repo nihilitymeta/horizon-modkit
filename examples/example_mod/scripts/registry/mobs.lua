@@ -4,7 +4,7 @@ local ns = registry.id   -- "example_mod"
 
 -- ENTITY TYPES: a vanilla mob as the template, the attributes that differ,
 -- and `goals = "none"`: the mod's scripts give it all of its behaviour
--- (scripts/example/mob.lua). Its look and sounds are the pig's; a model and
+-- (scripts/server/example/mob.lua). Its look and sounds are the pig's; a model and
 -- an animation set of the mod's own go here too (docs/guides/mobs.md). Its
 -- loot table, or the template's without one.
 registry.entity_type("example_mob", {

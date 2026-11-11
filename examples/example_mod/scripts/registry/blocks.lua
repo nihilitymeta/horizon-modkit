@@ -4,7 +4,7 @@ local ns = registry.id   -- "example_mod"
 -- BLOCKS: a template, a state property of the block's own (`lit`), random
 -- ticks (the template never ticks), an item for it, a blockstate that picks a
 -- model per state, loot, a tag so a pickaxe mines it, a recipe. Its
--- behaviour is in scripts/example/block.lua.
+-- behaviour is in scripts/server/example/block.lua.
 registry.block("example_block", {
   template = "minecraft:iron_block",
   properties = { hardness = 2.0, random_ticks = true },
@@ -42,7 +42,7 @@ registry.data("recipe/example_block", {
 -- that tick), a sculk template with a little light and the catalyst's
 -- sounds, a model per stage from three vanilla sculk textures, a hoe tag
 -- (a hoe mines it, as sculk is mined) and a recipe. It grows and breeds in
--- scripts/example/nest.lua.
+-- scripts/server/example/nest.lua.
 local STAGES = { "dormant", "growing", "mature" }
 registry.block("example_nest", {
   template = "minecraft:sculk",

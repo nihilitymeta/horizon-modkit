@@ -1,8 +1,8 @@
 {
   "languageMode": "nonstrict",
   "aliases": {
-    "modkit": "../../scripts/modkit",
-    "example": "scripts/example",
+    "modkit": "../../scripts/server/modkit",
+    "example": "scripts/server/example",
     "registry": "scripts/registry"
   }
 }

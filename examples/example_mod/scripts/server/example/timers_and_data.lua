@@ -14,7 +14,7 @@ local cfg = M:config {
   greeting = "Welcome to the example",
   report_minutes = 1,
   max_mobs = 12,     -- more example mobs than this and the minute timer culls the rest
-  nest_breeds = 3,   -- example mobs a nest breeds before it is spent (scripts/example/nest.lua)
+  nest_breeds = 3,   -- example mobs a nest breeds before it is spent (scripts/server/example/nest.lua)
 }
 
 -- Once, in 40 ticks (two seconds): a timer runs with the reads and actions

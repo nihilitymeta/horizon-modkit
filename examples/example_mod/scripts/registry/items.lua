@@ -4,7 +4,7 @@ local ns = registry.id   -- "example_mod"
 -- ITEMS: a vanilla template (its data components: stack size, food,
 -- durability...) and what differs; a look under assets/, as the client reads
 -- it (items/<name>: which model; models/item/<name>: the model). The feather
--- gets its callbacks in scripts/example/item.lua.
+-- gets its callbacks in scripts/server/example/item.lua.
 registry.item("example_item", { template = "minecraft:feather", max_stack_size = 16, rarity = "uncommon" })
 registry.asset("items/example_item", { model = { type = "minecraft:model", model = ns .. ":item/example_item" } })
 registry.asset("models/item/example_item", { parent = "minecraft:item/generated", textures = { layer0 = "minecraft:item/feather" } })
@@ -20,7 +20,7 @@ registry.asset("items/example_snack", { model = { type = "minecraft:model", mode
 registry.asset("models/item/example_snack", { parent = "minecraft:item/generated", textures = { layer0 = "minecraft:item/cookie" } })
 -- The lure: a bone by template with a bone's look; used on a block it calls
 -- an example mob out of it, and a zombie struck with it becomes one
--- (scripts/example/lure.lua).
+-- (scripts/server/example/lure.lua).
 registry.item("example_lure", { template = "minecraft:bone", max_stack_size = 16, rarity = "rare" })
 registry.asset("items/example_lure", { model = { type = "minecraft:model", model = ns .. ":item/example_lure" } })
 registry.asset("models/item/example_lure", { parent = "minecraft:item/generated", textures = { layer0 = "minecraft:item/bone" } })

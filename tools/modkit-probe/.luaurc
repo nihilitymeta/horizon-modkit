@@ -1,6 +1,6 @@
 {
   "languageMode": "nonstrict",
   "aliases": {
-    "modkit": "../../scripts/modkit"
+    "modkit": "../../scripts/server/modkit"
   }
 }
