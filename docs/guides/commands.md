@@ -15,7 +15,9 @@ M:command("example feather [count:integer] [to:player]", 2, function(player, arg
     local to = args.to
     horizon.after(1, function()
       local p = horizon.player(to)
-      if p then modkit.player(p):give("example_mod:example_item", count) end
+      if p then
+        modkit.player(p):give("example_mod:example_item", count)
+      end
     end)
     horizon.feedback(("%d feather(s) sent to %s"):format(count, to))
     return

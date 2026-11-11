@@ -21,7 +21,7 @@ local Lamp = M:block("example_block")
 
 -- Every placed block of this kind gets a block entity: saved data of its own,
 -- kept with the chunk, and a tick every server tick when `ticks`.
-Lamp:block_entity { ticks = true, data = { lit_ticks = 0 } }
+Lamp:block_entity({ ticks = true, data = { lit_ticks = 0 } })
 
 -- A right click lights it: the click names no `set_block_property`, so the
 -- whole block is replaced lit, and the click is eaten, so the held item does
@@ -41,7 +41,9 @@ end
 -- placed block, every tick.
 function Lamp:on_block_entity_tick(block)
   local data = block.data
-  if not data or block.lit ~= "true" then return end
+  if not data or block.lit ~= "true" then
+    return
+  end
   data.lit_ticks = data.lit_ticks + 1
   if data.lit_ticks >= 100 then
     data.lit_ticks = 0
@@ -100,7 +102,9 @@ mobs, the nest is spent and replaces itself with sculk:
 ```lua
 function Nest:on_block_entity_tick(block)
   local data = block.data
-  if not data or block.stage ~= "mature" then return end
+  if not data or block.stage ~= "mature" then
+    return
+  end
   data.charge = data.charge + 1
   -- A mirror for the click, which names no block data.
   local w = horizon.world_data()
@@ -117,7 +121,16 @@ function Nest:on_block_entity_tick(block)
   horizon.log(("EXAMPLE nest bred an example mob (%d so far)"):format(data.bred))
   if data.bred >= cfg.nest_breeds then
     local l = block:light()
-    block:broadcast(("the nest at %d %d %d is spent after %d example mob(s) (light %d/%d)"):format(block.x, block.y, block.z, data.bred, l.block, l.sky))
+    block:broadcast(
+      ("the nest at %d %d %d is spent after %d example mob(s) (light %d/%d)"):format(
+        block.x,
+        block.y,
+        block.z,
+        data.bred,
+        l.block,
+        l.sky
+      )
+    )
     block:drop("minecraft:wheat", 2)
     block:replace("minecraft:sculk")
     horizon.log(("EXAMPLE nest spent after %d"):format(data.bred))

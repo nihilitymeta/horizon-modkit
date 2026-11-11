@@ -25,23 +25,31 @@ local Mob = M:entity("example_mob")
 -- `flags` say what it locks (move, look, jump, target), as vanilla's goals
 -- do; `self` is this goal's table on this mob, with self:every(name, ticks)
 -- and self:cooldown(name, ticks).
-local Approach = modkit.Goal {
+local Approach = modkit.Goal({
   flags = { "move", "look" },
-  can_use = function(self, mob) return mob:player_within(8) end,
+  can_use = function(self, mob)
+    return mob:player_within(8)
+  end,
   tick = function(self, mob)
     local p = mob.nearest_player
-    if not p then return end
+    if not p then
+      return
+    end
     mob:look_at(p.x, p.y + 1.6, p.z)
-    if mob.navigation_done or self:every("path", 20) then mob:navigate_to(p.x, p.y, p.z, 1.0) end
+    if mob.navigation_done or self:every("path", 20) then
+      mob:navigate_to(p.x, p.y, p.z, 1.0)
+    end
   end,
-  stop = function(self, mob) mob:stop_navigation() end,
-}
+  stop = function(self, mob)
+    mob:stop_navigation()
+  end,
+})
 
 -- Its goals, lower priority first; modkit.goals has ready-made ones.
-Mob:goals {
+Mob:goals({
   { 1, Approach },
   { 5, modkit.goals.Wander(6, 80, 16) },
-}
+})
 ```
 
 ## Goals
@@ -87,11 +95,15 @@ example makes zombies stalk players. A zombie that stays next to an example mob 
 keeping its equipment and name:
 
 ```lua
-local Succumb = modkit.Goal {
+local Succumb = modkit.Goal({
   name = "succumb",
   flags = {},
-  can_use = function(self, mob) return mob:nearest("example_mod:example_mob", 2.5) ~= nil end,
-  start = function(self, mob) self.ticks = 0 end,
+  can_use = function(self, mob)
+    return mob:nearest("example_mod:example_mob", 2.5) ~= nil
+  end,
+  start = function(self, mob)
+    self.ticks = 0
+  end,
   tick = function(self, mob)
     self.ticks = self.ticks + 1
     if self.ticks == 60 then
@@ -100,7 +112,7 @@ local Succumb = modkit.Goal {
       horizon.log("EXAMPLE conversion: a zombie became an example mob")
     end
   end,
-}
+})
 ```
 
 ## Look and spawning

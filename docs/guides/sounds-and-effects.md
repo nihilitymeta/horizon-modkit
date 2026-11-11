@@ -15,7 +15,9 @@ M:command("example show", 0, function(player, args)
     modkit.sound("minecraft:entity.player.levelup", p.x, p.y, p.z, 1.0, 1.0)
     modkit.particles("minecraft:firework", p.x, p.y + 2, p.z, 30, 1.0, 0.05)
     local raw = horizon.player(name)
-    if not raw then return end
+    if not raw then
+      return
+    end
     local who = modkit.player(raw)
     who:title_times(5, 40, 10)
     who:title("Example Mod", "sounds, particles, titles, effects")
