@@ -22,10 +22,15 @@ The command writes these files:
 |---|---|
 | `horizon-mod.toml` | the manifest, with `capabilities = ["registries", "scripts"]` and `depends = ["horizon_modkit >= 0.7"]` |
 | `scripts/registry.lua` | what the mod adds: a wand, which is a stick by template |
-| `scripts/init.lua` | what the mod does: the wand's `on_use` |
+| `scripts/server/init.lua` | what the mod does: the wand's `on_use` |
 | `assets/my_mod/lang/en_us.json` | the wand's name |
 | `.luaurc` | points your editor at the modkit checkout |
 | `README.md` | how to run and build the mod |
+
+A mod's scripts live in three folders: `scripts/server/` holds the server's state, `scripts/client/` the window's,
+and `scripts/shared/` the modules either may require. Each side starts at its folder's `init.lua`, and a state
+registers only its own side's hooks. `scripts/registry.lua` and `scripts/registry/` declare content once, when the
+game starts; the modkit itself is server-side code.
 
 ## 2. Run it
 
@@ -34,7 +39,7 @@ horizon-client --dev-tools --dev-mod /path/to/horizon-modkit --dev-mod /path/to/
 ```
 
 Open a world, type `/give @s my_mod:wand`, and right-click. Everyone sees a message that you waved the wand, and
-sparks rise where you stand. This is the whole of `scripts/init.lua`:
+sparks rise where you stand. This is the whole of `scripts/server/init.lua`:
 
 ```lua
 local modkit = require("@modkit")

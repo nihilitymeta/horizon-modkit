@@ -56,7 +56,7 @@ if $self_test; then
   echo "--- self-test: a mod with a misspelled hook must fail with its line"
   W=$(mktemp -d /tmp/horizon-check-self.XXXXXX)
   (cd "$W" && "$TOOL" horizon-mod new broken --template lua >/dev/null) || exit 1
-  printf 'horizon.on("player_jioned", function() end)\n' >> "$W/broken/scripts/init.lua"
+  printf 'horizon.on("player_jioned", function() end)\n' >> "$W/broken/scripts/server/init.lua"
   if OUT=$("$TOOL" horizon-mod check "$W/broken" --game "$GAME" --dev-mod "$HERE" 2>&1); then
     echo "FAILED: the broken mod passed"; failed=1
   else
@@ -64,8 +64,8 @@ if $self_test; then
   fi
   if command -v luau-lsp >/dev/null; then
     # The same misspelling, and a misspelled function, caught by the editor's analysis before any game.
-    printf 'horizon.brodcast("x")\n' >> "$W/broken/scripts/init.lua"
-    sed -i.bak "s|../horizon-modkit/scripts/modkit|$HERE/scripts/modkit|" "$W/broken/.luaurc"
+    printf 'horizon.brodcast("x")\n' >> "$W/broken/scripts/server/init.lua"
+    sed -i.bak "s|../horizon-modkit/scripts/modkit|$HERE/scripts/server/modkit|" "$W/broken/.luaurc"
     OUT=$(cd "$W/broken" && luau-lsp analyze --definitions "@horizon=$HERE/types/horizon.d.lua" --platform=standard scripts 2>&1 | grep -v '^\[')
     echo "$OUT" | grep -q 'player_jioned' && echo "$OUT" | grep -q 'brodcast' && echo "ok: luau-lsp reports the misspelled hook and function: $(echo "$OUT" | grep -c 'TypeError') errors" || { echo "FAILED: luau-lsp did not report both misspellings: $OUT"; failed=1; }
   fi

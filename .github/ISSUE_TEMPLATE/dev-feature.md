@@ -31,7 +31,7 @@ What a player sees without it: <!-- e.g. the item is missing from the creative t
 
 | Piece | Where | New or existing |
 |---|---|---|
-| Modkit API (`scripts/modkit/…`) | horizon-modkit | |
+| Modkit API (`scripts/server/modkit/…`) | horizon-modkit | |
 | Engine binding (`horizon.*`), if any | Event Horizon, `lua_mods` | |
 | Engine screen or command it reuses | Event Horizon, `dev_tools` | |
 

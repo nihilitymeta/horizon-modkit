@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Drives the inspect stick (scripts/registry.lua, scripts/init.lua) in a game started WITHOUT --dev-tools, beside
+# Drives the inspect stick (scripts/registry.lua, scripts/server/init.lua) in a game started WITHOUT --dev-tools, beside
 # the example mod: a mob's pages forward and, sneaking, back; a villager inspected and not traded with; a chest's
 # block window instead of its screen; a button not pressed; an example mod block. Then in survival the stick is any
 # stick: the chest opens. Each step is judged by what the game tells the player (the action bar line the engine

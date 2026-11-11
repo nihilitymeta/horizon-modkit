@@ -4,8 +4,8 @@ Everything players do reaches one class, `M:players()`, with one callback for ea
 
 The examples on this page come from the example mod:
 
-- [scripts/example/players.lua](../../examples/example_mod/scripts/example/players.lua): the players class
-- [scripts/example/mob.lua](../../examples/example_mod/scripts/example/mob.lua): counting the players who feed a mob
+- [scripts/server/example/players.lua](../../examples/example_mod/scripts/server/example/players.lua): the players class
+- [scripts/server/example/mob.lua](../../examples/example_mod/scripts/server/example/mob.lua): counting the players who feed a mob
 
 The reference is [The players class](../api.md#the-players-class) and [The player](../api.md#the-player).
 
@@ -17,7 +17,7 @@ on the first visit:
 ```lua
 local Players = M:players()
 
--- Who fed three example mobs, by uuid (scripts/example/mob.lua fills it, and
+-- Who fed three example mobs, by uuid (scripts/server/example/mob.lua fills it, and
 -- the join below): the chat callback has no host to read the saved data
 -- with, so it reads this.
 Players.keepers = {}

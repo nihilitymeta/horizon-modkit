@@ -14,19 +14,19 @@ they make.
 | `scripts/registry/mobs.lua` | a mob, its spawn egg and its natural spawns |
 | `scripts/registry/effects.lua` | a mob effect |
 | `scripts/registry/tabs.lua` | the creative tab, last, so it lists what the other modules declared |
-| `scripts/init.lua` | what the mod does: it requires one file for each concept |
-| `scripts/example/mod.lua` | the mod object that the other files share |
-| `scripts/example/item.lua` | items and their callbacks |
-| `scripts/example/lure.lua` | an item that summons a mob when used, and converts a zombie when it hits one |
-| `scripts/example/block.lua` | a block with a state property, a block entity and ticks |
-| `scripts/example/nest.lua` | a block with stages that grows, breeds mobs and is spent, with loot for each stage |
-| `scripts/example/mob.lua` | a mob with goals and callbacks; the players who feed it become its keepers |
-| `scripts/example/conversion.lua` | goals on a vanilla kind: zombies stalk players, and become example mobs |
-| `scripts/example/players.lua` | what players do: joining, chatting (with a keeper's suffix), blocks, a refused bed |
-| `scripts/example/command.lua` | commands |
-| `scripts/example/timers_and_data.lua` | settings, timers, saved data, and a cull that follows the settings |
-| `scripts/example/spawning.lua` | making mobs |
-| `scripts/example/effects.lua` | sounds, particles, titles and status effects |
+| `scripts/server/init.lua` | what the mod does: it requires one file for each concept |
+| `scripts/server/example/mod.lua` | the mod object that the other files share |
+| `scripts/server/example/item.lua` | items and their callbacks |
+| `scripts/server/example/lure.lua` | an item that summons a mob when used, and converts a zombie when it hits one |
+| `scripts/server/example/block.lua` | a block with a state property, a block entity and ticks |
+| `scripts/server/example/nest.lua` | a block with stages that grows, breeds mobs and is spent, with loot for each stage |
+| `scripts/server/example/mob.lua` | a mob with goals and callbacks; the players who feed it become its keepers |
+| `scripts/server/example/conversion.lua` | goals on a vanilla kind: zombies stalk players, and become example mobs |
+| `scripts/server/example/players.lua` | what players do: joining, chatting (with a keeper's suffix), blocks, a refused bed |
+| `scripts/server/example/command.lua` | commands |
+| `scripts/server/example/timers_and_data.lua` | settings, timers, saved data, and a cull that follows the settings |
+| `scripts/server/example/spawning.lua` | making mobs |
+| `scripts/server/example/effects.lua` | sounds, particles, titles and status effects |
 
 ## Running it
 

@@ -5,8 +5,8 @@ with a block class in a script.
 
 The examples on this page come from the example mod:
 
-- [scripts/example/block.lua](../../examples/example_mod/scripts/example/block.lua): a lamp with a boolean state
-- [scripts/example/nest.lua](../../examples/example_mod/scripts/example/nest.lua): a block with stages that breeds
+- [scripts/server/example/block.lua](../../examples/example_mod/scripts/server/example/block.lua): a lamp with a boolean state
+- [scripts/server/example/nest.lua](../../examples/example_mod/scripts/server/example/nest.lua): a block with stages that breeds
   mobs
 - [scripts/registry/blocks.lua](../../examples/example_mod/scripts/registry/blocks.lua): the declarations of both
 

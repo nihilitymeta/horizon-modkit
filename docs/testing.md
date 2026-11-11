@@ -7,6 +7,11 @@ To test a mod, run Event Horizon's `engine-work` build with `--dev-tools`, a `--
 mod ([getting started](getting-started.md)). `--game-dir` sets where saves, options and logs go. `--dev-mod` reads a
 mod folder as it is and keeps the mod on.
 
+A mod's scripts live in `scripts/server/`, `scripts/client/` and `scripts/shared/`: the server's state, the window's
+state, and the modules either may require. Each side starts at its folder's `init.lua`, and a state registers only
+its own side's hooks. `scripts/registry.lua` and `scripts/registry/` declare content once, when the game starts; the
+modkit is server-side code.
+
 The check scripts turn the master volume off in the game folder's options before they start the game, because the
 game has no mute option. If you play in that game folder afterwards, turn the volume back up in the game's options.
 

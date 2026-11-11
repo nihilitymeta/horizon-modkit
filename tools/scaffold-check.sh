@@ -24,7 +24,7 @@ echo "--- scaffold, build and check in $WORK"
 (cd "$WORK/my-wand" && "$TOOL" horizon-mod build && "$TOOL" horizon-mod check target/horizon-mod/my_wand.hmod --game "${GAME_BUILD:-$HORIZON/target/fast}/horizon-client" --dev-mod "$HERE") || exit 1
 if command -v luau-lsp >/dev/null; then
   # The scaffold's .luaurc names ../horizon-modkit; here the modkit is this checkout.
-  sed -i.bak "s|../horizon-modkit/scripts/modkit|$HERE/scripts/modkit|" "$WORK/my-wand/.luaurc"
+  sed -i.bak "s|../horizon-modkit/scripts/modkit|$HERE/scripts/server/modkit|" "$WORK/my-wand/.luaurc"
   OUT=$(cd "$WORK/my-wand" && luau-lsp analyze --definitions "@horizon=$HERE/types/horizon.d.lua" --platform=standard scripts 2>&1) && echo "luau-lsp analyze: clean on the scaffold" || { echo "$OUT" | grep -v '^\['; echo "luau-lsp analyze: errors on the scaffold (above)"; exit 1; }
 fi
 echo "--- in a game beside the modkit"

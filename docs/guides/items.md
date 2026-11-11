@@ -5,8 +5,8 @@ from it. Its behaviour lives in an item class in a script, with one callback for
 
 The examples on this page come from the example mod:
 
-- [scripts/example/item.lua](../../examples/example_mod/scripts/example/item.lua): a feather and a snack
-- [scripts/example/lure.lua](../../examples/example_mod/scripts/example/lure.lua): an item that summons and converts
+- [scripts/server/example/item.lua](../../examples/example_mod/scripts/server/example/item.lua): a feather and a snack
+- [scripts/server/example/lure.lua](../../examples/example_mod/scripts/server/example/lure.lua): an item that summons and converts
   mobs
 - [scripts/registry/items.lua](../../examples/example_mod/scripts/registry/items.lua): the declarations
 

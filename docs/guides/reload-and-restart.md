@@ -4,13 +4,13 @@ Each kind of change needs a different step before it shows in the game, from lea
 
 | Step | What it reloads |
 |---|---|
-| `/reload` | `scripts/init.lua` and what it requires; recipes, loot tables and tags |
+| `/reload` | `scripts/server/init.lua` and what it requires; recipes, loot tables and tags |
 | the resource-reload key | textures, models, blockstates and the lang file |
 | restarting the game | `scripts/registry.lua` and `scripts/registry/`: a new or changed item, block, entity type, effect or creative tab |
 
 ## `/reload`
 
-`/reload` reads the mod's scripts again and runs `scripts/init.lua` from the start. Handlers, goals, timers and
+`/reload` reads the mod's scripts again and runs `scripts/server/init.lua` from the start. Handlers, goals, timers and
 `require`d modules are dropped and declared again, and the settings are read again (`M:config`). The Lua state and
 its globals stay.
 

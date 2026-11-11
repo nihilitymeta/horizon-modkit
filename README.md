@@ -49,13 +49,13 @@ the reference.
 A mod needs a manifest and a script. The manifest, `horizon-mod.toml`, asks for scripts and names the modkit:
 
 ```toml
-# horizon-mod.toml; scripts/init.lua below
+# horizon-mod.toml; scripts/server/init.lua below
 capabilities = ["registries", "scripts"]
 experimental = ["scripts"]
 depends = ["horizon_modkit >= 0.7"]
 ```
 
-The script, `scripts/init.lua`, gives a wand a right-click action:
+The script, `scripts/server/init.lua`, gives a wand a right-click action:
 
 ```lua
 local modkit = require("@modkit")
@@ -72,6 +72,10 @@ function Wand:on_use(item, player)
   return true
 end
 ```
+
+A mod's scripts live in three folders: `scripts/server/` holds the server's state, `scripts/client/` the window's,
+and `scripts/shared/` the modules either may require. Each side starts at its folder's `init.lua`, and a mod needs
+only the sides it uses. The modkit itself is server-side code, under `scripts/server/modkit/`.
 
 To run it, start the game with the modkit and your mod:
 

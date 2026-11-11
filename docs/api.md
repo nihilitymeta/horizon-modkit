@@ -112,7 +112,7 @@ table. JSON files under `data/` work as well, and textures stay under `assets/`.
 A mod that adds a lot can split the script into modules under `scripts/registry/`. `scripts/registry.lua` requires
 them in order, with `require("@registry/items")` for `scripts/registry/items.lua`. Each module runs once, with the
 same `registry` table. Add `"registry": "scripts/registry"` to `.luaurc` so that luau-lsp finds them. The modules
-can't be required from `scripts/init.lua`.
+can't be required from `scripts/server/init.lua`.
 
 `registry.lang(locale, entries)` names what a module adds. The entries of every call for a locale go into one
 `assets/<id>/lang/<locale>.json`, so each module can name its own things:
@@ -191,7 +191,7 @@ to choose another. Both need the game restarted.
 ## The inspect stick
 
 The modkit declares one item of its own, `horizon_modkit:inspect_stick`, in its `scripts/registry.lua`, and handles
-its clicks in its `scripts/init.lua`. A mod writes nothing for it. Only a click that holds the stick asks the
+its clicks in its `scripts/server/init.lua`. A mod writes nothing for it. Only a click that holds the stick asks the
 engine's `horizon.dev.inspect(who, what)` from the `interact_entity` and `right_click_block` hooks, and cancels the
 click when the engine answers true; anything else keeps its vanilla click. A stick in the off hand alone never
 opens the windows on a block: `right_click_block` names no hand, and the selected slot it reads is the main hand's.
@@ -201,7 +201,7 @@ The [inspect stick guide](guides/inspect-stick.md) says how to use it.
 
 ### `modkit.mod(id)`
 
-Creates a new mod object. Call it once per mod, at the top of `scripts/init.lua`.
+Creates a new mod object. Call it once per mod, at the top of `scripts/server/init.lua`.
 
 - *id*: the mod's id, as in its manifest
 

@@ -3,7 +3,7 @@
 A mob of yours can appear in three ways: from a spawn egg, by natural spawning, and from a script. The first two are
 data in `scripts/registry.lua`. The third is `horizon.summon`.
 
-The examples come from [scripts/example/spawning.lua](../../examples/example_mod/scripts/example/spawning.lua) and the
+The examples come from [scripts/server/example/spawning.lua](../../examples/example_mod/scripts/server/example/spawning.lua) and the
 `SPAWNING` section of [scripts/registry/mobs.lua](../../examples/example_mod/scripts/registry/mobs.lua). The reference
 is [Spawn eggs and natural spawning](../api.md#spawn-eggs-and-natural-spawning).
 

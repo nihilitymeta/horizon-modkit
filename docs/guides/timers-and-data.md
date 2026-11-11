@@ -7,7 +7,7 @@ This guide covers three things that keep a mod's state:
 - saved tables, which are kept with the world, a player or a block with a block entity
 
 The examples come from
-[scripts/example/timers_and_data.lua](../../examples/example_mod/scripts/example/timers_and_data.lua). The reference
+[scripts/server/example/timers_and_data.lua](../../examples/example_mod/scripts/server/example/timers_and_data.lua). The reference
 is [`M:config`](../api.md#mconfigdefaults) and [Timers and saved data](../api.md#timers-and-saved-data).
 
 The example reads its settings, logs a line two seconds after loading, and every minute counts its mobs and culls
@@ -18,7 +18,7 @@ local cfg = M:config {
   greeting = "Welcome to the example",
   report_minutes = 1,
   max_mobs = 12,     -- more example mobs than this and the minute timer culls the rest
-  nest_breeds = 3,   -- example mobs a nest breeds before it is spent (scripts/example/nest.lua)
+  nest_breeds = 3,   -- example mobs a nest breeds before it is spent (scripts/server/example/nest.lua)
 }
 
 -- Once, in 40 ticks (two seconds): a timer runs with the reads and actions

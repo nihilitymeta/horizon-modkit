@@ -3,7 +3,7 @@
 A mod can play sounds and show particles in the world, put words on a player's screen, and give status effects to
 a player or a mob.
 
-The example comes from [scripts/example/effects.lua](../../examples/example_mod/scripts/example/effects.lua). The
+The example comes from [scripts/server/example/effects.lua](../../examples/example_mod/scripts/server/example/effects.lua). The
 reference is [the modkit table](../api.md#the-modkit-table) and the player's [messages](../api.md#messages).
 
 This command shows the player one of each:

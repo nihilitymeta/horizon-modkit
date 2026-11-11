@@ -6,8 +6,8 @@ an entity class in a script gives it goals and callbacks.
 
 The examples on this page come from the example mod:
 
-- [scripts/example/mob.lua](../../examples/example_mod/scripts/example/mob.lua): a mob of the mod's own
-- [scripts/example/conversion.lua](../../examples/example_mod/scripts/example/conversion.lua): goals added to a
+- [scripts/server/example/mob.lua](../../examples/example_mod/scripts/server/example/mob.lua): a mob of the mod's own
+- [scripts/server/example/conversion.lua](../../examples/example_mod/scripts/server/example/conversion.lua): goals added to a
   vanilla mob
 - [scripts/registry/mobs.lua](../../examples/example_mod/scripts/registry/mobs.lua): the mob's declaration
 

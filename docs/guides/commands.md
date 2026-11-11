@@ -3,7 +3,7 @@
 `M:command(usage, level, fn)` adds a command of your mod to the server's command tree. The chat box completes it as
 it completes vanilla's commands.
 
-The example comes from [scripts/example/command.lua](../../examples/example_mod/scripts/example/command.lua). The
+The example comes from [scripts/server/example/command.lua](../../examples/example_mod/scripts/server/example/command.lua). The
 reference is [`M:command`](../api.md#mcommandusage-level-fn).
 
 This command gives feathers to the player who typed it, or to another player:
