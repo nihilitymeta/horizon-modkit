@@ -3,11 +3,11 @@
 This page describes every function, class and callback of the modkit. The modkit is written over the engine's own
 Lua API, which has its own references:
 
-- [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/lua-bindings.md) describes the
+- [lua-bindings.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/lua-bindings.md) describes the
   `horizon` table and the `registry` table.
-- [hook-points.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/api/hook-points.md) lists every
+- [hook-points.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/api/hook-points.md) lists every
   engine hook point and the Lua handler it reaches.
-- [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md) describes the data files a mod declares.
+- [mods.md](https://github.com/nihilitymeta/horizon/blob/main/docs/mods.md) describes the data files a mod declares.
 
 For a walkthrough, start with [getting started](getting-started.md) and the [guides](../README.md#guides).
 
@@ -108,7 +108,7 @@ cargo horizon-mod check . --game /path/to/horizon-client --dev-mod /path/to/hori
 A mod declares what it adds (entity types, blocks, items, mob effects, creative tabs, menu types, loot tables,
 recipes and tags) in `scripts/registry.lua`. The game runs this script once, at start. The modkit is not loaded
 there: the script is plain Luau with the engine's `registry` table. The engine's
-[lua-bindings.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/lua-bindings.md) describes that
+[lua-bindings.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/lua-bindings.md) describes that
 table. JSON files under `data/` work as well, and textures stay under `assets/`.
 
 A mod that adds a lot can split the script into modules under `scripts/registry/`. `scripts/registry.lua` requires
@@ -1292,4 +1292,4 @@ Inside a callback with a host, these engine functions answer at once:
 - `horizon.raycast(player, distance)`
 
 A goal reads its `mob` view instead. The engine's
-[lua-bindings.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/lua-bindings.md) describes each one.
+[lua-bindings.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/lua-bindings.md) describes each one.

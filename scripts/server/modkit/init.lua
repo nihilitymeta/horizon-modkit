@@ -1,6 +1,6 @@
 -- Horizon Modkit: write a mod's entities, blocks and goals as classes with
 -- lifecycle callbacks, over the game's `horizon.*` hook API
--- (whos-carmen/horizon, docs/lua-bindings.md).
+-- (nihilitymeta/horizon, docs/lua-bindings.md).
 --
 --   local modkit = require("@modkit")
 --   local M = modkit.mod("my_mod")

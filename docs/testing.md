@@ -51,7 +51,7 @@ To see the nest:
 ### Hooks and the console
 
 - Event Horizon's generated
-  [hook-points.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/api/hook-points.md) lists the
+  [hook-points.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/api/hook-points.md) lists the
   engine hook behind each callback, and every other hook a script could listen to.
 - `/lua` opens the console. Press F8 to free the mouse. The console's first section lists each mod with its
   handlers, goals and last error, with a button that reloads the mod. `print` and `horizon.log` lines appear there
@@ -83,7 +83,7 @@ game.
 
 `horizon-ctl` starts the game and drives it from a shell, without a window if you want. It is built with the game,
 with `-p horizon-client-lib`. Event Horizon's
-[horizon-ctl-commands.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/horizon-ctl-commands.md)
+[horizon-ctl-commands.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/horizon-ctl-commands.md)
 lists every command.
 
 ```sh
@@ -161,7 +161,7 @@ Before it starts, it writes `config/example_mod.json`, with a nest that breeds o
 ### The driven hooks, and every modkit callback
 
 `tools/hook-coverage.sh` reads Event Horizon's generated
-[hook reference](https://github.com/whos-carmen/horizon/blob/engine-work/docs/api/hook-points.md), which lists every
+[hook reference](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/api/hook-points.md), which lists every
 hook that reaches Lua: far more than any drive can exercise. It runs the game with `tools/hook-probe`, a mod with
 one logging handler for each hook the drive reaches, next to the example mod. Then it drives the game through each
 of those hooks: blocks, mobs, items, a command, `/reload`, a death, a fall, a snowball, a dropped stick, crafted
@@ -182,7 +182,7 @@ Two details make the drive reliable:
 Run it after an engine change, or after adding a hook.
 
 `/reload` logs `content mods not loaded: example_mod: ... is already a block` for a mod that registers a block. This
-message is harmless and known (whos-carmen/horizon#15).
+message is harmless and known (nihilitymeta/horizon#15).
 
 ### The draw hooks
 

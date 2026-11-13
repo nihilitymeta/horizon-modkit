@@ -5,7 +5,7 @@ This guide takes you from nothing to an item of your own in the game. It takes a
 You need:
 
 - Event Horizon's `engine-work` build of the game
-  ([building it](https://github.com/whos-carmen/horizon/blob/engine-work/docs/building.md))
+  ([building it](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/building.md))
 - Event Horizon's `cargo-horizon-mod`, which you build in Event Horizon's checkout with `cargo build -p cargo-horizon-mod`
 - a clone of this repository, next to the folder where your mod will live. To play mods without working on the
   modkit, you don't need the clone: Event Horizon's launcher installs the modkit's newest release into its instances

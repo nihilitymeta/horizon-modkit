@@ -38,5 +38,5 @@ the Goals window's **log** button writes the mob's AI to a file.
 - Press F8 to free the pointer and click the windows' buttons, and F8 again to play. To use another key, rebind
   **Free Mouse for Dev Windows** in Options → Controls → Key Binds.
 
-The engine's [dev-tools.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/dev-tools.md#the-inspect-stick)
+The engine's [dev-tools.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/dev-tools.md#the-inspect-stick)
 describes the windows in full.

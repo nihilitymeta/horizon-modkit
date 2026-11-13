@@ -7,7 +7,7 @@ A mob of your own is drawn as its template, unless its declaration says otherwis
 - `sounds`
 
 The worked example is the parasite mod's
-[scripts/registry.lua](https://github.com/whos-carmen/horizon-parasite-mod/blob/example-archive/scripts/registry.lua),
+[scripts/registry.lua](https://github.com/nihilitymeta/horizon-parasite-mod/blob/example-archive/scripts/registry.lua),
 at the `example-archive` tag of that repository. It declares a mob with a zombie's layout, a swollen head and spines.
 The reference is [A mob's look and sounds](../api.md#a-mobs-look-and-sounds).
 
@@ -46,7 +46,7 @@ This is how a vanilla model layer is written. The animation set moves the parts 
 
 The animation set is one of vanilla's, by name: `zombie` (arms out), `skeleton`, `quadruped` (a pig or a cow),
 `iron_golem`, `spider`, and the others that the engine's
-[mob-ai-hooks.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/mob-ai-hooks.md) lists. The set moves
+[mob-ai-hooks.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/mob-ai-hooks.md) lists. The set moves
 the parts with the names that it expects, such as `head`, `body`, `right_arm` and `left_leg`. A model of your own
 must use those names for the parts that move.
 

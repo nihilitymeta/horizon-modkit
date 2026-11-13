@@ -5,8 +5,8 @@ name: release
 #     git tag v0.8.0 && git push origin v0.8.0
 # - A nightly, nightly-<date>: every day at 09:00 UTC (4am Eastern in winter, 5am in summer), from main, when it
 #   changed since the last release. The repository variable NIGHTLY_PAUSED=1 skips nightlies until it is removed:
-#     gh variable set NIGHTLY_PAUSED -R whos-carmen/horizon-modkit --body 1      # gh variable delete NIGHTLY_PAUSED to resume
-#   Run one now from the Actions tab or with: gh workflow run release -R whos-carmen/horizon-modkit
+#     gh variable set NIGHTLY_PAUSED -R nihilitymeta/horizon-modkit --body 1      # gh variable delete NIGHTLY_PAUSED to resume
+#   Run one now from the Actions tab or with: gh workflow run release -R nihilitymeta/horizon-modkit
 on:
   push:
     tags: ['v*']
@@ -56,7 +56,7 @@ jobs:
       # cargo-horizon-mod from Event Horizon, the engine the modkit's scripts run on.
       - name: cargo-horizon-mod
         if: steps.decide.outputs.go == 'true'
-        run: cargo install --locked --git https://github.com/whos-carmen/horizon --branch engine-work cargo-horizon-mod
+        run: cargo install --locked --git https://github.com/nihilitymeta/horizon --branch engine-work cargo-horizon-mod
       - name: Pack the modkit
         if: steps.decide.outputs.go == 'true'
         run: cargo horizon-mod build && ls -l target/horizon-mod/

@@ -92,7 +92,7 @@ registry.item("example_item", { template = "minecraft:feather", max_stack_size =
 
 Then give it a look: `items/<name>` and `models/item/<name>` under `assets/`, written as tables with `registry.asset`,
 and a name with `registry.lang("en_us", { ["item.<id>.<name>"] = "..." })`. A sword gets its damage through
-`components`, as the engine's [mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md) describes. The
+`components`, as the engine's [mods.md](https://github.com/nihilitymeta/horizon/blob/main/docs/mods.md) describes. The
 [ids reference](../reference/ids.md#item-templates) lists templates that are known to work.
 
 ## See it in the game

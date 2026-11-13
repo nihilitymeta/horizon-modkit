@@ -4,7 +4,7 @@ Horizon Modkit is a Lua library for writing [Horizon](https://playhorizon.dev) m
 mobs, goals, players and commands as classes with callbacks, the way a NeoForge or Fabric mod declares them. You
 don't need Rust or patches.
 
-The modkit runs on Event Horizon ([whos-carmen/horizon](https://github.com/whos-carmen/horizon)), branch
+The modkit runs on Event Horizon ([nihilitymeta/horizon](https://github.com/nihilitymeta/horizon)), branch
 `engine-work`. Scripted mods are an experimental feature of Event Horizon.
 
 ## Start here
@@ -13,7 +13,7 @@ The modkit runs on Event Horizon ([whos-carmen/horizon](https://github.com/whos-
   game.
 - [The example mod](examples/example_mod) has one file for each concept, and each file says how to see it in the
   game.
-- [Horizon Parasite Mod](https://github.com/whos-carmen/horizon-parasite-mod) is a mod built with the modkit.
+- [Horizon Parasite Mod](https://github.com/nihilitymeta/horizon-parasite-mod) is a mod built with the modkit.
 
 ## Guides
 
@@ -41,7 +41,7 @@ the reference.
 - [Ids](docs/reference/ids.md): vanilla ids that mods often need
 - [FAQ](docs/reference/faq.md): common problems and their fixes
 - [Testing](docs/testing.md): what to look for in the game, and the scripts that check a mod
-- The engine's [lua-bindings.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/lua-bindings.md):
+- The engine's [lua-bindings.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/lua-bindings.md):
   the engine API under the modkit
 
 ## A first mod

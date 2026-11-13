@@ -2,9 +2,9 @@
 
 The modkit is a Lua library for [Horizon](https://playhorizon.dev) mods. A mod declares items, blocks, mobs, goals,
 players and commands as classes with callbacks, the way a NeoForge or Fabric mod does, and needs no Rust. It runs
-only on Event Horizon ([whos-carmen/horizon](https://github.com/whos-carmen/horizon)), branch `engine-work`, which
+only on Event Horizon ([nihilitymeta/horizon](https://github.com/nihilitymeta/horizon)), branch `engine-work`, which
 adds the Lua runtime. The mod it exists for is
-[horizon-parasite-mod](https://github.com/whos-carmen/horizon-parasite-mod).
+[horizon-parasite-mod](https://github.com/nihilitymeta/horizon-parasite-mod).
 
 The person you work for knows modding well but is not a software developer. Say what you did and what it means in
 plain words, and ask before anything you can't undo. Don't push without their word.

@@ -2,9 +2,9 @@
 
 The engine's Lua hooks are now the native hooks under their native names, one event table per handler. The
 modkit follows them, so a mod written with the modkit changes in the places below. The engine's own table,
-[docs/lua-hook-migration.md](https://github.com/whos-carmen/horizon/blob/engine-work/docs/lua-hook-migration.md),
+[docs/lua-hook-migration.md](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/lua-hook-migration.md),
 maps every old hook name; its generated
-[horizon.d.lua](https://github.com/whos-carmen/horizon/blob/engine-work/docs/api/horizon.d.lua) wins where they
+[horizon.d.lua](https://github.com/nihilitymeta/horizon/blob/engine-work/docs/api/horizon.d.lua) wins where they
 disagree.
 
 ## Handler shapes

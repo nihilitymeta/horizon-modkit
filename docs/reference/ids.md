@@ -2,7 +2,7 @@
 
 These are vanilla ids that mods often need. Most of them are used by the example mod or the engine's own checks, so
 they are known to work on Minecraft 26.3. The full lists are vanilla's registries. The engine's
-[mods.md](https://github.com/whos-carmen/horizon/blob/main/docs/mods.md) describes what a template carries over to a
+[mods.md](https://github.com/nihilitymeta/horizon/blob/main/docs/mods.md) describes what a template carries over to a
 mod's item, block or mob.
 
 ## Item templates
