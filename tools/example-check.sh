@@ -8,12 +8,13 @@
 #
 #   HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/example-check.sh
 #
-# HORIZON is the fork checkout, built (`target/fast/horizon-client` and `horizon-ctl`); WORLD defaults to "New World".
+# HORIZON is the fork checkout, built (`target/fast/horizon-client` and `horizon-ctl`); WORLD defaults to "example-check": a world of its own, so the
+# --creative below applies (it only counts when a world is created, and another check may have made "New World").
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 : "${HORIZON:?the fork checkout}" "${RESOURCES:?the prepared 26.3 folder}" "${GAME_DIR:?the game dir}"
 MOD="$HERE/examples/example_mod"
-WORLD=${WORLD:-New World}
+WORLD=${WORLD:-example-check}
 SOCK=${SOCK:-/tmp/horizon-example-check.sock}
 CTL="${GAME_BUILD:-$HORIZON/target/fast}/horizon-ctl --socket $SOCK"
 # The game writes logs/ under HORIZON_HOME when it is set: keep that the game dir, so the log is here.
