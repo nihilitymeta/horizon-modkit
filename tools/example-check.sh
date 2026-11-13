@@ -28,8 +28,10 @@ printf '{"nest_breeds": 1}\n' > "$GAME_DIR/config/example_mod.json"
 # Quiet: the master volume off in the game dir's options.
 [ -f "$GAME_DIR/options.txt" ] && sed -i.bak 's/^soundCategory_master:.*/soundCategory_master:0.0/' "$GAME_DIR/options.txt" && rm -f "$GAME_DIR/options.txt.bak"
 echo "--- the example mod in a game beside the modkit"
+# --creative: a world that allows commands, so the player is an operator: the example mod's commands are
+# level 2, and the game checks the usage a line matches (not the lowest level of its root), as it should.
 $CTL launch --game "${GAME_BUILD:-$HORIZON/target/fast}/horizon-client" --wait --game-dir "$GAME_DIR" --resources "$RESOURCES" \
-  --world "$WORLD" --offscreen --dev-tools --dev-mod "$HERE" --dev-mod "$MOD" >/dev/null
+  --world "$WORLD" --creative --offscreen --dev-tools --dev-mod "$HERE" --dev-mod "$MOD" >/dev/null
 $CTL wait-ready 180 >/dev/null
 for i in $(seq 1 20); do
   S=$($CTL state)

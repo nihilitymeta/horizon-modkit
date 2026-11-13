@@ -26,13 +26,20 @@ export type Component = { text: string?, translate: string?, color: string?, bol
 export type Vec2 = { x: number, y: number }
 export type Chunk = { x: number, z: number }
 export type Time = { dimension: string, day_time: number, day: number, time_of_day: number, rain: number, thunder: number }
+export type LocalXp = { level: number, progress: number?, total: number }
+export type LocalCrosshair = { kind: "block" | "entity", distance: number?, pos: Vec3, entity: number? }
+export type LocalPlayer = { ["local"]: boolean, health: number, max_health: number, absorption: number, food: number, saturation: number, air: number, max_air: number, xp: LocalXp, armor: number, position: Vec3, yaw: number, pitch: number, selected_slot: number, crosshair: LocalCrosshair? }
 export type Raycast = { id: string, x: number, y: number, z: number, block: Vec3 }
 export type Light = { block: number, sky: number }
 export type CommandArgs = { raw: string, [string]: any }
 export type Inventory = { [number]: Item }
 export type Carried = { [string]: number }
+export type CommandResult = { ran: boolean, result: number, output: { string }, output_components: { Component } }
 export type HudBatch = { fill: (x: number, y: number, w: number, h: number, argb: number) -> (), text: (text: string, x: number, y: number, rgb: number, shadow: boolean) -> (), sprite: (name: string, sx: number, sy: number, sw: number, sh: number, dx: number, dy: number, dw: number, dh: number) -> boolean, item: (id: string, x: number, y: number, size: number) -> boolean, item_stack: (stack: Item, x: number, y: number, size: number) -> boolean, item_model: (item: string, model: string, x: number, y: number, size: number) -> boolean, quad: (x1: number, y1: number, x2: number, y2: number, x3: number, y3: number, x4: number, y4: number, argb: number) -> (), text_width: (text: string) -> number }
 export type HudCorners = { place: (corner: string, w: number, h: number) -> (number, number), shown: (corner: string) -> boolean }
+export type PrimitiveOptions = { through_walls: boolean?, scale_with_distance: boolean?, background: boolean? }
+export type WorldPrimitives = { line: (from: Vec3, to: Vec3, color: (number | { r: number, g: number, b: number, a: number? }), width: number, options: PrimitiveOptions?) -> (), box_outline: (min: Vec3, max: Vec3, color: (number | { r: number, g: number, b: number, a: number? }), width: number, options: PrimitiveOptions?) -> (), filled_box: (min: Vec3, max: Vec3, color: (number | { r: number, g: number, b: number, a: number? }), options: PrimitiveOptions?) -> (), beam: (base: Vec3, height: number, color: (number | { r: number, g: number, b: number, a: number? }), options: PrimitiveOptions?) -> (), text: (at: Vec3, text: string, color: (number | { r: number, g: number, b: number, a: number? }), scale: number, options: PrimitiveOptions?) -> (), sprite: (at: Vec3, sprite: string, size: number, color: (number | { r: number, g: number, b: number, a: number? }), options: PrimitiveOptions?) -> () }
+export type MarkerSpec = { kind: "box" | "line" | "beam" | "text" | "icon", pos: Vec3, size: (Vec3 | number)?, filled: boolean?, to: Vec3?, height: number?, text: string?, scale: number?, sprite: string?, color: (number | { r: number, g: number, b: number, a: number? })?, through_walls: boolean?, ttl: number? }
 
 -- The event tables of the generated hooks: one table per hook,
 -- holding the struct's fields by name.
@@ -52,12 +59,14 @@ export type HudCorners = { place: (corner: string, w: number, h: number) -> (num
 -- An item's `extra` keeps its NBT types when edited in place; a fresh
 -- table reads with default types.
 --
--- In hud and gui_layer_post, `horizon.time`, `block`, `block_property`,
--- `light` read the client's world; `player`, `players`, `mob`, `mobs`,
--- `raycast`, `surface_height` need a server and read empty on a client
--- window; `world_data`, `player_data`, `entity_data`, the acting player's
--- inventory reads and `summon` raise an error. `held` on the player tables
--- reads nil there, and `acting_player` answers nil with no acting player.
+-- In hud, gui_layer_post, gui_layer_pre and world_primitives, `horizon.time`, `block`, `block_property`,
+-- `light` read the client's world; `player` with no argument reads the
+-- window's own player and `real_time` the wall clock; `players`, `mob`,
+-- `mobs`, `raycast`, `surface_height` need a server and read empty on a
+-- client window; `world_data`, `player_data`, `entity_data`, the acting
+-- player's inventory reads and `summon` raise an error. `held` on the
+-- player tables reads nil there, and `acting_player` answers nil with no
+-- acting player.
 export type AddServerReloadListenersEvent = { listeners: { { id: string, folder: string } } }
 export type AnalogOutputEvent = { dimension: string, pos: Vec3, state: string, face: "down" | "up" | "north" | "south" | "west" | "east", output: number, state_props: Props }
 export type AnvilCraftPostEvent = { player: PlayerRef, pos: Vec3, craft: { left: Item?, right: Item?, output: Item } }
@@ -89,6 +98,7 @@ export type BlockExpEvent = { dimension: string, pos: Vec3, block: string, exper
 export type BlockFadeEvent = { dimension: string, pos: Vec3, from: string, to: string, from_props: Props, to_props: Props }
 export type BlockFailedDispenseEvent = { dimension: string, pos: Vec3, item: string }
 export type BlockFormEvent = { dimension: string, pos: Vec3, from: string, to: string, from_props: Props, to_props: Props }
+export type BlockGrowEvent = { dimension: string, pos: Vec3, from: string, to: string }
 export type BlockHighlightEvent = { pos: Vec3, state: string, partial: number, state_props: Props }
 export type BlockIgniteEvent = { dimension: string, player: string?, pos: Vec3, cause: string }
 export type BlockLockCheckEvent = { player: PlayerRef, pos: Vec3 }
@@ -106,10 +116,12 @@ export type BroadcastMessageEvent = { line: string, line_component: Component? }
 export type BucketEmptyEvent = { player: PlayerRef, pos: Vec3, fluid: string }
 export type CameraPoseEvent = { partial: number, position: Vec3, yaw: number, pitch: number }
 export type CampfireStartEvent = { pos: Vec3, item: string }
+export type CanBuildEvent = { player: string, name: string, dimension: string, pos: Vec3, action: string }
 export type CanEatEvent = { stack: Item, can_eat: boolean }
 export type CanPlayerSleepEvent = { player: PlayerRef, pos: Vec3, problem: string? }
 export type CanSurviveEvent = { dimension: string, pos: Vec3, state: string, state_props: Props, survives: boolean? }
 export type CauldronLevelChangedEvent = { dimension: string, player: string?, pos: Vec3, from_level: number, to_level: number, reason: string }
+export type ChatDecorateEvent = { player: string, name: string, message: string, decorated: { text: string, component: Component? }?? }
 export type ChatSuggestionAppliedEvent = { original: string, start: number, ["end"]: number, suggestion: string, input: string }
 export type ChorusFruitTeleportEvent = { player: PlayerRef, from: Vec3, target: Vec3 }
 export type ChunkLoadEvent = { dimension: string, chunk: Chunk, new: boolean }
@@ -130,6 +142,7 @@ export type CommandEvent = { command: string }
 export type CommandsEvent = { commands: { string } }
 export type ComponentTypesEvent = { types: { string } }
 export type CompostItemEvent = { pos: Vec3, item: string }
+export type ComputeFogColorEvent = { partial: number, camera: Vec3, fog_type: "atmospheric" | "water" | "lava" | "powder_snow", rgb: Vec3 }
 export type ComputeFovEvent = { partial: number, camera: Vec3, degrees: number }
 export type ConsoleLineEvent = { source: string, line: string, replies: { { text: string, component: Component? } } }
 export type ConsumeEffectEvent = { kind: string, data: Data }
@@ -162,6 +175,7 @@ export type EntityBreakDoorEvent = { entity: number, kind: string, pos: Vec3 }
 export type EntityBreedEvent = { parent: number, partner: number, child: number? }
 export type EntityChangeBlockEvent = { entity: number, kind: string, pos: Vec3, from: string, to: string }
 export type EntityChangeBlockV2Event = { player: string?, entity: number?, kind: string, pos: Vec3, from: string, to: string }
+export type EntityChangeBlockV3Event = { entity: number, kind: string, pos: Vec3, from: string, to: string }
 export type EntityDropItemEvent = { entity: number, item: string, count: number, pos: Vec3 }
 export type EntityEnterBlockEvent = { entity: number, kind: string, pos: Vec3, block: string }
 export type EntityEnterLoveModeEvent = { entity: number, kind: string, player: string? }
@@ -185,7 +199,7 @@ export type ExperienceOrbCanMergeEvent = { dimension: string, into: number, from
 export type ExperienceOrbMergeEvent = { dimension: string, into: number, from: number, from_value: number }
 export type ExperienceOrbPickupEvent = { player: string, dimension: string, orb: number, value: number, count: number }
 export type ExperienceOrbPickupListenedEvent = { listened: boolean }
-export type ExplosionDetonateEvent = { dimension: string, center: Vec3, blocks: { Vec3 } }
+export type ExplosionDetonateEvent = { dimension: string, center: Vec3, source: { entity: number, kind: string }?, blocks: { Vec3 } }
 export type ExplosionKnockbackEvent = { dimension: string, center: Vec3, blocks: { Vec3 }, entity: number?, knockback_velocity: Vec3 }
 export type ExplosionPrimeEvent = { center: Vec3, radius: number }
 export type FillBucketEvent = { stack: Item, pos: Vec3 }
@@ -202,8 +216,10 @@ export type FurnaceSmeltEvent = { pos: Vec3, item: string, result: string }
 export type FurnaceStartSmeltEvent = { pos: Vec3, item: string }
 export type GameEventEvent = { event: string, pos: Vec3 }
 export type GuiLayerPostEvent = { layer: string, batch: HudBatch }
+export type GuiLayerPreEvent = { layer: string, batch: HudBatch }
 export type HandshakeEvent = { address: string, host: string, intent: number, reason: string?, reason_component: Component? }
 export type HangingBreakEvent = { player: string?, kind: string, pos: Vec3 }
+export type HangingBreakV2Event = { player: string?, dimension: string, kind: string, pos: Vec3 }
 export type HangingPlaceEvent = { player: PlayerRef, kind: string, pos: Vec3 }
 export type HasAnalogOutputEvent = { state: string, output: boolean, state_props: Props }
 export type HopperInventorySearchEvent = { hopper: Vec3, container: Vec3?, entity: number? }
@@ -253,12 +269,14 @@ export type LivingConversionPreEvent = { entity: number, kind: string, outcome: 
 export type LivingDamagePostEvent = { entity: number, kind: string, damage_type: string, causing: number, direct: number, amount: number }
 export type LivingDamagePreEvent = { entity: number, kind: string, damage_type: string, causing: number, direct: number, amount: number }
 export type LivingDeathEvent = { entity: number, kind: string, damage_type: string, attacker: number }
+export type LivingDeathMessageEvent = { entity: number, kind: string, message: string?, message_component: Component? }
 export type LivingDrownEvent = { entity: number, kind: string, is_drowning: boolean, damage_amount: number, bubble_count: number }
 export type LivingEntityUseItemFinishEvent = { stack: Item, entity: number?, hand: "main" | "off", duration: number, result: Item? }
 export type LivingEntityUseItemStartEvent = { stack: Item, entity: number?, hand: "main" | "off", duration: number }
 export type LivingEntityUseItemStopEvent = { stack: Item, entity: number?, hand: "main" | "off", duration: number }
 export type LivingEntityUseItemTickEvent = { stack: Item, entity: number?, hand: "main" | "off", duration: number }
 export type LivingEquipmentChangeEvent = { entity: number, kind: string, slot: string, from: Item?, to: Item? }
+export type LivingExperienceDropEvent = { entity: number, kind: string, xp: number }
 export type LivingFallEvent = { entity: number, kind: string, distance: number, multiplier: number }
 export type LivingGetProjectileEvent = { player: PlayerRef?, entity: number?, kind: string, weapon: Item, projectile: Item? }
 export type LivingHealEvent = { entity: number, amount: number }
@@ -309,6 +327,7 @@ export type OnUseTickEvent = { stack: Item, entity: number?, remaining: number }
 export type PerformCommandEvent = { player: CommandPlayer, command: string }
 export type PerformConsoleCommandEvent = { command: string }
 export type PermissionCheckEvent = { player: string, node: string, default_level: number, result: boolean? }
+export type PermissionGroupsEvent = { player: string, groups: { string } }
 export type PistonMoveEvent = { dimension: string, piston: Vec3, direction: Vec3, push: { Vec3 }, destroy: { Vec3 } }
 export type PlaceBlockEvent = { stack: Item, pos: Vec3, state: string, state_props: Props }
 export type PlayerAdvancementCriterionGrantEvent = { player: PlayerRef, advancement: string, criterion: string }
@@ -324,6 +343,7 @@ export type PlayerChangeBeaconEffectEvent = { player: PlayerRef, pos: Vec3, prim
 export type PlayerChangeMainHandEvent = { player: PlayerRef, left: boolean }
 export type PlayerChangedDimensionEvent = { player: PlayerRef, from: string, to: string }
 export type PlayerChatEvent = { player: string, name: string, message: string, replies: { { text: string, component: Component? } } }
+export type PlayerChatV2Event = { player: string, name: string, level: number, message: string, replies: { { text: string, component: Component? } } }
 export type PlayerClientLoadedWorldEvent = { player: PlayerRef }
 export type PlayerCloneEvent = { player: PlayerRef, was_death: boolean }
 export type PlayerCommandEvent = { player: PlayerRef, command: string, replies: { { text: string, component: Component? } } }
@@ -335,6 +355,7 @@ export type PlayerContainerOpenEvent = { player: PlayerRef, dimension: string, m
 export type PlayerDeepSleepEvent = { player: PlayerRef }
 export type PlayerDestroyItemEvent = { player: PlayerRef, item: string, slot: string }
 export type PlayerDiedEvent = { player: string, cause: string? }
+export type PlayerDiedV2Event = { player: PlayerRef, message: string, message_component: Component? }
 export type PlayerEditBookEvent = { player: PlayerRef, pages: number, signing: boolean }
 export type PlayerEggThrowEvent = { player: PlayerRef }
 export type PlayerElytraBoostEvent = { player: PlayerRef }
@@ -351,10 +372,12 @@ export type PlayerItemCooldownEvent = { player: PlayerRef, item: string, ticks: 
 export type PlayerItemFrameChangeEvent = { player: PlayerRef, entity_id: number, action: string, item: string, rotation: number }
 export type PlayerItemHeldEvent = { player: PlayerRef, from_slot: number, to_slot: number }
 export type PlayerItemMendEvent = { player: PlayerRef, item: string, repair: number, experience: number }
+export type PlayerJoinMessageEvent = { player: PlayerRef, line: string?, line_component: Component? }
 export type PlayerJumpEvent = { player: PlayerRef }
 export type PlayerKickedEvent = { player: PlayerRef, reason: string }
 export type PlayerLaunchProjectileEvent = { player: PlayerRef, item: string }
 export type PlayerLaunchProjectileV2Event = { player: PlayerRef, stack: Item }
+export type PlayerLeaveMessageEvent = { player: PlayerRef, line: string?, line_component: Component? }
 export type PlayerLecternPageChangeEvent = { player: PlayerRef, pos: Vec3, page: number }
 export type PlayerLevelChangeEvent = { player: PlayerRef, from: number, to: number }
 export type PlayerLoadFromFileEvent = { player: PlayerRef, directory: string }
@@ -368,6 +391,7 @@ export type PlayerMapFilledEvent = { player: PlayerRef, map_id: number }
 export type PlayerMoveEvent = { player: string, name: string, from: Vec3, to: Vec3, yaw: number, pitch: number, on_ground: boolean }
 export type PlayerNameEntityEvent = { player: PlayerRef, entity_id: number, entity_name: string }
 export type PlayerOpenSignEvent = { player: PlayerRef, pos: Vec3, front: boolean }
+export type PlayerPhysicalTriggerEvent = { dimension: string, player: string, pos: Vec3, block: string }
 export type PlayerPickItemEvent = { player: PlayerRef, from_entity: boolean, pos: Vec3, entity_id: number }
 export type PlayerPickupArrowEvent = { player: PlayerRef, entity_id: number, item: string }
 export type PlayerPortalEvent = { player: PlayerRef, from_dimension: string, to_dimension: string, cause: string }
@@ -412,6 +436,7 @@ export type PlayerXpChangeEvent = { player: PlayerRef, amount: number }
 export type PortalCreateEvent = { dimension: string, pos: Vec3 }
 export type PotentialSpawnsEvent = { dimension: string, category: string, pos: Vec3, entries: { { entity: string, weight: number, min: number, max: number, constant: boolean } } }
 export type PotionSplashEvent = { item: string, pos: Vec3 }
+export type PotionSplashV2Event = { item: string, pos: Vec3 }
 export type PrepareAnvilEvent = { player: PlayerRef, pos: Vec3, cost: number, result: Item? }
 export type PrepareGrindstoneEvent = { player: PlayerRef, pos: Vec3, result: Item? }
 export type PrepareHopperTransferEvent = { pos: Vec3 }
@@ -431,6 +456,7 @@ export type RegisterCommandsEvent = { commands: { { usage: string, level: number
 export type RegisterConfigsEvent = { configs: { { mod_id: string, kind: string, file: string, default: string } } }
 export type RegisterGoalsEvent = { mob: MobView }
 export type ReleaseUsingEvent = { stack: Item, entity: number?, time_left: number, used: boolean }
+export type RenderFogEvent = { partial: number, camera: Vec3, fog_type: "atmospheric" | "water" | "lava" | "powder_snow", fog: { color: { r: number, g: number, b: number, a: number }, ["environmental_start"]: number, ["environmental_end"]: number, ["render_distance_start"]: number, ["render_distance_end"]: number, ["sky_end"]: number, ["cloud_end"]: number } }
 export type RenderHandEvent = { hand: "main" | "off", stack: Item?, partial: number, swing: number, equip: number }
 export type RenderHandPoseEvent = { hand: "main" | "off", stack: Item?, partial: number, swing: number, equip: number, x: number, y: number, z: number, pitch: number, yaw: number, roll: number, scale: number }
 export type RenderItemInFrameEvent = { entity_id: number, pos: Vec3, stack: Item }
@@ -440,14 +466,25 @@ export type ResourcePackStatusV2Event = { player: PlayerRef, pack: string, statu
 export type RightClickBlockEvent = { pos: Vec3, face: Vec3 }
 export type RightClickBlockV2Event = { pos: Vec3, face: Vec3, hand: "main" | "off" }
 export type ScreenEvent = { block: string, screen: { width: number, height: number, slots: {{ x: number, y: number }?}, inventory_y: number, inventory_x: number, own_labels: boolean, own_background: boolean }?? }
+export type ScreenCharTypedPreEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number }, c: string, modifiers: number }
 export type ScreenClickEvent = { block: string, data: { number }, at: Vec2, right: boolean, button: number? }
+export type ScreenClosingEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number } }
+export type ScreenInitPostEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number } }
+export type ScreenKeyPressedPreEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number }, key: string, ["repeat"]: boolean, modifiers: number }
+export type ScreenKeyReleasedPreEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number }, key: string, modifiers: number }
+export type ScreenMouseButtonPressedPreEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number }, button: number, modifiers: number }
+export type ScreenMouseButtonReleasedPreEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number }, button: number, modifiers: number }
+export type ScreenMouseDraggedPreEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number }, button: number, delta: Vec2, modifiers: number }
 export type ScreenMouseDraggedPreV2Event = { screen: string, mouse: Vec2, button: number, delta: Vec2, modifiers: number }
+export type ScreenMouseScrolledPreEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number }, scroll: Vec2, modifiers: number }
 export type ScreenMouseScrolledPreV2Event = { screen: string, mouse: Vec2, scroll: Vec2, modifiers: number }
+export type ScreenOpeningEvent = { screen: { id: string, menu: string?, title: string?, title_component: Component?, rect: { x: number, y: number, width: number, height: number }, slots: number, mouse: Vec2, partial_tick: number } }
 export type ScreenTooltipEvent = { block: string, data: { number }, at: Vec2, lines: { string } }
 export type SculkBloomEvent = { dimension: string, pos: Vec3 }
 export type ServerAboutToStartEvent = { dedicated: boolean }
 export type ServerDataLoadedEvent = { reload: boolean }
 export type ServerReloadListenerApplyEvent = { listener: { id: string, folder: string }, files: { { path: string, data: Data } } }
+export type ServerStoppedEvent = { dedicated: boolean }
 export type ServerStoppingEvent = { dedicated: boolean }
 export type ServerTickEvent = { authority: string, epoch: number, tick: number, phase: string, world_running: boolean }
 export type ServerTickTimedEvent = { wall_ms: number, cpu_ms: number?, spans: { { name: string, ms: number, cpu_ms: number, depth: number } } }
@@ -471,6 +508,7 @@ export type TickEvent = {  }
 export type TickBlockEvent = { dimension: string, pos: Vec3, state: string, state_props: Props, data: Data? }
 export type TimeSkipEvent = { dimension: string, from: number, to: number, cause: string }
 export type TntPrimedEvent = { player: string?, pos: Vec3 }
+export type TntPrimedV2Event = { player: string?, dimension: string, pos: Vec3 }
 export type ToastAddEvent = { kind: string, id: string }
 export type TooltipEvent = { stack: Item, lines: { { text: string, component: Component?, count: number } } }
 export type TooltipColorEvent = { stack: Item?, background: number, border_top: number, border_bottom: number }
@@ -499,6 +537,7 @@ export type WorldBorderBoundsChangedEvent = {  }
 export type WorldBorderCenterChangedEvent = {  }
 export type WorldGameRuleChangeEvent = { player: PlayerRef, rule: string, value: string }
 export type WorldLifecycleEvent = { authority: string, epoch: number, tick: number, phase: string, error_text: string }
+export type WorldPrimitivesEvent = { partial: number, camera: Vec3, primitives: WorldPrimitives }
 export type WorldSavedEvent = { wait: boolean }
 export type ZoomEvent = { zoom: { factor: number, smooth: boolean, turn: number }?? }
 
@@ -535,6 +574,7 @@ export type HorizonOn =
     ((name: "block_fade", fn: (event: BlockFadeEvent) -> ()) -> ()) &
     ((name: "block_failed_dispense", fn: (event: BlockFailedDispenseEvent) -> ()) -> ()) &
     ((name: "block_form", fn: (event: BlockFormEvent) -> ()) -> ()) &
+    ((name: "block_grow", fn: (event: BlockGrowEvent) -> ()) -> ()) &
     ((name: "block_highlight", fn: (event: BlockHighlightEvent) -> ()) -> ()) &
     ((name: "block_ignite", fn: (event: BlockIgniteEvent) -> ()) -> ()) &
     ((name: "block_lock_check", fn: (event: BlockLockCheckEvent) -> ()) -> ()) &
@@ -552,10 +592,12 @@ export type HorizonOn =
     ((name: "bucket_empty", fn: (event: BucketEmptyEvent) -> ()) -> ()) &
     ((name: "camera_pose", fn: (event: CameraPoseEvent) -> ()) -> ()) &
     ((name: "campfire_start", fn: (event: CampfireStartEvent) -> ()) -> ()) &
+    ((name: "can_build", fn: (event: CanBuildEvent) -> ()) -> ()) &
     ((name: "can_eat", fn: (event: CanEatEvent) -> ()) -> ()) &
     ((name: "can_player_sleep", fn: (event: CanPlayerSleepEvent) -> ()) -> ()) &
     ((name: "can_survive", fn: (event: CanSurviveEvent) -> ()) -> ()) &
     ((name: "cauldron_level_changed", fn: (event: CauldronLevelChangedEvent) -> ()) -> ()) &
+    ((name: "chat_decorate", fn: (event: ChatDecorateEvent) -> ()) -> ()) &
     ((name: "chat_suggestion_applied", fn: (event: ChatSuggestionAppliedEvent) -> ()) -> ()) &
     ((name: "chorus_fruit_teleport", fn: (event: ChorusFruitTeleportEvent) -> ()) -> ()) &
     ((name: "chunk_load", fn: (event: ChunkLoadEvent) -> ()) -> ()) &
@@ -576,6 +618,7 @@ export type HorizonOn =
     ((name: "commands", fn: (event: CommandsEvent) -> ()) -> ()) &
     ((name: "component_types", fn: (event: ComponentTypesEvent) -> ()) -> ()) &
     ((name: "compost_item", fn: (event: CompostItemEvent) -> ()) -> ()) &
+    ((name: "compute_fog_color", fn: (event: ComputeFogColorEvent) -> ()) -> ()) &
     ((name: "compute_fov", fn: (event: ComputeFovEvent) -> ()) -> ()) &
     ((name: "console_line", fn: (event: ConsoleLineEvent) -> ()) -> ()) &
     ((name: "consume_effect", fn: (event: ConsumeEffectEvent) -> ()) -> ()) &
@@ -608,6 +651,7 @@ export type HorizonOn =
     ((name: "entity_breed", fn: (event: EntityBreedEvent) -> ()) -> ()) &
     ((name: "entity_change_block", fn: (event: EntityChangeBlockEvent) -> (), kind: string?) -> ()) &
     ((name: "entity_change_block_v2", fn: (event: EntityChangeBlockV2Event) -> (), kind: string?) -> ()) &
+    ((name: "entity_change_block_v3", fn: (event: EntityChangeBlockV3Event) -> (), kind: string?) -> ()) &
     ((name: "entity_drop_item", fn: (event: EntityDropItemEvent) -> (), kind: string?) -> ()) &
     ((name: "entity_enter_block", fn: (event: EntityEnterBlockEvent) -> (), kind: string?) -> ()) &
     ((name: "entity_enter_love_mode", fn: (event: EntityEnterLoveModeEvent) -> (), kind: string?) -> ()) &
@@ -648,8 +692,10 @@ export type HorizonOn =
     ((name: "furnace_start_smelt", fn: (event: FurnaceStartSmeltEvent) -> ()) -> ()) &
     ((name: "game_event", fn: (event: GameEventEvent) -> ()) -> ()) &
     ((name: "gui_layer_post", fn: (event: GuiLayerPostEvent) -> ()) -> ()) &
+    ((name: "gui_layer_pre", fn: (event: GuiLayerPreEvent) -> ()) -> ()) &
     ((name: "handshake", fn: (event: HandshakeEvent) -> ()) -> ()) &
     ((name: "hanging_break", fn: (event: HangingBreakEvent) -> (), kind: string?) -> ()) &
+    ((name: "hanging_break_v2", fn: (event: HangingBreakV2Event) -> (), kind: string?) -> ()) &
     ((name: "hanging_place", fn: (event: HangingPlaceEvent) -> (), kind: string?) -> ()) &
     ((name: "has_analog_output", fn: (event: HasAnalogOutputEvent) -> ()) -> ()) &
     ((name: "hopper_inventory_search", fn: (event: HopperInventorySearchEvent) -> (), kind: string?) -> ()) &
@@ -699,12 +745,14 @@ export type HorizonOn =
     ((name: "living_damage_post", fn: (event: LivingDamagePostEvent) -> (), kind: string?) -> ()) &
     ((name: "living_damage_pre", fn: (event: LivingDamagePreEvent) -> (), kind: string?) -> ()) &
     ((name: "living_death", fn: (event: LivingDeathEvent) -> (), kind: string?) -> ()) &
+    ((name: "living_death_message", fn: (event: LivingDeathMessageEvent) -> (), kind: string?) -> ()) &
     ((name: "living_drown", fn: (event: LivingDrownEvent) -> (), kind: string?) -> ()) &
     ((name: "living_entity_use_item_finish", fn: (event: LivingEntityUseItemFinishEvent) -> (), kind: string?) -> ()) &
     ((name: "living_entity_use_item_start", fn: (event: LivingEntityUseItemStartEvent) -> (), kind: string?) -> ()) &
     ((name: "living_entity_use_item_stop", fn: (event: LivingEntityUseItemStopEvent) -> (), kind: string?) -> ()) &
     ((name: "living_entity_use_item_tick", fn: (event: LivingEntityUseItemTickEvent) -> (), kind: string?) -> ()) &
     ((name: "living_equipment_change", fn: (event: LivingEquipmentChangeEvent) -> (), kind: string?) -> ()) &
+    ((name: "living_experience_drop", fn: (event: LivingExperienceDropEvent) -> (), kind: string?) -> ()) &
     ((name: "living_fall", fn: (event: LivingFallEvent) -> (), kind: string?) -> ()) &
     ((name: "living_get_projectile", fn: (event: LivingGetProjectileEvent) -> (), kind: string?) -> ()) &
     ((name: "living_heal", fn: (event: LivingHealEvent) -> ()) -> ()) &
@@ -755,6 +803,7 @@ export type HorizonOn =
     ((name: "perform_command", fn: (player: CommandPlayer, args: CommandArgs) -> (), kind: string?) -> ()) &
     ((name: "perform_console_command", fn: (event: PerformConsoleCommandEvent) -> ()) -> ()) &
     ((name: "permission_check", fn: (event: PermissionCheckEvent) -> ()) -> ()) &
+    ((name: "permission_groups", fn: (event: PermissionGroupsEvent) -> ()) -> ()) &
     ((name: "piston_move", fn: (event: PistonMoveEvent) -> ()) -> ()) &
     ((name: "place_block", fn: (event: PlaceBlockEvent) -> ()) -> ()) &
     ((name: "player_advancement_criterion_grant", fn: (event: PlayerAdvancementCriterionGrantEvent) -> ()) -> ()) &
@@ -770,6 +819,7 @@ export type HorizonOn =
     ((name: "player_change_main_hand", fn: (event: PlayerChangeMainHandEvent) -> ()) -> ()) &
     ((name: "player_changed_dimension", fn: (event: PlayerChangedDimensionEvent) -> ()) -> ()) &
     ((name: "player_chat", fn: (event: PlayerChatEvent) -> ()) -> ()) &
+    ((name: "player_chat_v2", fn: (event: PlayerChatV2Event) -> ()) -> ()) &
     ((name: "player_client_loaded_world", fn: (event: PlayerClientLoadedWorldEvent) -> ()) -> ()) &
     ((name: "player_clone", fn: (event: PlayerCloneEvent) -> ()) -> ()) &
     ((name: "player_command", fn: (event: PlayerCommandEvent) -> ()) -> ()) &
@@ -781,6 +831,7 @@ export type HorizonOn =
     ((name: "player_deep_sleep", fn: (event: PlayerDeepSleepEvent) -> ()) -> ()) &
     ((name: "player_destroy_item", fn: (event: PlayerDestroyItemEvent) -> ()) -> ()) &
     ((name: "player_died", fn: (event: PlayerDiedEvent) -> ()) -> ()) &
+    ((name: "player_died_v2", fn: (event: PlayerDiedV2Event) -> ()) -> ()) &
     ((name: "player_edit_book", fn: (event: PlayerEditBookEvent) -> ()) -> ()) &
     ((name: "player_egg_throw", fn: (event: PlayerEggThrowEvent) -> ()) -> ()) &
     ((name: "player_elytra_boost", fn: (event: PlayerElytraBoostEvent) -> ()) -> ()) &
@@ -797,10 +848,12 @@ export type HorizonOn =
     ((name: "player_item_frame_change", fn: (event: PlayerItemFrameChangeEvent) -> (), kind: string?) -> ()) &
     ((name: "player_item_held", fn: (event: PlayerItemHeldEvent) -> ()) -> ()) &
     ((name: "player_item_mend", fn: (event: PlayerItemMendEvent) -> ()) -> ()) &
+    ((name: "player_join_message", fn: (event: PlayerJoinMessageEvent) -> ()) -> ()) &
     ((name: "player_jump", fn: (event: PlayerJumpEvent) -> ()) -> ()) &
     ((name: "player_kicked", fn: (event: PlayerKickedEvent) -> ()) -> ()) &
     ((name: "player_launch_projectile", fn: (event: PlayerLaunchProjectileEvent) -> ()) -> ()) &
     ((name: "player_launch_projectile_v2", fn: (event: PlayerLaunchProjectileV2Event) -> ()) -> ()) &
+    ((name: "player_leave_message", fn: (event: PlayerLeaveMessageEvent) -> ()) -> ()) &
     ((name: "player_lectern_page_change", fn: (event: PlayerLecternPageChangeEvent) -> ()) -> ()) &
     ((name: "player_level_change", fn: (event: PlayerLevelChangeEvent) -> ()) -> ()) &
     ((name: "player_load_from_file", fn: (event: PlayerLoadFromFileEvent) -> ()) -> ()) &
@@ -814,6 +867,7 @@ export type HorizonOn =
     ((name: "player_move", fn: (event: PlayerMoveEvent) -> ()) -> ()) &
     ((name: "player_name_entity", fn: (event: PlayerNameEntityEvent) -> (), kind: string?) -> ()) &
     ((name: "player_open_sign", fn: (event: PlayerOpenSignEvent) -> ()) -> ()) &
+    ((name: "player_physical_trigger", fn: (event: PlayerPhysicalTriggerEvent) -> ()) -> ()) &
     ((name: "player_pick_item", fn: (event: PlayerPickItemEvent) -> (), kind: string?) -> ()) &
     ((name: "player_pickup_arrow", fn: (event: PlayerPickupArrowEvent) -> (), kind: string?) -> ()) &
     ((name: "player_portal", fn: (event: PlayerPortalEvent) -> ()) -> ()) &
@@ -858,6 +912,7 @@ export type HorizonOn =
     ((name: "portal_create", fn: (event: PortalCreateEvent) -> ()) -> ()) &
     ((name: "potential_spawns", fn: (event: PotentialSpawnsEvent) -> ()) -> ()) &
     ((name: "potion_splash", fn: (event: PotionSplashEvent) -> ()) -> ()) &
+    ((name: "potion_splash_v2", fn: (event: PotionSplashV2Event) -> ()) -> ()) &
     ((name: "prepare_anvil", fn: (event: PrepareAnvilEvent) -> ()) -> ()) &
     ((name: "prepare_grindstone", fn: (event: PrepareGrindstoneEvent) -> ()) -> ()) &
     ((name: "prepare_hopper_transfer", fn: (event: PrepareHopperTransferEvent) -> ()) -> ()) &
@@ -877,6 +932,7 @@ export type HorizonOn =
     ((name: "register_configs", fn: (event: RegisterConfigsEvent) -> ()) -> ()) &
     ((name: "register_goals", fn: (event: RegisterGoalsEvent) -> (), kind: string?) -> ()) &
     ((name: "release_using", fn: (event: ReleaseUsingEvent) -> (), kind: string?) -> ()) &
+    ((name: "render_fog", fn: (event: RenderFogEvent) -> ()) -> ()) &
     ((name: "render_hand", fn: (event: RenderHandEvent) -> ()) -> ()) &
     ((name: "render_hand_pose", fn: (event: RenderHandPoseEvent) -> ()) -> ()) &
     ((name: "render_item_in_frame", fn: (event: RenderItemInFrameEvent) -> (), kind: string?) -> ()) &
@@ -886,14 +942,25 @@ export type HorizonOn =
     ((name: "right_click_block", fn: (event: RightClickBlockEvent) -> ()) -> ()) &
     ((name: "right_click_block_v2", fn: (event: RightClickBlockV2Event) -> ()) -> ()) &
     ((name: "screen", fn: (event: ScreenEvent) -> ()) -> ()) &
+    ((name: "screen_char_typed_pre", fn: (event: ScreenCharTypedPreEvent) -> ()) -> ()) &
     ((name: "screen_click", fn: (event: ScreenClickEvent) -> ()) -> ()) &
+    ((name: "screen_closing", fn: (event: ScreenClosingEvent) -> ()) -> ()) &
+    ((name: "screen_init_post", fn: (event: ScreenInitPostEvent) -> ()) -> ()) &
+    ((name: "screen_key_pressed_pre", fn: (event: ScreenKeyPressedPreEvent) -> ()) -> ()) &
+    ((name: "screen_key_released_pre", fn: (event: ScreenKeyReleasedPreEvent) -> ()) -> ()) &
+    ((name: "screen_mouse_button_pressed_pre", fn: (event: ScreenMouseButtonPressedPreEvent) -> ()) -> ()) &
+    ((name: "screen_mouse_button_released_pre", fn: (event: ScreenMouseButtonReleasedPreEvent) -> ()) -> ()) &
+    ((name: "screen_mouse_dragged_pre", fn: (event: ScreenMouseDraggedPreEvent) -> ()) -> ()) &
     ((name: "screen_mouse_dragged_pre_v2", fn: (event: ScreenMouseDraggedPreV2Event) -> ()) -> ()) &
+    ((name: "screen_mouse_scrolled_pre", fn: (event: ScreenMouseScrolledPreEvent) -> ()) -> ()) &
     ((name: "screen_mouse_scrolled_pre_v2", fn: (event: ScreenMouseScrolledPreV2Event) -> ()) -> ()) &
+    ((name: "screen_opening", fn: (event: ScreenOpeningEvent) -> ()) -> ()) &
     ((name: "screen_tooltip", fn: (event: ScreenTooltipEvent) -> ()) -> ()) &
     ((name: "sculk_bloom", fn: (event: SculkBloomEvent) -> ()) -> ()) &
     ((name: "server_about_to_start", fn: (event: ServerAboutToStartEvent) -> ()) -> ()) &
     ((name: "server_data_loaded", fn: (event: ServerDataLoadedEvent) -> ()) -> ()) &
     ((name: "server_reload_listener_apply", fn: (event: ServerReloadListenerApplyEvent) -> ()) -> ()) &
+    ((name: "server_stopped", fn: (event: ServerStoppedEvent) -> ()) -> ()) &
     ((name: "server_stopping", fn: (event: ServerStoppingEvent) -> ()) -> ()) &
     ((name: "server_tick", fn: (event: ServerTickEvent) -> ()) -> ()) &
     ((name: "server_tick_timed", fn: (event: ServerTickTimedEvent) -> ()) -> ()) &
@@ -917,6 +984,7 @@ export type HorizonOn =
     ((name: "tick_block", fn: (event: TickBlockEvent) -> (), kind: string?) -> ()) &
     ((name: "time_skip", fn: (event: TimeSkipEvent) -> ()) -> ()) &
     ((name: "tnt_primed", fn: (event: TntPrimedEvent) -> ()) -> ()) &
+    ((name: "tnt_primed_v2", fn: (event: TntPrimedV2Event) -> ()) -> ()) &
     ((name: "toast_add", fn: (event: ToastAddEvent) -> ()) -> ()) &
     ((name: "tooltip", fn: (event: TooltipEvent) -> ()) -> ()) &
     ((name: "tooltip_color", fn: (event: TooltipColorEvent) -> ()) -> ()) &
@@ -945,6 +1013,7 @@ export type HorizonOn =
     ((name: "world_border_center_changed", fn: (event: WorldBorderCenterChangedEvent) -> ()) -> ()) &
     ((name: "world_game_rule_change", fn: (event: WorldGameRuleChangeEvent) -> ()) -> ()) &
     ((name: "world_lifecycle", fn: (event: WorldLifecycleEvent) -> ()) -> ()) &
+    ((name: "world_primitives", fn: (event: WorldPrimitivesEvent) -> ()) -> ()) &
     ((name: "world_saved", fn: (event: WorldSavedEvent) -> ()) -> ()) &
     ((name: "zoom", fn: (event: ZoomEvent) -> ()) -> ())
 
@@ -967,8 +1036,9 @@ declare horizon: {
     mob: (id: number) -> MobView?,
     mobs: () -> { MobView },
     players: () -> { ReadPlayer },
-    player: (who: string) -> ReadPlayer?,
+    player: (who: string?) -> (ReadPlayer | LocalPlayer)?,
     time: () -> Time,
+    real_time: () -> { seconds: number, delta: number },
     raycast: (player: string, distance: number?) -> Raycast?,
     world_data: () -> Data,
     player_data: (who: string) -> Data?,
@@ -980,6 +1050,10 @@ declare horizon: {
     count_items: (who: string | ReadPlayer, id: string) -> number?,
     carried_items: (who: string | ReadPlayer) -> Carried?,
     data: (path: string) -> any,
+    menu_contents: (who: string | ReadPlayer) -> { Item? }?,
+    menu_cursor: (who: string | ReadPlayer) -> Item?,
+    has_permission: (who: string | ReadPlayer, node: string, default_level: number) -> boolean,
+    player_permission: (who: string | ReadPlayer) -> number?,
     dev: { inspect: (who: ReadPlayer | string, what: number | { x: number, y: number, z: number, face: Vec3?, dimension: string? }) -> boolean },
     summon: (dimension: string, kind: string, x: number, y: number, z: number) -> number?,
     after: (ticks: number, fn: () -> ()) -> (),
@@ -1019,6 +1093,187 @@ declare horizon: {
     drop_item: (x: number, y: number, z: number, id: string, count: number?) -> (),
     set_nickname: (who: string | ReadPlayer, name: string?) -> (),
     effect: (target: number | string | ReadPlayer, name: string, ticks: number, amplifier: number?) -> (),
+    net_send_to_player: (who: string | ReadPlayer, channel: string, data: string) -> (),
+    send_custom_payload_to_player: (who: string | ReadPlayer, channel: string, data: string) -> (),
+    net_send_to_server: (channel: string, data: string) -> (),
+    open_menu: (who: string | ReadPlayer, rows: number, title: string, items: { (Item | false)? }) -> (),
+    open_menu_with_input: (who: string | ReadPlayer, rows: number, title: string, items: { (Item | false)? }, input: { start: number, ["end"]: number }) -> (),
+    set_menu_items: (who: string | ReadPlayer, items: { (Item | false)? }) -> (),
+    close_menu: (who: string | ReadPlayer) -> (),
+    kick: (who: string | ReadPlayer, reason: string) -> (),
+    teleport_player: (who: string | ReadPlayer, dimension: string, pos: Vec3, yaw: number, pitch: number) -> (),
+    run_command_as: (who: string | ReadPlayer, line: string, callback: ((result: CommandResult) -> ())?) -> (),
+    marker_set: (id: string, spec: MarkerSpec) -> (),
+    marker_move: (id: string, pos: Vec3) -> (),
+    marker_remove: (id: string) -> (),
+    marker_clear: () -> (),
+    apply_screen_blur: () -> boolean, -- client state only
+    biome: (value: Vec3) -> string?,
+    biome_name: (value: number) -> string?,
+    block_entity_sync: (value: Vec3) -> (),
+    chat_input: () -> { string | number }?, -- client state only
+    clear_between: (name: string, value: Vec3, value2: Vec3) -> boolean,
+    client_block_obstruction: (value: Vec3) -> { boolean }?, -- client state only
+    client_entity_move: (who: string | ReadPlayer, value: number, value2: Vec3, value3: number) -> (), -- client state only
+    client_entity_set: (who: string | ReadPlayer, value: number, value2: Data) -> (),
+    client_visual_clear: (value: Vec3, value2: Vec3) -> boolean, -- client state only
+    default_state: (name: string) -> string?,
+    dimension_of_world: (name: string) -> string?,
+    dismount: (value: number) -> (),
+    eject_passengers: (value: number) -> (),
+    entity_add_tag: (value: number, name: string) -> (),
+    entity_air_supply: (value: number) -> number?,
+    entity_block_position: (value: number) -> Vec3?,
+    entity_direction: (value: number) -> string?,
+    entity_distance_to_sqr: (value: number, value2: Vec3) -> number?,
+    entity_eye_height: (value: number) -> number?,
+    entity_eye_position: (value: number) -> Vec3?,
+    entity_fire_immune: (value: number) -> boolean?,
+    entity_fire_ticks: (value: number) -> number?,
+    entity_head_yaw: (value: number) -> number?,
+    entity_is_crouching: (value: number) -> boolean?,
+    entity_is_in_lava: (value: number) -> boolean?,
+    entity_is_in_water: (value: number) -> boolean?,
+    entity_is_invisible: (value: number) -> boolean?,
+    entity_is_shift_key_down: (value: number) -> boolean?,
+    entity_is_silent: (value: number) -> boolean?,
+    entity_is_sprinting: (value: number) -> boolean?,
+    entity_kind: (value: number) -> string?,
+    entity_level: (value: number) -> string?,
+    entity_max_air_supply: (value: number) -> number?,
+    entity_merge_nbt: (value: number, value2: Data) -> (),
+    entity_name: (value: number) -> string?,
+    entity_on_ground: (value: number) -> boolean?,
+    entity_pose: (value: number) -> string?,
+    entity_position: (value: number) -> Vec3?,
+    entity_push: (value: number, value2: Vec3) -> (),
+    entity_remove_tag: (value: number, name: string) -> (),
+    entity_set_attribute_base: (value: number, name: string, value2: number) -> (),
+    entity_set_fire: (value: number, value2: number) -> (),
+    entity_set_head_yaw: (value: number, value2: number) -> (),
+    entity_set_rotation: (value: number, value2: number, value3: number) -> (),
+    entity_set_silent: (value: number, value2: boolean) -> (),
+    entity_set_velocity: (value: number, value2: Vec3) -> (),
+    entity_swing: (value: number, value2: boolean) -> (),
+    entity_tags: (value: number) -> { string }?,
+    entity_use_item: (value: number, value2: boolean, value3: boolean) -> (),
+    entity_velocity: (value: number) -> Vec3?,
+    entity_view_vector: (value: number) -> Vec3?,
+    equipment: (value: "mainhand" | "offhand" | "head" | "chest" | "legs" | "feet" | "body" | "saddle") -> Item?,
+    expect_fake_player: (name: string, value: boolean) -> (),
+    flame_particle: (value: Vec3, value2: boolean) -> (), -- client state only
+    fluid_flow: (name: string, value: Vec3) -> Vec3?,
+    has_alt_down: () -> boolean, -- client state only
+    has_control_down: () -> boolean, -- client state only
+    has_line_of_sight: (value: number, value2: number) -> boolean,
+    has_played_before: (who: string | ReadPlayer) -> boolean,
+    has_shift_down: () -> boolean, -- client state only
+    hide_entity_from: (who: string | ReadPlayer, value: number, value2: boolean) -> (),
+    is_player_fake: (who: string | ReadPlayer) -> boolean,
+    item_from_snbt: (name: string) -> Item?,
+    key_down: (name: string) -> boolean, -- client state only
+    level: (name: string) -> string?,
+    level_block: (name: string, value: Vec3) -> string?,
+    level_block_property: (name: string, value: Vec3, name2: string) -> string?,
+    level_block_state: (name: string, value: Vec3) -> string?,
+    level_day_time: (name: string) -> number?,
+    level_difficulty: (name: string) -> string?,
+    level_game_time: (name: string) -> number?,
+    level_height: (name: string) -> { min: number, max: number }?,
+    level_is_loaded: (name: string, value: Vec3) -> boolean,
+    level_is_raining: (name: string) -> boolean?,
+    level_is_thundering: (name: string) -> boolean?,
+    level_name: () -> string?,
+    level_play_sound: (name: string, name2: string, value: Vec3, value2: number, value3: number, value4: number) -> (),
+    level_seed: (name: string) -> number?,
+    level_set_day_time: (name: string, value: number) -> (),
+    level_set_weather: (name: string, value: number, value2: number, value3: boolean, value4: boolean) -> (),
+    level_weather: (name: string) -> { number }?,
+    lightning_bolt: (name: string, value: Vec3, value2: boolean) -> (),
+    lit_block_name: (value: Vec3) -> string?,
+    max_players: () -> number?,
+    max_stack_size: (name: string) -> number?,
+    may_build: (who: string | ReadPlayer, name: string, name2: string, value: Vec3, name3: string) -> boolean,
+    menu_blur_radius: () -> number, -- client state only
+    merge_entity_nbt: (name: string, value: number, value2: Data) -> (),
+    mob_attack: (name: string, value: number, value2: number) -> (),
+    mob_follow: (name: string, value: number, value2: number, value3: number) -> (),
+    mob_look_at: (name: string, value: number, value2: Vec3) -> (),
+    mob_navigate: (name: string, value: number, value2: Vec3, value3: number, value4: number) -> (),
+    mob_stop: (name: string, value: number) -> (),
+    mod_key: (name: string, name2: string, name3: string) -> string, -- client state only
+    mod_screen: () -> string?, -- client state only
+    mod_screen_close: (name: string) -> (), -- client state only
+    mod_screen_open: (name: string) -> (), -- client state only
+    motd: () -> string,
+    mount: (value: number, value2: number) -> (),
+    move_entity: (name: string, value: number, value2: Vec3, value3: number, value4: number) -> (),
+    online_mode: () -> boolean?,
+    play_local_sound: (name: string, value: Vec3, value2: number, value3: number, value4: number) -> (), -- client state only
+    player_break_block: (who: string | ReadPlayer, value: Vec3, value2: boolean) -> (),
+    player_channels: (who: string | ReadPlayer) -> { string },
+    player_equipment: (who: string | ReadPlayer, value: "mainhand" | "offhand" | "head" | "chest" | "legs" | "feet" | "body" | "saddle") -> Item?,
+    player_head: (who: string | ReadPlayer) -> Item,
+    player_permission_value: (who: string | ReadPlayer, name: string) -> boolean?,
+    player_sneaking: (who: string | ReadPlayer) -> boolean?,
+    player_stat: (who: string | ReadPlayer, name: string, name2: string) -> number?,
+    player_textures: (who: string | ReadPlayer) -> { value: string, signature: string? }?,
+    player_view_distance: (who: string | ReadPlayer) -> number?,
+    playing: () -> boolean, -- client state only
+    primary_group: (who: string | ReadPlayer) -> string?,
+    profile_by_name: (name: string) -> { string }?,
+    profile_by_uuid: (who: string | ReadPlayer) -> string?,
+    proxy_forwarding: () -> string?,
+    recipe_categories_changed: () -> (),
+    refresh_biome_colors: () -> (), -- client state only
+    refresh_commands: () -> (),
+    refresh_player: (who: string | ReadPlayer) -> (),
+    registry_name: (name: string, value: number) -> string?,
+    remove_effect: (who: string | ReadPlayer, name: string) -> (),
+    remove_entity: (name: string, value: number) -> (),
+    resend_commands: (who: string | ReadPlayer) -> (),
+    respawn_player: (who: string | ReadPlayer) -> (),
+    scoreboard_add_objective: (name: string, name2: string) -> (),
+    scoreboard_add_score: (name: string, name2: string, value: number) -> (),
+    scoreboard_add_team: (name: string) -> (),
+    scoreboard_objectives: () -> { string },
+    scoreboard_remove_objective: (name: string) -> (),
+    scoreboard_remove_team: (name: string) -> (),
+    scoreboard_score: (name: string, name2: string) -> number?,
+    scoreboard_set_score: (name: string, name2: string, value: number) -> (),
+    scoreboard_team_join: (name: string, name2: string) -> (),
+    scoreboard_team_leave: (name: string) -> (),
+    scoreboard_team_members: (name: string) -> { string },
+    scoreboard_team_of: (name: string) -> string?,
+    scoreboard_teams: () -> { string },
+    screen_pos: () -> Vec3?, -- client state only
+    screen_title: () -> string?, -- client state only
+    server_port: () -> number?,
+    set_attribute_base: (who: string | ReadPlayer, name: string, value: number) -> (),
+    set_block_entity: (name: string, value: Vec3, name2: string) -> (),
+    set_block_property_with: (value: Vec3, name: string, name2: string, value2: number) -> (),
+    set_break_progress: (value: number, value2: Vec3, value3: number) -> (),
+    set_compass_target: (who: string | ReadPlayer, value: { string | Vec3 }?) -> (),
+    set_entity_data: (value: number, value2: Data) -> (),
+    set_flight: (who: string | ReadPlayer, value: boolean, value2: boolean) -> (),
+    set_game_mode: (who: string | ReadPlayer, value: number) -> (),
+    set_item_entity: (name: string, value: number, value2: Item) -> (),
+    set_player_fake: (who: string | ReadPlayer, value: boolean) -> (),
+    set_profile_property: (who: string | ReadPlayer, name: string, value: { value: string, signature: string? }?) -> (),
+    sleep_ignored: (who: string | ReadPlayer, value: boolean) -> (),
+    sneaking: () -> boolean,
+    teleport_vehicle: (name: string, value: number, value2: Vec3) -> (),
+    text_allowed: (name: string) -> boolean?,
+    text_width: (name: string) -> number, -- client state only
+    transfer_recipe_all: (value: number, value2: boolean) -> (),
+    update_output_neighbors: (name: string, value: Vec3) -> (),
+    update_signal_neighbors: (name: string, value: Vec3) -> (),
+    vehicle_of: (value: number) -> number?,
+    whitelist_add: (who: string | ReadPlayer, name: string) -> boolean,
+    whitelist_remove: (who: string | ReadPlayer, name: string) -> (),
+    window: () -> boolean, -- client state only
+    world_of_dimension: (name: string) -> string?,
+    world_seed: () -> number?,
 }
 
 -- `scripts/registry.lua` and its modules (`scripts/registry/`) run with this instead of `horizon`.
