@@ -123,7 +123,9 @@ for try in 1 2 3 4; do
   grep -q "PROBE hook attack_entity" "$LOG" && break
 done
 $CTL select netherite_sword >/dev/null
-for try in 1 2 3 4 5 6; do
+# A held item's attribute modifiers apply on the next tick, as in vanilla: a hit right after the switch is a weak one.
+sleep 1.5
+for try in 1 2 3 4 5 6 7 8 9 10; do
   R=$($CTL attack "$ZID")
   echo "$R" | j 'print("hit with the sword:", d.get("hit", d.get("error")), "health:", d.get("health_before"), "->", d.get("health"), "alive:", d.get("alive"))'
   echo "$R" | grep -q '"alive":false' && break
