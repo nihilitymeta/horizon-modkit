@@ -12,7 +12,7 @@
 #            vanilla 4 from one log, so nothing else vanished
 #
 # The game is asked through `horizon-ctl`: `screen` shows the result slot with
-# the items in the grid, `inventory` counts what the craft put in it, and
+# the items in the grid, `inventory` polls for what the craft put in it, and
 # `command` carries the reply to `/recipe give` (the owner's chat). Each fact
 # is one RECIPE line, printed here from those answers; a missing line, a
 # `RECIPE ... BAD` line, a craft that did not happen, or a probe line at WARN or
@@ -145,10 +145,22 @@ put_grid() {
   done
   [ "$try" = "-" ] || { echo "the hand still holds $try"; return 1; }
 }
-# take_result: take slot 200 with shift, as a player would, and wait a tick.
+# take_result ITEM WANT BEFORE: take slot 200 with shift, then poll the
+# inventory until ITEM's count is BEFORE+WANT twice in a row, up to eight
+# seconds, and print the count it saw. The client's copy follows the server a
+# tick behind: after the click it can show the old count, or its own recipe
+# table's prediction (vanilla's 4 sticks), so one read that agrees proves nothing.
 take_result() {
+  local item=$1 want=$2 before=$3 seen="" same=0
+  want=$((want + before))
   $CTL click-slot 200 shift >/dev/null
-  sleep 1
+  for i in $(seq 1 16); do
+    seen=$($CTL inventory | item_count "$item")
+    if [ "$seen" = "$want" ]; then same=$((same + 1)); else same=0; fi
+    [ "$same" -ge 2 ] && break
+    sleep 0.5
+  done
+  printf '%s' "$seen"
 }
 # wait_result ITEM COUNT: the result slot (200) as `item count`, polled for up
 # to eight seconds: the server answers the click a tick or two after it lands.
@@ -188,6 +200,8 @@ if [ "${now:-0}" -le "$pushes" ]; then
   echo "FAILED: /reload did not run the data_pack_files hook again"
   ok=1
 fi
+# Nothing judged after the reload runs before the polls below (put_grid's and
+# wait_result's eight seconds), which carry a slow reload themselves.
 sleep 2
 
 # ---- replace: 2 planks in a column make 7 sticks, not vanilla's 4 ----------
@@ -197,8 +211,7 @@ $CTL close >/dev/null 2>&1
 before=$($CTL inventory | item_count minecraft:stick)
 put_grid minecraft:oak_planks 100 102 || echo "FAILED: could not fill the grid for the stick recipe"
 shown=$(wait_result minecraft:stick 7)
-take_result
-after=$($CTL inventory | item_count minecraft:stick)
+after=$(take_result minecraft:stick 7 "$before")
 made=$((after - before))
 if [ "$shown" = "minecraft:stick 7" ] && [ "$made" = 7 ]; then
   say "RECIPE replace ok result=7 shown=$shown made=$made"
@@ -210,8 +223,7 @@ fi
 put_grid minecraft:dirt 100 || echo "FAILED: could not fill the grid for the probe recipe"
 shown=$(wait_result minecraft:diamond 1)
 before=$($CTL inventory | item_count minecraft:diamond)
-take_result
-after=$($CTL inventory | item_count minecraft:diamond)
+after=$(take_result minecraft:diamond 1 "$before")
 made=$((after - before))
 if [ "$shown" = "minecraft:diamond 1" ] && [ "$made" = 1 ]; then
   say "RECIPE add ok result=minecraft:diamond 1 shown=$shown made=$made"
@@ -223,8 +235,7 @@ fi
 put_grid minecraft:oak_log 100 || echo "FAILED: could not fill the grid for the control recipe"
 shown=$(wait_result minecraft:oak_planks 4)
 before=$($CTL inventory | item_count minecraft:oak_planks)
-take_result
-after=$($CTL inventory | item_count minecraft:oak_planks)
+after=$(take_result minecraft:oak_planks 4 "$before")
 made=$((after - before))
 if [ "$shown" = "minecraft:oak_planks 4" ] && [ "$made" = 4 ]; then
   say "RECIPE control ok result=minecraft:oak_planks 4 shown=$shown made=$made"

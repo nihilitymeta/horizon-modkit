@@ -226,11 +226,12 @@ control:
 - `minecraft:oak_planks`, which the probe does not name: one log still makes 4 (`control`).
 
 The check reads the game's own answers. `screen` holds the server's crafting result once items are in the grid,
-`inventory` the counts after the result is taken, and the reply to `command` the owner's chat. It runs `/reload`
-first and waits for the probe's line from that load, so the files it judges are the ones a reload pushed. Each fact
-is one `RECIPE` line, and a missing line prints `FAILED: no line: …`. A `RECIPE … BAD` line, a `[lua:recipes_probe]`
-line at WARN or ERROR, or a craft that made a different count fails the run. The socket, the game and the quit work
-as they do for the gates check.
+`inventory` the counts after the result is taken, polled until the craft's count is there twice in a row: the
+client's copy can show the count from before the click, or the one its own recipe table predicts, for a tick. The
+reply to `command` is the owner's chat. It runs `/reload` first and waits for the probe's line from that load, so
+the files it judges are the ones a reload pushed. Each fact is one `RECIPE` line, and a missing line prints
+`FAILED: no line: …`. A `RECIPE … BAD` line, a `[lua:recipes_probe]` line at WARN or ERROR, or a craft that made a
+different count fails the run. The socket, the game and the quit work as they do for the gates check.
 
 ## Playing through the launcher
 
