@@ -16,18 +16,50 @@
 #                             primitive: both calls must be accepted
 #
 # Each fact is one GATE line. A missing line, a `GATE ... BAD` line, or any
-# [lua:gates_*] line at WARN or ERROR fails the run.
+# [lua:gates_*] line at WARN or ERROR fails the run. The control socket sits in
+# the game dir, and the game this script started is quit on every exit, a
+# Ctrl-C included.
 #
 #   HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/gates-check.sh
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 : "${HORIZON:?the fork checkout}" "${RESOURCES:?the prepared 26.3 folder}" "${GAME_DIR:?the game dir}"
 WORLD=${WORLD:-gates-check}
-SOCK=${SOCK:-/tmp/horizon-gates-check.sock}
+# The socket lives in the game dir, so a run leaves nothing outside it. A unix
+# socket path is limited to about 100 bytes: a long game dir falls back to the
+# other checks' /tmp path instead.
+SOCK=${SOCK:-$GAME_DIR/ctl.sock}
+if [ ${#SOCK} -gt 100 ]; then
+  SOCK=/tmp/horizon-gates-check.sock
+  echo "the socket path is over 100 bytes: using $SOCK"
+fi
 CTL="$HORIZON/target/fast/horizon-ctl --socket $SOCK"
 PROBE="$HERE/tools/gates-probe"
 export HORIZON_HOME="$GAME_DIR"
 LOG="$GAME_DIR/logs/latest.log"
+GAME_PID=
+GAME_STOPPED=0
+# Any exit — a failure, a signal, the end of the run — quits the game this
+# script started: `quit` first, then the pid from the launch, then SIGKILL, and
+# the socket goes too. `status` keeps the script's own exit status.
+stop_game() {
+  [ "$GAME_STOPPED" = 1 ] && return 0
+  GAME_STOPPED=1
+  if [ -n "$GAME_PID" ] && kill -0 "$GAME_PID" 2>/dev/null; then
+    $CTL quit >/dev/null 2>&1
+    for i in $(seq 1 20); do kill -0 "$GAME_PID" 2>/dev/null || break; sleep 0.5; done
+    if kill -0 "$GAME_PID" 2>/dev/null; then
+      echo "the game did not quit; killing pid $GAME_PID"
+      kill "$GAME_PID" 2>/dev/null
+      for i in $(seq 1 10); do kill -0 "$GAME_PID" 2>/dev/null || break; sleep 0.5; done
+      kill -0 "$GAME_PID" 2>/dev/null && kill -9 "$GAME_PID" 2>/dev/null
+    fi
+  fi
+  rm -f "$SOCK"
+}
+trap 'status=$?; stop_game; exit $status' EXIT
+trap 'echo "interrupted: stopping the game"; exit 130' INT
+trap 'echo "terminated: stopping the game"; exit 143' TERM
 # A reused world opens with the player where the last run left them, and with
 # the last run's rules: this check wants a fresh one.
 [ "$WORLD" = gates-check ] && rm -rf "$GAME_DIR/saves/gates-check"
@@ -38,9 +70,13 @@ for m in "$PROBE/gates_allowed" "$PROBE/gates_denied" "$PROBE/gates_client"; do
 done
 echo "scripts load: the gates probe's three mods"
 [ -f "$GAME_DIR/options.txt" ] && sed -i.bak 's/^soundCategory_master:.*/soundCategory_master:0.0/' "$GAME_DIR/options.txt" && rm -f "$GAME_DIR/options.txt.bak"
-$CTL launch --game "$HORIZON/target/fast/horizon-client" --wait --game-dir "$GAME_DIR" --resources "$RESOURCES" \
+# The launch reports the game's pid; the trap stops that process, so ask for it
+# before the ready wait runs as its own step.
+LAUNCH=$($CTL launch --game "$HORIZON/target/fast/horizon-client" --game-dir "$GAME_DIR" --resources "$RESOURCES" \
   --world "$WORLD" --offscreen --dev-tools --dev-mod "$HERE" \
-  --dev-mod "$PROBE/gates_allowed" --dev-mod "$PROBE/gates_denied" --dev-mod "$PROBE/gates_client" >/dev/null
+  --dev-mod "$PROBE/gates_allowed" --dev-mod "$PROBE/gates_denied" --dev-mod "$PROBE/gates_client")
+GAME_PID=$(printf '%s' "$LAUNCH" | python3 -c 'import json, sys; print(json.load(sys.stdin).get("pid", ""))' 2>/dev/null || true)
+[ -n "$GAME_PID" ] || { printf '%s\n' "$LAUNCH" | cut -c1-300; echo "FAILED: the game did not start"; exit 1; }
 $CTL wait-ready 180 >/dev/null
 for i in $(seq 1 20); do
   S=$($CTL state)
@@ -60,7 +96,7 @@ for i in $(seq 1 40); do
   grep -q 'GATE timer cancel' "$LOG" 2>/dev/null && grep -q 'GATE display' "$LOG" 2>/dev/null && grep -q 'GATE client markers' "$LOG" 2>/dev/null && break
   sleep 1
 done
-$CTL quit >/dev/null; sleep 3
+stop_game
 echo "--- the GATE lines"
 grep -o 'GATE .*' "$LOG" | cut -c1-200
 ok=0
@@ -72,6 +108,7 @@ need "GATE rule write ok keep_inventory=true"
 need "GATE rule allow-list ok"
 need "GATE rule allow-list unchanged ok mob_griefing=true"
 need "GATE rule type ok"
+need "GATE day time ok before="
 need "GATE kick unknown ok"
 need "GATE timer handles ok"
 need "GATE timer cancel ok count=2 first=true again=false"

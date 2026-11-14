@@ -10,11 +10,12 @@ end
 horizon.command("gatesallowed", 0, function(player)
   local level = player.dimension
   local day_before = horizon.level_day_time(level) or -1
-  local grief_before = horizon.level_game_rule(level, "mob_griefing")
   -- A writable rule; then the allow-list's two refusals, raised at the call.
+  -- `mob_griefing` defaults to true, so writing false differs from the value
+  -- the world holds: a write that slipped past the gate shows below.
   horizon.level_set_game_rule(level, "keep_inventory", true)
   local ok, err = pcall(function()
-    horizon.level_set_game_rule(level, "mob_griefing", true)
+    horizon.level_set_game_rule(level, "mob_griefing", false)
   end)
   check("rule allow-list", not ok and tostring(err):find("not writable from Lua", 1, true) ~= nil)
   ok, err = pcall(function()
@@ -54,7 +55,9 @@ horizon.command("gatesallowed", 0, function(player)
     local rule = horizon.level_game_rule(level, "keep_inventory")
     check("rule write", rule == true, ("keep_inventory=%s"):format(tostring(rule)))
     local grief = horizon.level_game_rule(level, "mob_griefing")
-    check("rule allow-list unchanged", grief == grief_before, ("mob_griefing=%s"):format(tostring(grief)))
+    -- The read-back is logged, not only judged: a write that got through shows
+    -- as `mob_griefing=false` here and fails the check's line.
+    check("rule allow-list unchanged", grief == true, ("mob_griefing=%s"):format(tostring(grief)))
     local day = horizon.level_day_time(level) or -1
     check("day time", day >= 6000 and day < 6100, ("before=%d after=%d"):format(day_before, day))
     local shown = horizon.scoreboard_display_objective("sidebar")

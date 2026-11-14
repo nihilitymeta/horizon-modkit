@@ -203,8 +203,14 @@ capability gates working in a game, not only in the Lua test harness:
   must stop on its second firing, and a kick of a name nobody has is a no-op.
 - `gates_client` adds one icon marker and draws one world primitive; both calls must be accepted.
 
-Each fact is one `GATE` line in the log. A missing line, a `GATE … BAD` line, or any `[lua:gates_*]` line at WARN
-or ERROR fails the run.
+Each fact is one `GATE` line in the log, and the check requires each of them, the day-time line included: a missing
+line prints `FAILED: no line: …`. A `GATE … BAD` line, an `[lua:gates_*]` line at WARN or ERROR, or a denied write
+that changed the day clock, the game mode or the rule fails the run too.
+
+The control socket sits in the game dir (`$GAME_DIR/ctl.sock`), and the check quits the game it started on every
+exit, a Ctrl-C included, by the pid the launch reported; the socket is removed. No game and no socket file is left
+behind. A game dir longer than the unix socket path limit (about 100 bytes) falls back to
+`/tmp/horizon-gates-check.sock`, and the check says so.
 
 ## Playing through the launcher
 
