@@ -232,6 +232,7 @@ export type InteractEntityEvent = { entity: number, kind: string, stack: Item? }
 export type InteractEntityV2Event = { entity: number, kind: string, hand: "main" | "off", stack: Item? }
 export type InteractionKeyEvent = { button: number, key_mapping: string, hand: "main" | "off", swing_hand: boolean }
 export type InventoryBlockStartEvent = { player: PlayerRef, pos: Vec3 }
+export type InventoryChangedEvent = { uuid: string, kind: "player" | "ender" | "cursor" | "crafting" }
 export type InventoryClickEvent = { player: PlayerRef, window: number, slot: number, button: number, mode: number }
 export type InventoryDragEvent = { player: PlayerRef, window: number, kind: number, slots: { number } }
 export type InventoryMoveItemEvent = { source: Vec3, destination: Vec3, item: string }
@@ -368,6 +369,7 @@ export type PlayerGameModeChangedEvent = { player: PlayerRef, from: number, to: 
 export type PlayerHurtByPlayerEvent = { attacker: string, attacker_entity: number, victim: string, victim_entity: number, source: string, damage_type: string, amount: number }
 export type PlayerInputEvent = { player: PlayerRef, flags: number }
 export type PlayerInsertLecternBookEvent = { player: PlayerRef, pos: Vec3, book: string }
+export type PlayerInventoryChangedEvent = { player: string, stacks: { [number]: Item } }
 export type PlayerItemCooldownEvent = { player: PlayerRef, item: string, ticks: number }
 export type PlayerItemFrameChangeEvent = { player: PlayerRef, entity_id: number, action: string, item: string, rotation: number }
 export type PlayerItemHeldEvent = { player: PlayerRef, from_slot: number, to_slot: number }
@@ -708,6 +710,7 @@ export type HorizonOn =
     ((name: "interact_entity_v2", fn: (event: InteractEntityV2Event) -> (), kind: string?) -> ()) &
     ((name: "interaction_key", fn: (event: InteractionKeyEvent) -> ()) -> ()) &
     ((name: "inventory_block_start", fn: (event: InventoryBlockStartEvent) -> ()) -> ()) &
+    ((name: "inventory_changed", fn: (event: InventoryChangedEvent) -> ()) -> ()) &
     ((name: "inventory_click", fn: (event: InventoryClickEvent) -> ()) -> ()) &
     ((name: "inventory_drag", fn: (event: InventoryDragEvent) -> ()) -> ()) &
     ((name: "inventory_move_item", fn: (event: InventoryMoveItemEvent) -> ()) -> ()) &
@@ -844,6 +847,7 @@ export type HorizonOn =
     ((name: "player_hurt_by_player", fn: (event: PlayerHurtByPlayerEvent) -> ()) -> ()) &
     ((name: "player_input", fn: (event: PlayerInputEvent) -> ()) -> ()) &
     ((name: "player_insert_lectern_book", fn: (event: PlayerInsertLecternBookEvent) -> ()) -> ()) &
+    ((name: "player_inventory_changed", fn: (event: PlayerInventoryChangedEvent) -> ()) -> ()) &
     ((name: "player_item_cooldown", fn: (event: PlayerItemCooldownEvent) -> ()) -> ()) &
     ((name: "player_item_frame_change", fn: (event: PlayerItemFrameChangeEvent) -> (), kind: string?) -> ()) &
     ((name: "player_item_held", fn: (event: PlayerItemHeldEvent) -> ()) -> ()) &
@@ -1056,8 +1060,9 @@ declare horizon: {
     player_permission: (who: string | ReadPlayer) -> number?,
     dev: { inspect: (who: ReadPlayer | string, what: number | { x: number, y: number, z: number, face: Vec3?, dimension: string? }) -> boolean },
     summon: (dimension: string, kind: string, x: number, y: number, z: number) -> number?,
-    after: (ticks: number, fn: () -> ()) -> (),
-    every: (ticks: number, fn: () -> ()) -> (),
+    after: (ticks: number, fn: () -> ()) -> number,
+    every: (ticks: number, fn: () -> ()) -> number,
+    cancel_timer: (handle: number) -> boolean,
     ticks: () -> number,
     broadcast: (text: string) -> (),
     kill_mob: (dimension: string, id: number) -> (),
@@ -1178,6 +1183,7 @@ declare horizon: {
     level_block_state: (name: string, value: Vec3) -> string?,
     level_day_time: (name: string) -> number?,
     level_difficulty: (name: string) -> string?,
+    level_game_rule: (name: string, name2: string) -> (boolean | number)?,
     level_game_time: (name: string) -> number?,
     level_height: (name: string) -> { min: number, max: number }?,
     level_is_loaded: (name: string, value: Vec3) -> boolean,
@@ -1187,6 +1193,7 @@ declare horizon: {
     level_play_sound: (name: string, name2: string, value: Vec3, value2: number, value3: number, value4: number) -> (),
     level_seed: (name: string) -> number?,
     level_set_day_time: (name: string, value: number) -> (),
+    level_set_game_rule: (name: string, name2: string, value: (boolean | number)) -> (),
     level_set_weather: (name: string, value: number, value2: number, value3: boolean, value4: boolean) -> (),
     level_weather: (name: string) -> { number }?,
     lightning_bolt: (name: string, value: Vec3, value2: boolean) -> (),
@@ -1236,10 +1243,13 @@ declare horizon: {
     scoreboard_add_objective: (name: string, name2: string) -> (),
     scoreboard_add_score: (name: string, name2: string, value: number) -> (),
     scoreboard_add_team: (name: string) -> (),
+    scoreboard_clear_display: (name: string) -> (),
+    scoreboard_display_objective: (name: string) -> string?,
     scoreboard_objectives: () -> { string },
     scoreboard_remove_objective: (name: string) -> (),
     scoreboard_remove_team: (name: string) -> (),
     scoreboard_score: (name: string, name2: string) -> number?,
+    scoreboard_set_display: (name: string, name2: string) -> (),
     scoreboard_set_score: (name: string, name2: string, value: number) -> (),
     scoreboard_team_join: (name: string, name2: string) -> (),
     scoreboard_team_leave: (name: string) -> (),
