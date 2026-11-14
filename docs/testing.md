@@ -125,7 +125,8 @@ HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/ex
 
 `tools/steps-check.sh` and `tools/hook-coverage.sh` open a fresh `modkit-check` world on each run.
 `tools/example-check.sh` opens the world named by `WORLD`, which is `New World` by default. `tools/hud-check.sh`
-opens a `hud-check` world with `tools/hud-probe`.
+opens a `hud-check` world with `tools/hud-probe`. `tools/recipes-check.sh` opens a `recipes-check` world with
+`tools/recipes-probe`.
 
 ### Every concept of the example mod
 
@@ -211,6 +212,25 @@ The control socket sits in the game dir (`$GAME_DIR/ctl.sock`), and the check qu
 exit, a Ctrl-C included, by the pid the launch reported; the socket is removed. No game and no socket file is left
 behind. A game dir longer than the unix socket path limit (about 100 bytes) falls back to
 `/tmp/horizon-gates-check.sock`, and the check says so.
+
+### The recipes a mod changes
+
+`tools/recipes-check.sh` starts one game with `tools/recipes-probe` and checks that a mod changes the game's recipes
+from Lua through the `data_pack_files` hook. The probe pushes three pack files, and an untouched recipe is the
+control:
+
+- a `recipe/minecraft:stick` file whose result is 7: the crafting grid makes 7 sticks, not vanilla's 4 (`replace`).
+- a `recipe_filter/…` file that removes `minecraft:stone_pickaxe`: `/recipe give` answers `Unknown recipe: …`
+  (`remove`).
+- a new `recipe/recipes_probe:probe_item` file: one dirt makes one diamond (`add`).
+- `minecraft:oak_planks`, which the probe does not name: one log still makes 4 (`control`).
+
+The check reads the game's own answers. `screen` holds the server's crafting result once items are in the grid,
+`inventory` the counts after the result is taken, and the reply to `command` the owner's chat. It runs `/reload`
+first and waits for the probe's line from that load, so the files it judges are the ones a reload pushed. Each fact
+is one `RECIPE` line, and a missing line prints `FAILED: no line: …`. A `RECIPE … BAD` line, a `[lua:recipes_probe]`
+line at WARN or ERROR, or a craft that made a different count fails the run. The socket, the game and the quit work
+as they do for the gates check.
 
 ## Playing through the launcher
 

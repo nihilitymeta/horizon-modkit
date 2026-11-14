@@ -1,0 +1,9 @@
+id = "recipes_probe"
+name = "Recipes Probe"
+version = "0.1.0"
+description = "Replaces, removes and adds a recipe through data_pack_files; run by tools/recipes-check.sh"
+authors = ["whos-carmen"]
+api = "0.3"
+side = "server"
+capabilities = ["scripts"]
+experimental = ["scripts"]

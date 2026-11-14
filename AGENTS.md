@@ -55,6 +55,7 @@ must be built in Event Horizon (`target/fast/horizon-client`, `horizon-ctl`, and
 | `tools/hook-coverage.sh` | every modkit callback is reached from the game |
 | `tools/hud-check.sh` | the draw hooks fire and take the probe's draws |
 | `tools/gates-check.sh` | the capability gates, the game-rule and day-time writes and the display slot work in a game, and a marker and a world primitive are accepted |
+| `tools/recipes-check.sh` | a mod replaces, removes and adds a recipe in a game through the `data_pack_files` hook, and an unnamed vanilla recipe is unchanged |
 | `tools/docs-check.sh` | links resolve, and each Lua block in the docs is copied exactly from a file that runs |
 | `tools/scaffold-check.sh` | a new mod from `cargo horizon-mod new --template lua` builds and runs |
 

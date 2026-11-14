@@ -13,8 +13,8 @@
 #
 # HORIZON is the fork checkout, built: target/fast/horizon-client and target/debug/cargo-horizon-mod
 # (`cargo build -p cargo-horizon-mod`). With no folders given, examples/example_mod and the probes the
-# in-game checks run (tools/hook-probe, tools/step-probe, tools/modkit-probe, tools/gates-probe's three mods)
-# are checked.
+# in-game checks run (tools/hook-probe, tools/step-probe, tools/modkit-probe, tools/gates-probe's three mods,
+# tools/recipes-probe) are checked.
 set -u
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 : "${HORIZON:?the fork checkout}"
@@ -27,7 +27,8 @@ for a in "$@"; do
 done
 if [ ${#mods[@]} = 0 ]; then
   mods=("$HERE/examples/example_mod" "$HERE/tools/hook-probe" "$HERE/tools/step-probe" "$HERE/tools/modkit-probe" "$HERE/tools/hud-probe" "$HERE/tools/viewless-probe" \
-    "$HERE/tools/gates-probe/gates_allowed" "$HERE/tools/gates-probe/gates_denied" "$HERE/tools/gates-probe/gates_client")
+    "$HERE/tools/gates-probe/gates_allowed" "$HERE/tools/gates-probe/gates_denied" "$HERE/tools/gates-probe/gates_client" \
+    "$HERE/tools/recipes-probe")
 fi
 failed=0
 res=()
