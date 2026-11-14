@@ -71,7 +71,7 @@ Add `--resources <26.3 folder>`, the prepared vanilla folder, and it also layers
 does at start. A file the game would refuse fails the check here. In a game, such a file leaves every content mod out
 of the world: an `add_spawns` spawner with `min_count` instead of NeoForge's `minCount`, for example.
 
-`tools/check.sh` runs this check on the modkit, the example mod and the three probes under `tools/`. Each run also
+`tools/check.sh` runs this check on the modkit, the example mod and the probes under `tools/`. Each run also
 runs the script steps: StyLua formatting, selene linting and type analysis against `types/horizon.d.lua` with a
 pinned luau-lsp the check downloads on the first run, so nothing needs to be on your `PATH` (`--offline` skips the
 type step). With `--self-test`, it shows a misspelled hook being refused with its line, and a type error that still
@@ -111,7 +111,7 @@ Some details to keep in mind:
 
 ## The check scripts
 
-The four scripts below each start the game, drive it, and read the log. They take the same variables:
+The scripts below each start the game, drive it, and read the log. They take the same variables:
 
 ```sh
 HORIZON=/path/to/horizon RESOURCES=<26.3 folder> GAME_DIR=~/horizon-dev tools/example-check.sh
@@ -190,6 +190,21 @@ message is harmless and known (nihilitymeta/horizon#15).
 `gui_layer_post` hooks. The check polls the log until both handlers logged after their draws, and fails on any
 `[lua:hud_probe]` line at WARN or ERROR. An offscreen run that never draws fails: drive the probe in a window with
 `--dev-mod tools/hud-probe` first, then point the check at that game dir's log.
+
+### The capability gates, the world writes and the client draws
+
+`tools/gates-check.sh` starts one game with the three mods under `tools/gates-probe/` and shows the engine's
+capability gates working in a game, not only in the Lua test harness:
+
+- `gates_denied` declares only `scripts`: each helper that needs `world-settings` or `server-admin` is called and
+  must fail, naming the helper and the capability, with nothing changed.
+- `gates_allowed` declares both capabilities: a `keep_inventory` write, a day-time write and a `sidebar` display
+  slot must take effect, a rule off the allow-list and a wrong-kind value must still be refused, a cancelled `every`
+  must stop on its second firing, and a kick of a name nobody has is a no-op.
+- `gates_client` adds one icon marker and draws one world primitive; both calls must be accepted.
+
+Each fact is one `GATE` line in the log. A missing line, a `GATE … BAD` line, or any `[lua:gates_*]` line at WARN
+or ERROR fails the run.
 
 ## Playing through the launcher
 

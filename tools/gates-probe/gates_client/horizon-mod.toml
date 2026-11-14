@@ -1,0 +1,9 @@
+id = "gates_client"
+name = "Gates Client"
+version = "0.1.0"
+description = "Adds one icon marker and draws one world primitive; run by tools/gates-check.sh"
+authors = ["whos-carmen"]
+api = "0.2"
+side = "both"
+capabilities = ["scripts"]
+experimental = ["scripts"]
