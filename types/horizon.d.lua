@@ -179,6 +179,7 @@ export type EntityChangeBlockV3Event = { entity: number, kind: string, pos: Vec3
 export type EntityDropItemEvent = { entity: number, item: string, count: number, pos: Vec3 }
 export type EntityEnterBlockEvent = { entity: number, kind: string, pos: Vec3, block: string }
 export type EntityEnterLoveModeEvent = { entity: number, kind: string, player: string? }
+export type EntityIgniteEvent = { entity: number, kind: string, cause: string, original_ticks: number, ticks: number }
 export type EntityInteractSpecificEvent = { entity: number, kind: string, stack: Item?, location: Vec3 }
 export type EntityJoinLevelEvent = { dimension: string, entity: number, kind: string, pos: Vec3, loaded_from_disk: boolean }
 export type EntityLeaveLevelEvent = { dimension: string, entity: number, kind: string }
@@ -305,10 +306,12 @@ export type MinimapEvent = { minimap: { corner: string, size: number, blocks_per
 export type MobAiRegisterEvent = { mob: MobView }
 export type MobDiedEvent = { dimension: string, entity: number, kind: string, damage_type: string, causing: number, player: string? }
 export type MobEffectAddedEvent = { effect: string, entity: number?, amplifier: number }
+export type MobFinalizeEvent = { kind: string, position: Vec3, reason: string, spawner: Vec3?, difficulty: number, skip: boolean, spawn_cancelled: boolean }
 export type MobKilledEvent = { player: string, entity: number, kind: string }
 export type MobSpawnedEvent = { dimension: string, kind: string, pos: Vec3, natural: boolean }
 export type MobSplitEvent = { parent: number, kind: string, size: number, child_size: number, count: number }
 export type ModContainerViewersEvent = { dimension: string, pos: Vec3, viewers: number, previous: number }
+export type ModEventEvent = { event: string, payload: Data }
 export type ModifyDefaultComponentsEvent = { item: string, components: Data }
 export type ModsEvent = { mods: { { id: string, title: string, description: string, keys: {{ key: string, label: string, default: string }} } } }
 export type MoistureChangeEvent = { dimension: string, pos: Vec3, from: number, to: number }
@@ -658,6 +661,7 @@ export type HorizonOn =
     ((name: "entity_drop_item", fn: (event: EntityDropItemEvent) -> (), kind: string?) -> ()) &
     ((name: "entity_enter_block", fn: (event: EntityEnterBlockEvent) -> (), kind: string?) -> ()) &
     ((name: "entity_enter_love_mode", fn: (event: EntityEnterLoveModeEvent) -> (), kind: string?) -> ()) &
+    ((name: "entity_ignite", fn: (event: EntityIgniteEvent) -> (), kind: string?) -> ()) &
     ((name: "entity_interact_specific", fn: (event: EntityInteractSpecificEvent) -> (), kind: string?) -> ()) &
     ((name: "entity_join_level", fn: (event: EntityJoinLevelEvent) -> (), kind: string?) -> ()) &
     ((name: "entity_leave_level", fn: (event: EntityLeaveLevelEvent) -> (), kind: string?) -> ()) &
@@ -784,10 +788,12 @@ export type HorizonOn =
     ((name: "mob_ai_register", fn: (event: MobAiRegisterEvent) -> (), kind: string?) -> ()) &
     ((name: "mob_died", fn: (event: MobDiedEvent) -> (), kind: string?) -> ()) &
     ((name: "mob_effect_added", fn: (event: MobEffectAddedEvent) -> (), kind: string?) -> ()) &
+    ((name: "mob_finalize", fn: (event: MobFinalizeEvent) -> (), kind: string?) -> ()) &
     ((name: "mob_killed", fn: (event: MobKilledEvent) -> (), kind: string?) -> ()) &
     ((name: "mob_spawned", fn: (event: MobSpawnedEvent) -> (), kind: string?) -> ()) &
     ((name: "mob_split", fn: (event: MobSplitEvent) -> (), kind: string?) -> ()) &
     ((name: "mod_container_viewers", fn: (event: ModContainerViewersEvent) -> ()) -> ()) &
+    ((name: "mod_event", fn: (event: ModEventEvent) -> ()) -> ()) &
     ((name: "modify_default_components", fn: (event: ModifyDefaultComponentsEvent) -> ()) -> ()) &
     ((name: "mods", fn: (event: ModsEvent) -> ()) -> ()) &
     ((name: "moisture_change", fn: (event: MoistureChangeEvent) -> ()) -> ()) &
@@ -1060,6 +1066,8 @@ declare horizon: {
     menu_cursor: (who: string | ReadPlayer) -> Item?,
     has_permission: (who: string | ReadPlayer, node: string, default_level: number) -> boolean,
     player_permission: (who: string | ReadPlayer) -> number?,
+    emit: (event: string, payload: Data) -> boolean,
+    on_event: (event: string, fn: (payload: Data, event: ModEventEvent) -> ()) -> (),
     dev: { inspect: (who: ReadPlayer | string, what: number | { x: number, y: number, z: number, face: Vec3?, dimension: string? }) -> boolean },
     summon: (dimension: string, kind: string, x: number, y: number, z: number) -> number?,
     after: (ticks: number, fn: () -> ()) -> number,
